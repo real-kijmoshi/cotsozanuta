@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>admin · cotsozanuta</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0 }
+    :root {
+      --bg: #0e0b0b;
+      --surface: #1a1515;
+      --border: rgba(255,255,255,0.08);
+      --red: #e31c12;
+      --text: #f0ece8;
+      --sub: #8a7f7a;
+      --sub2: #5a5250;
+      --ok: #22c55e;
+      --mono: 'Courier New', monospace;
+    }
+    body { background: var(--bg); color: var(--text); font-family: var(--mono); min-height: 100vh; padding: 32px 16px; }
+    h1 { font-size: 1rem; letter-spacing: .2em; text-transform: uppercase; color: var(--red); margin-bottom: 28px; }
+    h2 { font-size: .65rem; letter-spacing: .18em; text-transform: uppercase; color: var(--sub); margin-bottom: 12px; }
+
+    /* ── LOGIN ── */
+    #login-view { max-width: 320px; margin: 80px auto; display: flex; flex-direction: column; gap: 12px; }
+    #login-view input { background: var(--surface); border: 1px solid var(--border); color: var(--text);
+      font-family: var(--mono); font-size: .75rem; padding: 10px 14px; outline: none; letter-spacing: .1em; }
+    #login-view input:focus { border-color: rgba(227,28,18,0.4); }
+    #login-error { color: var(--red); font-size: .6rem; letter-spacing: .1em; min-height: 1em; }
+
+    /* ── ADMIN LAYOUT ── */
+    #admin-view { display: none; max-width: 900px; margin: 0 auto; }
+    #admin-view.show { display: block; }
+
+    .panel { background: var(--surface); border: 1px solid var(--border); padding: 20px 24px; margin-bottom: 20px; }
+
+    /* date row */
+    .row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+    label { font-size: .58rem; letter-spacing: .15em; text-transform: uppercase; color: var(--sub); white-space: nowrap; }
+    input[type="date"], input[type="text"], input[type="number"] {
+      background: var(--bg); border: 1px solid var(--border); color: var(--text);
+      font-family: var(--mono); font-size: .72rem; padding: 7px 11px; outline: none; letter-spacing: .06em;
+    }
+    input:focus { border-color: rgba(227,28,18,0.4); }
+    input[type="number"] { width: 90px; }
+
+    /* song search */
+    #song-search-wrap { position: relative; flex: 1; min-width: 200px; }
+    #song-search { width: 100%; }
+    #song-ac { position: absolute; top: 100%; left: 0; right: 0; background: #211c1c;
+      border: 1px solid var(--border); border-top: none; max-height: 220px; overflow-y: auto; z-index: 10; display: none; }
+    #song-ac.show { display: block; }
+    .ac-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; cursor: pointer; font-size: .68rem; }
+    .ac-item:hover { background: rgba(255,255,255,0.05); }
+    .ac-thumb { width: 28px; height: 28px; object-fit: cover; flex-shrink: 0; }
+    .ac-thumb-ph { width: 28px; height: 28px; background: #2d2525; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: .7rem; color: var(--sub2); }
+    .ac-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ac-id { color: var(--sub2); font-size: .55rem; flex-shrink: 0; }
+
+    /* lyrics viewer */
+    #lyrics-section { display: none; }
+    #lyrics-section.show { display: block; }
+    #lyrics-meta { font-size: .62rem; color: var(--sub); margin-bottom: 10px; letter-spacing: .08em; }
+    #lyrics-wrap { position: relative; }
+    #lyrics-box { 
+      background: var(--bg); border: 1px solid var(--border); padding: 14px;
+      font-size: .7rem; line-height: 1.7; max-height: 360px; overflow-y: auto;
+      white-space: pre-wrap; word-break: break-word; cursor: text; user-select: none;
+    }
+    .w-token { cursor: pointer; border-radius: 2px; padding: 0 1px; }
+    .w-token:hover { background: rgba(227,28,18,0.2); }
+    .w-token.selected { background: var(--red); color: #fff; }
+    .w-token.before-selected { background: rgba(34,197,94,0.18); }
+    #word-idx-display { margin-top: 8px; font-size: .6rem; color: var(--sub); letter-spacing: .1em; }
+
+    /* buttons */
+    .btn { font-family: var(--mono); font-size: .65rem; letter-spacing: .12em; text-transform: uppercase;
+      padding: 8px 18px; border: 1px solid var(--border); background: transparent; color: var(--text);
+      cursor: pointer; transition: border-color .15s, color .15s; }
+    .btn:hover { border-color: rgba(255,255,255,0.25); color: #fff; }
+    .btn.primary { border-color: var(--red); color: var(--red); }
+    .btn.primary:hover { background: var(--red); color: #fff; }
+    .btn:disabled { opacity: .35; cursor: default; }
+
+    /* schedule table */
+    #schedule-table { width: 100%; border-collapse: collapse; font-size: .65rem; }
+    #schedule-table th { text-align: left; padding: 6px 10px; color: var(--sub); letter-spacing: .12em;
+      text-transform: uppercase; border-bottom: 1px solid var(--border); }
+    #schedule-table td { padding: 7px 10px; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: middle; }
+    #schedule-table tr:hover td { background: rgba(255,255,255,0.02); }
+    .tbl-cover { width: 24px; height: 24px; object-fit: cover; }
+    .tbl-cover-ph { width: 24px; height: 24px; background: #2d2525; display: inline-flex; align-items: center; justify-content: center; font-size: .6rem; color: var(--sub2); }
+    .tbl-date-today { color: var(--ok); }
+    .tbl-del { background: none; border: none; color: var(--sub2); cursor: pointer; font-size: .85rem; padding: 2px 6px; }
+    .tbl-del:hover { color: var(--red); }
+    .tbl-empty { color: var(--sub2); font-size: .6rem; letter-spacing: .1em; padding: 16px 10px; }
+
+    /* toast */
+    #toast { position: fixed; bottom: 24px; right: 24px; background: #1e1a1a; border: 1px solid var(--border);
+      padding: 10px 18px; font-size: .62rem; letter-spacing: .1em; color: var(--text);
+      opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 999; }
+    #toast.ok { border-color: rgba(34,197,94,0.4); color: var(--ok); }
+    #toast.err { border-color: rgba(227,28,18,0.4); color: var(--red); }
+    #toast.show { opacity: 1; }
+
+    #logout-btn { float: right; }
+    .spinner-sm { display: inline-block; width: 10px; height: 10px; border: 1px solid var(--sub); border-top-color: transparent; border-radius: 50%; animation: spin .6s linear infinite; vertical-align: middle; margin-right: 6px; }
+    @keyframes spin { to { transform: rotate(360deg) } }
+
+    /* ── STATS ── */
+    .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 20px; }
+    .kpi { background: var(--bg); border: 1px solid var(--border); padding: 14px 16px; }
+    .kpi-val { font-size: 1.6rem; letter-spacing: .04em; color: var(--text); line-height: 1; margin-bottom: 4px; }
+    .kpi-val.green { color: var(--ok); }
+    .kpi-val.red   { color: var(--red); }
+    .kpi-label { font-size: .5rem; letter-spacing: .18em; text-transform: uppercase; color: var(--sub2); }
+
+    .chart-wrap { position: relative; width: 100%; }
+    .chart-title { font-size: .52rem; letter-spacing: .15em; text-transform: uppercase; color: var(--sub2); margin-bottom: 10px; }
+    canvas.chart { width: 100% !important; height: 160px !important; display: block; }
+
+    .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+    @media (max-width: 600px) { .charts-grid { grid-template-columns: 1fr; } }
+
+    .guess-dist-bars { display: flex; flex-direction: column; gap: 3px; }
+    .gd-row { display: grid; grid-template-columns: 28px 1fr 36px; align-items: center; gap: 6px; }
+    .gd-lbl { font-size: .48rem; color: var(--sub); text-align: right; font-family: var(--mono); }
+    .gd-track { height: 10px; background: rgba(255,255,255,0.04); position: relative; overflow: hidden; }
+    .gd-fill-c { position: absolute; top: 0; left: 0; height: 100%; background: var(--ok); opacity: .75; transition: width .4s; }
+    .gd-fill-g { position: absolute; top: 0; height: 100%; background: var(--red); opacity: .5; transition: width .4s .05s; }
+    .gd-count { font-size: .46rem; color: var(--sub2); text-align: right; font-family: var(--mono); }
+
+    .stats-date-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+    .stats-date-row label { font-size: .55rem; letter-spacing: .15em; text-transform: uppercase; color: var(--sub); }
+    select { background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: var(--mono);
+      font-size: .68rem; padding: 6px 10px; outline: none; cursor: pointer; }
+    select:focus { border-color: rgba(227,28,18,0.4); }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-view">
+  <h1>cotsozanuta / admin</h1>
+  <input type="password" id="pwd-input" placeholder="hasło…" autocomplete="current-password">
+  <div id="login-error"></div>
+  <button class="btn primary" id="login-btn">zaloguj się</button>
+</div>
+
+<!-- ADMIN -->
+<div id="admin-view">
+  <h1>cotsozanuta / admin <button class="btn" id="logout-btn" style="font-size:.55rem">wyloguj</button></h1>
+
+  <!-- ADD / EDIT ENTRY -->
+  <div class="panel">
+    <h2>dodaj / edytuj wpis dzienny</h2>
+
+    <div class="row">
+      <label>data</label>
+      <input type="date" id="entry-date">
+    </div>
+
+    <div class="row">
+      <label>piosenka</label>
+      <div id="song-search-wrap">
+        <input type="text" id="song-search" placeholder="szukaj…" autocomplete="off" spellcheck="false">
+        <div id="song-ac"></div>
+      </div>
+      <input type="number" id="song-id-input" placeholder="ID" min="1" style="width:110px">
+      <button class="btn" id="load-lyrics-btn">załaduj tekst</button>
+    </div>
+
+    <!-- LYRICS -->
+    <div id="lyrics-section">
+      <div id="lyrics-meta"></div>
+      <div id="lyrics-wrap">
+        <div id="lyrics-box"></div>
+      </div>
+      <div id="word-idx-display">kliknij słowo, aby ustawić indeks startowy</div>
+      <div class="row" style="margin-top:12px">
+        <label>indeks słowa</label>
+        <input type="number" id="word-idx-input" min="0" value="0" style="width:90px">
+        <button class="btn primary" id="save-entry-btn">zapisz wpis</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="panel" id="stats-panel">
+    <h2>statystyki</h2>
+    <div id="stats-loading" style="color:var(--sub2);font-size:.6rem;letter-spacing:.1em"><span class="spinner-sm"></span>ładowanie…</div>
+    <div id="stats-content" style="display:none">
+
+      <!-- KPIs -->
+      <div class="kpi-row">
+        <div class="kpi"><div class="kpi-val" id="kpi-total">—</div><div class="kpi-label">łączne gry</div></div>
+        <div class="kpi"><div class="kpi-val green" id="kpi-correct">—</div><div class="kpi-label">zgadnięte</div></div>
+        <div class="kpi"><div class="kpi-val red" id="kpi-giveup">—</div><div class="kpi-label">poddane</div></div>
+        <div class="kpi"><div class="kpi-val" id="kpi-rate">—</div><div class="kpi-label">% sukcesu</div></div>
+        <div class="kpi"><div class="kpi-val" id="kpi-days">—</div><div class="kpi-label">aktywnych dni</div></div>
+        <div class="kpi"><div class="kpi-val" id="kpi-avg-day">—</div><div class="kpi-label">gier / dzień</div></div>
+      </div>
+
+      <!-- bar charts -->
+      <div class="charts-grid">
+        <div class="chart-wrap">
+          <div class="chart-title">gry dziennie (ostatnie 30 dni)</div>
+          <canvas class="chart" id="chart-daily"></canvas>
+        </div>
+        <div class="chart-wrap">
+          <div class="chart-title">gry miesięcznie</div>
+          <canvas class="chart" id="chart-monthly"></canvas>
+        </div>
+        <div class="chart-wrap">
+          <div class="chart-title">% sukcesu dziennie</div>
+          <canvas class="chart" id="chart-rate"></canvas>
+        </div>
+        <div class="chart-wrap">
+          <div class="chart-title">średnia słów do odgadnięcia</div>
+          <canvas class="chart" id="chart-words"></canvas>
+        </div>
+      </div>
+
+      <!-- guess distribution for a specific day -->
+      <div class="chart-title" style="margin-bottom:10px">rozkład zgadnięć dla dnia</div>
+      <div class="stats-date-row">
+        <label>dzień</label>
+        <select id="dist-date-select"></select>
+      </div>
+      <div id="dist-bars" class="guess-dist-bars"></div>
+
+    </div>
+  </div>
+
+  <!-- SCHEDULE -->
+  <div class="panel">
+    <h2>harmonogram</h2>
+    <div id="schedule-wrap">
+      <div class="tbl-empty"><span class="spinner-sm"></span>ładowanie…</div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  const API = (path, opts) => fetch(path, { headers: { 'x-admin-password': sessionStorage.getItem('admpwd') || '', 'Content-Type': 'application/json', ...(opts?.headers || {}) }, ...opts })
+
+  // ── TOAST ─────────────────────────────────────────────────
+  let toastTimer
+  function toast(msg, type = 'ok') {
+    const el = document.getElementById('toast')
+    el.textContent = msg; el.className = 'show ' + type
+    clearTimeout(toastTimer)
+    toastTimer = setTimeout(() => el.className = '', 2400)
+  }
+
+  // ── LOGIN ──────────────────────────────────────────────────
+  const loginView = document.getElementById('login-view')
+  const adminView = document.getElementById('admin-view')
+  const pwdInput  = document.getElementById('pwd-input')
+  const loginErr  = document.getElementById('login-error')
+  const loginBtn  = document.getElementById('login-btn')
+
+  async function tryLogin(pwd) {
+    loginBtn.disabled = true; loginErr.textContent = ''
+    const r = await fetch('/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pwd }) })
+    if (r.ok) {
+      sessionStorage.setItem('admpwd', pwd)
+      loginView.style.display = 'none'; adminView.classList.add('show')
+      await init()
+    } else {
+      loginErr.textContent = 'złe hasło'
+    }
+    loginBtn.disabled = false
+  }
+  loginBtn.addEventListener('click', () => tryLogin(pwdInput.value))
+  pwdInput.addEventListener('keydown', e => e.key === 'Enter' && tryLogin(pwdInput.value))
+  document.getElementById('logout-btn').addEventListener('click', () => { sessionStorage.removeItem('admpwd'); location.reload() })
+
+  // auto-login if session stored
+  if (sessionStorage.getItem('admpwd')) tryLogin(sessionStorage.getItem('admpwd'))
+
+  // ── SONG SEARCH / AUTOCOMPLETE ─────────────────────────────
+  let allSongs = [], selectedSong = null
+  const songSearch  = document.getElementById('song-search')
+  const songAc      = document.getElementById('song-ac')
+  const songIdInput = document.getElementById('song-id-input')
+
+  function renderAc(list) {
+    if (!list.length) { songAc.classList.remove('show'); return }
+    songAc.innerHTML = list.slice(0, 30).map(s =>
+      `<div class="ac-item" data-id="${s.id}">
+        ${s.cover ? `<img class="ac-thumb" src="${esc(s.cover)}" alt="" onerror="this.style.display='none'">` : `<div class="ac-thumb-ph">♪</div>`}
+        <span class="ac-title">${esc(s.title)}</span>
+        <span class="ac-id">#${s.id}</span>
+      </div>`
+    ).join('')
+    songAc.classList.add('show')
+    songAc.querySelectorAll('.ac-item').forEach(el => {
+      el.addEventListener('click', () => pickSong(allSongs.find(s => String(s.id) === el.dataset.id)))
+    })
+  }
+
+  function pickSong(s) {
+    if (!s) return
+    selectedSong = s
+    songSearch.value = s.title
+    songIdInput.value = s.id
+    songAc.classList.remove('show')
+  }
+
+  let acTimer
+  songSearch.addEventListener('input', () => {
+    clearTimeout(acTimer)
+    acTimer = setTimeout(() => {
+      const q = songSearch.value.trim().toLowerCase()
+      if (!q) { songAc.classList.remove('show'); return }
+      renderAc(allSongs.filter(s => s.title.toLowerCase().includes(q)))
+    }, 120)
+  })
+  songSearch.addEventListener('blur', () => setTimeout(() => songAc.classList.remove('show'), 160))
+
+  songIdInput.addEventListener('input', () => {
+    const found = allSongs.find(s => String(s.id) === songIdInput.value.trim())
+    if (found) { songSearch.value = found.title; selectedSong = found }
+  })
+
+  // ── LYRICS ─────────────────────────────────────────────────
+  let wordsArr = [], selectedWordIdx = 0
+  const lyricsSection  = document.getElementById('lyrics-section')
+  const lyricsBox      = document.getElementById('lyrics-box')
+  const lyricsMeta     = document.getElementById('lyrics-meta')
+  const wordIdxDisplay = document.getElementById('word-idx-display')
+  const wordIdxInput   = document.getElementById('word-idx-input')
+
+  document.getElementById('load-lyrics-btn').addEventListener('click', async () => {
+    const sid = songIdInput.value.trim() || selectedSong?.id
+    if (!sid) { toast('wybierz piosenkę', 'err'); return }
+    lyricsSection.classList.remove('show')
+    lyricsBox.innerHTML = '<span class="spinner-sm"></span>ładowanie…'
+    lyricsSection.classList.add('show')
+    const r = await API(`/api/admin/lyrics/${sid}`)
+    if (!r.ok) { const d = await r.json(); toast(d.error || 'błąd', 'err'); lyricsSection.classList.remove('show'); return }
+    const d = await r.json()
+    lyricsMeta.textContent = `${d.title} · ${d.wordCount} słów`
+    wordsArr = d.lyrics.split(/\s+/).filter(Boolean)
+    selectedWordIdx = 0
+    wordIdxInput.value = 0
+    renderLyrics()
+  })
+
+  function renderLyrics() {
+    lyricsBox.innerHTML = wordsArr.map((w, i) =>
+      `<span class="w-token${i === selectedWordIdx ? ' selected' : i < selectedWordIdx ? ' before-selected' : ''}" data-i="${i}">${esc(w)}</span> `
+    ).join('')
+    lyricsBox.querySelectorAll('.w-token').forEach(el => {
+      el.addEventListener('click', () => setWordIdx(parseInt(el.dataset.i)))
+    })
+    scrollToSelected()
+    updateIdxDisplay()
+  }
+
+  function setWordIdx(i) {
+    selectedWordIdx = i
+    wordIdxInput.value = i
+    renderLyrics()
+  }
+
+  wordIdxInput.addEventListener('input', () => {
+    const v = parseInt(wordIdxInput.value)
+    if (!isNaN(v) && v >= 0 && v < wordsArr.length) setWordIdx(v)
+  })
+
+  function scrollToSelected() {
+    const el = lyricsBox.querySelector('.selected')
+    if (el) el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+  }
+
+  function updateIdxDisplay() {
+    const ctx = wordsArr.slice(Math.max(0, selectedWordIdx - 2), selectedWordIdx + 8).join(' ')
+    wordIdxDisplay.textContent = `indeks: ${selectedWordIdx} · kontekst: „${ctx}"`
+  }
+
+  // ── SAVE ENTRY ─────────────────────────────────────────────
+  document.getElementById('save-entry-btn').addEventListener('click', async () => {
+    const date = document.getElementById('entry-date').value
+    const sid  = parseInt(songIdInput.value.trim())
+    const wi   = parseInt(wordIdxInput.value)
+    if (!date) { toast('wybierz datę', 'err'); return }
+    if (!sid)  { toast('wybierz piosenkę', 'err'); return }
+    if (isNaN(wi) || wi < 0) { toast('nieprawidłowy indeks', 'err'); return }
+    const r = await API('/api/admin/daily', { method: 'POST', body: JSON.stringify({ date, songID: sid, wordIndex: wi }) })
+    if (r.ok) { toast('zapisano ✓'); await loadSchedule() }
+    else { const d = await r.json(); toast(d.error || 'błąd', 'err') }
+  })
+
+  // ── SCHEDULE TABLE ─────────────────────────────────────────
+  const scheduleWrap = document.getElementById('schedule-wrap')
+  const today = new Date().toISOString().split('T')[0]
+
+  async function loadSchedule() {
+    const r = await API('/api/admin/daily')
+    if (!r.ok) { scheduleWrap.innerHTML = '<div class="tbl-empty">błąd ładowania</div>'; return }
+    const daily = await r.json()
+    if (!daily.length) { scheduleWrap.innerHTML = '<div class="tbl-empty">brak wpisów</div>'; return }
+    const rows = daily.slice().sort((a, b) => b.date.localeCompare(a.date)).map(e => {
+      const song = allSongs.find(s => String(s.id) === String(e.songID))
+      const isToday = e.date === today
+      return `<tr>
+        <td class="${isToday ? 'tbl-date-today' : ''}">${e.date}${isToday ? ' ←' : ''}</td>
+        <td>${song?.cover ? `<img class="tbl-cover" src="${esc(song.cover)}" alt="">` : `<span class="tbl-cover-ph">♪</span>`}</td>
+        <td>${song ? esc(song.title) : `#${e.songID}`}</td>
+        <td style="color:var(--sub)">@${e.wordIndex}</td>
+        <td><button class="tbl-del" data-date="${e.date}" title="usuń">✕</button></td>
+      </tr>`
+    }).join('')
+    scheduleWrap.innerHTML = `<table id="schedule-table"><thead><tr><th>data</th><th></th><th>piosenka</th><th>indeks</th><th></th></tr></thead><tbody>${rows}</tbody></table>`
+    scheduleWrap.querySelectorAll('.tbl-del').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm(`Usunąć wpis dla ${btn.dataset.date}?`)) return
+        const r = await API(`/api/admin/daily/${btn.dataset.date}`, { method: 'DELETE' })
+        if (r.ok) { toast('usunięto'); await loadSchedule() }
+        else toast('błąd', 'err')
+      })
+    })
+    // click row to prefill form
+    scheduleWrap.querySelectorAll('tbody tr').forEach((tr, i) => {
+      const entry = daily.slice().sort((a, b) => b.date.localeCompare(a.date))[i]
+      tr.style.cursor = 'pointer'
+      tr.addEventListener('click', e => {
+        if (e.target.classList.contains('tbl-del')) return
+        document.getElementById('entry-date').value = entry.date
+        songIdInput.value = entry.songID
+        const s = allSongs.find(s => String(s.id) === String(entry.songID))
+        if (s) { songSearch.value = s.title; selectedSong = s }
+        wordIdxInput.value = entry.wordIndex
+        lyricsSection.classList.remove('show')
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      })
+    })
+  }
+
+  // ── INIT ───────────────────────────────────────────────────
+  async function init() {
+    // set today as default date
+    document.getElementById('entry-date').value = today
+    // load all songs
+    const r = await API('/api/admin/songs')
+    if (r.ok) allSongs = await r.json()
+    await loadSchedule()
+    await loadStats()
+  }
+
+  // ── STATS ──────────────────────────────────────────────────
+  async function loadStats() {
+    const r = await API('/api/admin/stats-overview')
+    document.getElementById('stats-loading').style.display = 'none'
+    if (!r.ok) return
+    const d = await r.json()
+    document.getElementById('stats-content').style.display = 'block'
+
+    // KPIs
+    const rate = d.totals.plays ? Math.round(d.totals.correct / d.totals.plays * 100) : 0
+    document.getElementById('kpi-total').textContent   = d.totals.plays
+    document.getElementById('kpi-correct').textContent = d.totals.correct
+    document.getElementById('kpi-giveup').textContent  = d.totals.giveup
+    document.getElementById('kpi-rate').textContent    = rate + '%'
+    document.getElementById('kpi-days').textContent    = d.perDay.length
+    document.getElementById('kpi-avg-day').textContent = d.perDay.length ? (d.totals.plays / d.perDay.length).toFixed(1) : '—'
+
+    // last 30 days for bar charts
+    const last30 = d.perDay.slice(-30)
+
+    drawBarChart('chart-daily', last30.map(x => x.date.slice(5)), [
+      { values: last30.map(x => x.correct), color: 'rgba(34,197,94,0.7)' },
+      { values: last30.map(x => x.giveup),  color: 'rgba(227,28,18,0.5)', stacked: true }
+    ])
+
+    drawBarChart('chart-monthly', d.byMonth.map(x => x.month.slice(0, 7)), [
+      { values: d.byMonth.map(x => x.correct), color: 'rgba(34,197,94,0.65)' },
+      { values: d.byMonth.map(x => x.giveup),  color: 'rgba(227,28,18,0.45)', stacked: true }
+    ])
+
+    drawLineChart('chart-rate', last30.map(x => x.date.slice(5)),
+      last30.map(x => x.plays ? Math.round(x.correct / x.plays * 100) : 0),
+      'rgba(227,28,18,0.8)', 100)
+
+    drawLineChart('chart-words', last30.map(x => x.date.slice(5)),
+      last30.map(x => x.avgWords),
+      'rgba(240,236,232,0.5)')
+
+    // guess distribution date selector
+    const sel = document.getElementById('dist-date-select')
+    sel.innerHTML = d.perDay.slice().reverse().map(x =>
+      `<option value="${x.date}">${x.date} (${x.plays} gier)</option>`
+    ).join('')
+    if (d.perDay.length) {
+      sel.value = d.perDay[d.perDay.length - 1].date
+      await loadDist(sel.value)
+    }
+    sel.addEventListener('change', () => loadDist(sel.value))
+  }
+
+  async function loadDist(date) {
+    const r = await fetch(`/api/daily-stats/${date}`)
+    if (!r.ok) return
+    const d = await r.json()
+    const el = document.getElementById('dist-bars')
+    if (!d.total) { el.innerHTML = '<div style="color:var(--sub2);font-size:.6rem">brak danych</div>'; return }
+    const maxB = Math.max(...d.buckets.map(b => b.correct + b.giveup), 1)
+    el.innerHTML = d.buckets.filter(b => b.correct || b.giveup).map(b => {
+      const cw = Math.round(b.correct / maxB * 100)
+      const gw = Math.round(b.giveup  / maxB * 100)
+      return `<div class="gd-row">
+        <div class="gd-lbl">${b.words}w</div>
+        <div class="gd-track">
+          <div class="gd-fill-c" style="width:0%" data-w="${cw}"></div>
+          <div class="gd-fill-g" style="width:0%;left:${cw}%" data-w="${gw}"></div>
+        </div>
+        <div class="gd-count">${b.correct + b.giveup}</div>
+      </div>`
+    }).join('')
+    requestAnimationFrame(() => {
+      el.querySelectorAll('.gd-fill-c,.gd-fill-g').forEach(b => b.style.width = b.dataset.w + '%')
+    })
+  }
+
+  // ── PURE-CANVAS CHARTS ─────────────────────────────────────
+  function getCanvas(id) {
+    const el = document.getElementById(id)
+    const dpr = window.devicePixelRatio || 1
+    const w = el.parentElement.clientWidth || 400
+    el.width  = w * dpr; el.height = 160 * dpr
+    el.style.width  = w + 'px'; el.style.height = '160px'
+    const ctx = el.getContext('2d'); ctx.scale(dpr, dpr)
+    return { ctx, w, h: 160 }
+  }
+
+  function drawBarChart(id, labels, series) {
+    const { ctx, w, h } = getCanvas(id)
+    const pad = { t: 8, r: 8, b: 28, l: 32 }
+    const cw = w - pad.l - pad.r, ch = h - pad.t - pad.b
+    const n = labels.length
+    if (!n) return
+
+    // stacked max
+    const maxVal = Math.max(...labels.map((_, i) => series.reduce((s, sr) => s + (sr.values[i] || 0), 0)), 1)
+
+    ctx.clearRect(0, 0, w, h)
+    ctx.fillStyle = 'rgba(255,255,255,0.03)'
+    ctx.fillRect(pad.l, pad.t, cw, ch)
+
+    // grid lines
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1
+    for (let g = 1; g <= 4; g++) {
+      const y = pad.t + ch - (g / 4) * ch
+      ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + cw, y); ctx.stroke()
+    }
+
+    const barW = Math.max(2, cw / n - 2)
+    const gap  = cw / n
+
+    for (let i = 0; i < n; i++) {
+      let base = 0
+      for (const sr of series) {
+        const val = sr.values[i] || 0
+        const bh  = (val / maxVal) * ch
+        const x   = pad.l + i * gap + (gap - barW) / 2
+        const y   = pad.t + ch - base - bh
+        ctx.fillStyle = sr.color
+        ctx.fillRect(x, y, barW, bh)
+        base += bh
+      }
+    }
+
+    // x labels (show ~6)
+    ctx.fillStyle = 'rgba(138,127,122,0.8)'; ctx.font = '9px Courier New'; ctx.textAlign = 'center'
+    const step = Math.max(1, Math.floor(n / 6))
+    for (let i = 0; i < n; i += step) {
+      ctx.fillText(labels[i], pad.l + i * gap + gap / 2, h - 8)
+    }
+
+    // y axis max label
+    ctx.textAlign = 'right'; ctx.fillText(maxVal, pad.l - 3, pad.t + 8)
+  }
+
+  function drawLineChart(id, labels, values, color, yMax) {
+    const { ctx, w, h } = getCanvas(id)
+    const pad = { t: 8, r: 8, b: 28, l: 32 }
+    const cw = w - pad.l - pad.r, ch = h - pad.t - pad.b
+    const n = labels.length
+    if (!n) return
+
+    const maxVal = yMax || Math.max(...values, 1)
+    ctx.clearRect(0, 0, w, h)
+    ctx.fillStyle = 'rgba(255,255,255,0.03)'; ctx.fillRect(pad.l, pad.t, cw, ch)
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1
+    for (let g = 1; g <= 4; g++) {
+      const y = pad.t + ch - (g / 4) * ch
+      ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + cw, y); ctx.stroke()
+    }
+
+    const pts = values.map((v, i) => ({ x: pad.l + i * (cw / (n - 1 || 1)), y: pad.t + ch - (v / maxVal) * ch }))
+
+    // fill under line
+    const grad = ctx.createLinearGradient(0, pad.t, 0, pad.t + ch)
+    grad.addColorStop(0, color.replace(/[\d.]+\)$/, '0.25)'))
+    grad.addColorStop(1, 'transparent')
+    ctx.beginPath(); ctx.moveTo(pts[0].x, pad.t + ch)
+    pts.forEach(p => ctx.lineTo(p.x, p.y))
+    ctx.lineTo(pts[pts.length - 1].x, pad.t + ch)
+    ctx.closePath(); ctx.fillStyle = grad; ctx.fill()
+
+    // line
+    ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.lineJoin = 'round'
+    pts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y))
+    ctx.stroke()
+
+    // dots
+    ctx.fillStyle = color
+    pts.forEach(p => { ctx.beginPath(); ctx.arc(p.x, p.y, 2, 0, Math.PI * 2); ctx.fill() })
+
+    ctx.fillStyle = 'rgba(138,127,122,0.8)'; ctx.font = '9px Courier New'; ctx.textAlign = 'center'
+    const step = Math.max(1, Math.floor(n / 6))
+    for (let i = 0; i < n; i += step) ctx.fillText(labels[i], pts[i].x, h - 8)
+    ctx.textAlign = 'right'; ctx.fillText(maxVal, pad.l - 3, pad.t + 8)
+  }
+
+  function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+  }
+</script>
+</body>
+</html>

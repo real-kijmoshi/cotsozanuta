@@ -14,7 +14,7 @@ const api = axios.create({
 });
 
 // Cache management
-const cacheDir = path.join(__dirname, ".cache");
+const cacheDir = path.join(__dirname, "../db/cache");
 const artistCache = new Map();
 const songCache = new Map();
 const lyricsCache = new Map();
@@ -41,18 +41,19 @@ const saveCache = () => {
 };
 
 // Load cache from disk
-const loadCache = () => {
+const loadCacheFile = (filename, map) => {
   try {
-    const artists = JSON.parse(fs.readFileSync(path.join(cacheDir, "artists.json")));
-    const songs = JSON.parse(fs.readFileSync(path.join(cacheDir, "songs.json")));
-    const lyrics = JSON.parse(fs.readFileSync(path.join(cacheDir, "lyrics.json")));
-    
-    artists.forEach(([key, value]) => artistCache.set(key, value));
-    songs.forEach(([key, value]) => songCache.set(key, value));
-    lyrics.forEach(([key, value]) => lyricsCache.set(key, value));
+    const data = JSON.parse(fs.readFileSync(path.join(cacheDir, filename)));
+    data.forEach(([key, value]) => map.set(key, value));
   } catch (err) {
-    console.log("No existing cache found");
+    // file missing or corrupt — start with empty map for this cache
   }
+};
+
+const loadCache = () => {
+  loadCacheFile("artists.json", artistCache);
+  loadCacheFile("songs.json", songCache);
+  loadCacheFile("lyrics.json", lyricsCache);
 };
 
 // Load cache on startup
@@ -98,7 +99,17 @@ const getArtistIdByName = async (artistName) => {
 };
 
 const cleanLyrics = (raw) => {
-  return raw.replace(/^\d+\s*Contributors.*?Lyrics(\[Tekst piosenki[^\]]*\])?\n*/s, '').trim();
+  return raw
+    .replace(/^\d+\s*Contributors?.*?Lyrics/s, '')  // strip "X Contributors...Lyrics" prefix
+    .replace(/^[\s\S]*?Read More\s*/i, '')           // strip description text up to "Read More"
+    .replace(/ZNAJDZIECIE NAS RÓWNIEŻ NA INSTAGRAMIE![\s\S]*?(?=\[|$)/gi, '') // strip Rap Genius PL boilerplate
+    .replace(/Rap Genius dla[^\n]*/gi, '')           // strip "Rap Genius dla Początkujących?" etc
+    .replace(/Jak korzystać z Rap Genius[^\n]*/gi, '')
+    .replace(/Jak tworzyć własne (wyjaśnienia|adnotacje)[^\n]*/gi, '')
+    .replace(/\[Tekst i adnotacje na Rap Genius Polska\]\s*/gi, '') // strip common footer
+    .replace(/\[[^\]]+\]\n?/g, '')                   // strip section headers like [Refren], [Verse 1: Artist]
+    .replace(/\n{3,}/g, '\n\n')                      // collapse excessive blank lines
+    .trim();
 };
 
 const scrapeLyrics = async (songUrl) => {
@@ -212,6 +223,21 @@ const searchSongsByName = async (songName) => {
   }
 };
 
+const searchCachedSongsByName = (songName) => {
+  //search songs in cache by name
+  const results = [];
+  for (const [key, songs] of songCache.entries()) {
+    if (key.startsWith("artist_")) {
+      songs.forEach(song => {
+        if (song.title.toLowerCase().includes(songName.toLowerCase())) {
+          results.push(song);
+        }
+      });
+    }
+  }
+  return results;
+};
+
 const matchSingleWithAlbum = async (song) => {
   try {
     const response = await api.get("/search", {
@@ -243,7 +269,6 @@ const matchSingleWithAlbum = async (song) => {
 const getSongById = async (songId) => {
   const cacheKey = String(songId);
   if (songCache.has(cacheKey)) {
-    console.log(`[CACHE] Song ${songId} found`);
     return songCache.get(cacheKey);
   }
 
@@ -346,6 +371,16 @@ const clearCache = () => {
   console.log("Cache cleared");
 };
 
+const getSongCacheEntry = (songId) => songCache.get(String(songId)) || null;
+
+// Returns true only if the given songId is in the artist's known song list.
+// Prevents arbitrary song IDs from being looked up and polluting the cache.
+const isArtistSong = (artistId, songId) => {
+  const songs = songCache.get(`artist_${artistId}`);
+  if (!songs) return false;
+  return songs.some(s => String(s.id) === String(songId));
+};
+
 module.exports = {
   getArtistIdByName,
   getSongListForArtist,
@@ -353,7 +388,10 @@ module.exports = {
   getAllSongs,
   searchSongsByName,
   getSongById,
+  getSongCacheEntry,
+  isArtistSong,
   getArtistInfo,
   searchArtistsByName,
+  searchCachedSongsByName,
   clearCache,
 };
