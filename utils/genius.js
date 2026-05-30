@@ -381,6 +381,19 @@ const isArtistSong = (artistId, songId) => {
   return songs.some(s => String(s.id) === String(songId));
 };
 
+// In-memory word array cache — avoids re-splitting lyrics on every /api/lyrics request.
+const wordArrayCache = new Map();
+
+const getWordArray = async (songId) => {
+  const key = String(songId);
+  if (wordArrayCache.has(key)) return wordArrayCache.get(key);
+  const song = await getSongById(songId);
+  if (!song?.lyrics) return null;
+  const words = song.lyrics.split(/\s+/).filter(Boolean);
+  wordArrayCache.set(key, words);
+  return words;
+};
+
 module.exports = {
   getArtistIdByName,
   getSongListForArtist,
@@ -389,6 +402,7 @@ module.exports = {
   searchSongsByName,
   getSongById,
   getSongCacheEntry,
+  getWordArray,
   isArtistSong,
   getArtistInfo,
   searchArtistsByName,

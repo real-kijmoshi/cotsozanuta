@@ -34,18 +34,44 @@ const leaderboardLimiter = rateLimit({ windowMs: 60 * 1000, max: 5, standardHead
 const lyricsLimiter = rateLimit({ windowMs: 60 * 1000, max: 60, standardHeaders: true, legacyHeaders: false });
 
 let otsochodziId = null;
-genius.getArtistIdByName("otsochodzi").then((artistId) => {
+genius.getArtistIdByName("otsochodzi").then(async (artistId) => {
   otsochodziId = artistId;
   console.log(`Artist ID for Otsochodzi: ${artistId}`);
-  genius.getAllSongs(artistId).then((songs) => {
-    console.log(`Songs for Otsochodzi: ${songs.length}`);
-  });
+  await genius.getAllSongs(artistId);
+  console.log(`[WARM] Song list loaded`);
+
+  // Pre-warm lyrics for today's and tomorrow's daily song so the first player
+  // doesn't trigger a cold Genius API + scrape request.
+  const today    = new Date().toISOString().split("T")[0];
+  const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
+  const daily    = db.getDaily();
+  for (const entry of daily.filter(e => e.date === today || e.date === tomorrow)) {
+    try {
+      await genius.getWordArray(entry.songID);
+      console.log(`[WARM] Pre-warmed lyrics for daily ${entry.date}`);
+    } catch (e) {
+      console.error(`[WARM] Failed for daily ${entry.date}:`, e.message);
+    }
+  }
 });
 
 app.use(express.static("public"))
 
+const SITE_URL = (process.env.SITE_URL || "").replace(/\/$/, "");
+
+// Cache compiled HTML in memory — read each file only once instead of on every request.
+const htmlCache = new Map();
+function sendHtml(res, filePath) {
+    if (!htmlCache.has(filePath)) {
+        const raw = fs.readFileSync(filePath, "utf8").replace(/__SITE_URL__/g, SITE_URL);
+        htmlCache.set(filePath, raw);
+    }
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    res.send(htmlCache.get(filePath));
+}
+
 app.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, "public/views/index.html"));
+    sendHtml(res, path.join(__dirname, "public/views/index.html"));
 })
 
 app.get("/admin", (req, res) => {
@@ -53,11 +79,11 @@ app.get("/admin", (req, res) => {
 })
 
 app.get("/regulamin", (req, res) => {
-    res.sendFile(path.join(__dirname, "public/views/regulamin.html"));
+    sendHtml(res, path.join(__dirname, "public/views/regulamin.html"));
 })
 
 app.get("/polityka-prywatnosci", (req, res) => {
-    res.sendFile(path.join(__dirname, "public/views/polityka-prywatnosci.html"));
+    sendHtml(res, path.join(__dirname, "public/views/polityka-prywatnosci.html"));
 })
 
 // ── Admin auth middleware ────────────────────────────────────
@@ -267,6 +293,8 @@ app.get("/api/game/daily/:date", async (req, res) => {
 
         const { songID, wordIndex } = dailyData;
         const moreSongInfo = await genius.getSongById(songID);
+        // Daily games are immutable — same date always returns same data.
+        res.setHeader("Cache-Control", "public, max-age=300, stale-while-revalidate=3600");
         res.json({
             songId: songID,
             title: moreSongInfo.title,
@@ -296,12 +324,15 @@ app.get("/api/lyrics", lyricsLimiter, async (req, res) => {
     }
 
     try {
-        const lyrics = (await genius.getSongById(songIdInt)).lyrics;
-        const words = lyrics.split(/\s+/);
-        if (wordIndex < 0 || wordIndex >= words.length) {
+        const words = await genius.getWordArray(songIdInt);
+        if (!words) return res.status(404).json({ error: "Lyrics not available" });
+        const idx = parseInt(wordIndex, 10);
+        if (!Number.isInteger(idx) || idx < 0 || idx >= words.length) {
             return res.status(400).json({ error: "Invalid wordIndex" });
         }
-        res.json({ word: words[wordIndex] });
+        // A specific (songId, wordIndex) pair never changes — safe to cache long-term.
+        res.setHeader("Cache-Control", "public, max-age=86400, immutable");
+        res.json({ word: words[idx] });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Failed to fetch lyrics" });
@@ -372,6 +403,7 @@ app.get("/api/leaderboard", (req, res) => {
     try {
         const board = db.getLeaderboard();
         board.sort((a, b) => b.score - a.score);
+        res.setHeader("Cache-Control", "public, max-age=30");
         res.json(board.slice(0, 20));
     } catch (e) {
         res.status(500).json({ error: "Failed to read leaderboard" });
