@@ -11,7 +11,21 @@ const db = require("./utils/db");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc:  ["'self'"],
+      scriptSrc:   ["'self'", "'unsafe-inline'"],   // inline scripts in HTML pages
+      styleSrc:    ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc:     ["'self'", "https://fonts.gstatic.com"],
+      imgSrc:      ["'self'", "data:", "https:"],   // album art from any Genius CDN
+      connectSrc:  ["'self'"],
+      frameSrc:    ["'none'"],
+      objectSrc:   ["'none'"],
+      baseUri:     ["'self'"],
+    },
+  },
+}));
 app.use(express.json({ limit: "16kb" }));
 
 const loginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, standardHeaders: true, legacyHeaders: false });
