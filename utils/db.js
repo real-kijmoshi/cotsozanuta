@@ -90,7 +90,9 @@ const stmts = {
   getTopLb:        db.prepare("SELECT name, score, date FROM leaderboard ORDER BY score DESC LIMIT ?"),
   insertLb:        db.prepare("INSERT INTO leaderboard (name, score, date) VALUES (?, ?, ?)"),
   trimLb:          db.prepare("DELETE FROM leaderboard WHERE id NOT IN (SELECT id FROM leaderboard ORDER BY score DESC LIMIT 200)"),
-
+  getRankById:     db.prepare("SELECT COUNT(*) + 1 AS rank FROM leaderboard WHERE score > (SELECT score FROM leaderboard WHERE id = ?)"),
+  getRankedStats:   db.prepare("SELECT COUNT(*) AS total, AVG(score) AS avgScore, MAX(score) AS topScore FROM leaderboard"),
+  getRankedByMonth: db.prepare("SELECT substr(date,1,7) AS month, COUNT(*) AS submissions, AVG(score) AS avgScore, MAX(score) AS topScore FROM leaderboard GROUP BY month ORDER BY month"),
   getStatsByDate:  db.prepare("SELECT outcome, words FROM daily_stats WHERE date = ?"),
   addStat:         db.prepare("INSERT INTO daily_stats (date, outcome, words) VALUES (?, ?, ?)"),
   getAllStats:      db.prepare("SELECT date, outcome, words FROM daily_stats ORDER BY date"),
@@ -106,9 +108,13 @@ module.exports = {
   // ── Leaderboard ──────────────────────────────────────────────
   getLeaderboard(n = 200) { return stmts.getTopLb.all(n); },
   insertLeaderboard({ name, score, date }) {
-    stmts.insertLb.run(name, score, date);
+    const { lastInsertRowid } = stmts.insertLb.run(name, score, date);
+    const { rank } = stmts.getRankById.get(lastInsertRowid);
     stmts.trimLb.run();
+    return rank;
   },
+  getRankedStats()   { return stmts.getRankedStats.get(); },
+  getRankedByMonth() { return stmts.getRankedByMonth.all(); },
 
   // ── Stats ────────────────────────────────────────────────────
   getStatsByDate(date) {

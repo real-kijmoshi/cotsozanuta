@@ -3,32 +3,66 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cotsozanuta – Zgadnij piosenkę Otsochodzi</title>
-  <meta name="description" content="Gra słowna: odgadnij tytuł piosenki Otsochodzi na podstawie jednego słowa z tekstu. Tryb dzienny i bez końca.">
+  <title>Cotsozanuta – Zgadnij piosenkę Otsochodzi | Quiz z tekstów piosenek</title>
+  <meta name="description" content="Zgadnij piosenkę Otsochodzi po jednym słowie z tekstu! Codzienne wyzwanie, tryb bez końca i ranking. Sprawdź, czy znasz dyskografię Otsochodzi – Luty, BLOK, Ból i inne hity.">
+  <meta name="keywords" content="Otsochodzi, zgadnij piosenkę, quiz Otsochodzi, teksty piosenek Otsochodzi, gra muzyczna, Otsochodzi piosenki, Luty, BLOK, Ból, quiz muzyczny, polska muzyka, rap quiz, wordle muzyczne, cotsozanuta, zgadywanka piosenki, Otsochodzi quiz, otsochodzi tekst">
+  <meta name="robots" content="index, follow">
+  <meta name="author" content="Cotsozanuta">
+  <meta name="theme-color" content="#060404">
 
   <!-- Open Graph -->
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://cotsozahit.pl/">
-  <meta property="og:title" content="Cotsozanuta – Zgadnij piosenkę Otsochodzi">
-  <meta property="og:description" content="Gra słowna: odgadnij tytuł piosenki Otsochodzi na podstawie jednego słowa z tekstu. Tryb dzienny i bez końca.">
+  <meta property="og:title" content="Cotsozanuta – Zgadnij piosenkę Otsochodzi | Quiz muzyczny">
+  <meta property="og:description" content="Zgadnij piosenkę Otsochodzi po jednym słowie z tekstu! Codzienne wyzwanie, tryb bez końca i ranking. Sprawdź, czy znasz dyskografię Otsochodzi.">
   <meta property="og:image" content="https://cotsozahit.pl/images/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Cotsozanuta – quiz z piosenek Otsochodzi">
   <meta property="og:locale" content="pl_PL">
   <meta property="og:site_name" content="Cotsozanuta">
 
   <!-- Twitter / Discord -->
   <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@cotsozanuta">
   <meta name="twitter:title" content="Cotsozanuta – Zgadnij piosenkę Otsochodzi">
-  <meta name="twitter:description" content="Gra słowna: odgadnij tytuł piosenki Otsochodzi na podstawie jednego słowa z tekstu.">
+  <meta name="twitter:description" content="Zgadnij piosenkę Otsochodzi po jednym słowie z tekstu! Codzienne wyzwanie, tryb bez końca i ranking.">
   <meta name="twitter:image" content="https://cotsozahit.pl/images/og-image.png">
+  <meta name="twitter:image:alt" content="Cotsozanuta – quiz z piosenek Otsochodzi">
 
   <link rel="canonical" href="https://cotsozahit.pl/">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="favicon" type="image/png" href="/images/favicon.png">
+  <link rel="icon" type="image/png" href="/images/favicon.png">
+
+  <!-- Structured Data: WebApplication -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Cotsozanuta",
+    "url": "https://cotsozahit.pl/",
+    "description": "Zgadnij piosenkę Otsochodzi po jednym słowie z tekstu. Tryb dzienny, bez końca i rankingowy.",
+    "applicationCategory": "GameApplication",
+    "operatingSystem": "Web",
+    "inLanguage": "pl",
+    "about": {
+      "@type": "MusicGroup",
+      "name": "Otsochodzi",
+      "genre": "Rap",
+      "sameAs": "https://genius.com/artists/Otsochodzi"
+    },
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "PLN"
+    }
+  }
+  </script>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Share+Tech+Mono&family=Barlow+Condensed:ital,wght@0,400;0,700;0,900;1,900&family=Special+Elite&display=swap" rel="stylesheet">
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    html{font-size:16px}
+    html{font-size:16px;scroll-behavior:smooth}
     :root{
       --bg:#060404;
       --panel:rgba(6,4,4,0.82);
@@ -56,7 +90,10 @@
       flex-direction:column;
       position:relative;
       overflow-x:hidden;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
     }
+    ::selection{background:rgba(227,28,18,0.22);color:var(--text)}
 
     /* ─── PHOTO BG LAYERS ──────────────────────────────── */
     #bg-photo{
@@ -157,7 +194,9 @@
       line-height:1;
       text-decoration:none;
       cursor:pointer;
+      transition:opacity .12s;
     }
+    .wordmark:hover{opacity:.8}
     .wm-hl{
       color:var(--red);
       text-shadow:0 0 24px var(--red-glow),2px 2px 0 rgba(0,0,0,0.5);
@@ -292,6 +331,10 @@
       opacity:0.4;
       transition:transform .18s,opacity .18s;
     }
+    @keyframes cardIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+    .mode-card:nth-child(1){animation:cardIn .38s .04s cubic-bezier(0.15,0,0,1) both}
+    .mode-card:nth-child(2){animation:cardIn .38s .11s cubic-bezier(0.15,0,0,1) both}
+    .mode-card:nth-child(3){animation:cardIn .38s .18s cubic-bezier(0.15,0,0,1) both}
 
     #settings-btn{
       background:none;border:1px solid var(--line2);
@@ -322,7 +365,7 @@
     #qs-overlay.show{display:block}
     #qs-panel{
       position:fixed;top:50%;left:50%;z-index:301;
-      transform:translate(-50%,-50%) scale(0.96);
+      transform:translate(-50%,calc(-50% + 24px)) scale(0.97);
       width:min(520px,92vw);
       max-height:88dvh;
       overflow-y:auto;
@@ -331,7 +374,7 @@
       border-top:3px solid var(--red);
       display:none;
       flex-direction:column;
-      transition:transform .22s cubic-bezier(0.15,0,0,1),opacity .18s;
+      transition:transform .28s cubic-bezier(0.15,0,0,1),opacity .22s;
       opacity:0;
       cursor:default;
     }
@@ -390,6 +433,10 @@
       text-transform:uppercase;color:rgba(242,233,228,0.3);
       margin-bottom:2px;
     }
+    @keyframes ctaPulse{
+      0%,100%{box-shadow:0 0 0 0 rgba(227,28,18,0.0),0 4px 20px rgba(227,28,18,0.25)}
+      55%{box-shadow:0 0 0 7px rgba(227,28,18,0),0 4px 28px rgba(227,28,18,0.45)}
+    }
     .qs-start-btn{
       margin-top:4px;
       font-family:var(--display);font-size:.95rem;
@@ -397,8 +444,54 @@
       background:var(--red);border:none;
       padding:11px 32px;color:#fff;cursor:pointer;
       transition:opacity .12s;align-self:flex-start;
+      animation:ctaPulse 2.4s ease-in-out infinite;
     }
-    .qs-start-btn:hover{opacity:.85}
+    .qs-start-btn:hover{opacity:.85;animation:none}
+    /* ─── QS DEMO WORD ──────────────────────────────────── */
+    .qs-demo{
+      display:flex;flex-direction:column;align-items:center;
+      padding:14px 0 4px;gap:6px;
+    }
+    .qs-demo-label{
+      font-family:var(--mono);font-size:.55rem;letter-spacing:.22em;
+      text-transform:uppercase;color:rgba(242,233,228,0.28);
+    }
+    .qs-demo-word{
+      font-family:var(--display);
+      font-size:clamp(2rem,10vw,3.6rem);
+      font-weight:400;letter-spacing:.06em;line-height:.9;
+      color:var(--text);text-transform:uppercase;
+      text-shadow:2px 2px 0 rgba(227,28,18,0.25),-1px -1px 0 rgba(0,0,0,0.4),0 0 50px rgba(227,28,18,0.18);
+      min-height:3.4rem;display:flex;align-items:center;
+    }
+    .qs-demo-cursor{
+      display:inline-block;width:3px;height:.65em;
+      background:var(--red);margin-left:5px;vertical-align:middle;
+      animation:cursorBlink .65s step-end infinite;
+    }
+    @keyframes cursorBlink{0%,100%{opacity:1}50%{opacity:0}}
+    .qs-demo-sub{
+      font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;
+      color:rgba(242,233,228,0.3);text-align:center;
+    }
+    /* ─── QS STEP STAGGER ───────────────────────────────── */
+    @keyframes stepIn{
+      from{opacity:0;transform:translateX(-12px)}
+      to{opacity:1;transform:translateX(0)}
+    }
+    @keyframes modeIn{
+      from{opacity:0;transform:translateX(-8px)}
+      to{opacity:1;transform:translateX(0)}
+    }
+    #qs-panel.open .qs-step{animation:stepIn .32s cubic-bezier(0.15,0,0,1) both}
+    #qs-panel.open .qs-step:nth-child(1){animation-delay:.06s}
+    #qs-panel.open .qs-step:nth-child(2){animation-delay:.14s}
+    #qs-panel.open .qs-step:nth-child(3){animation-delay:.22s}
+    #qs-panel.open .qs-step:nth-child(4){animation-delay:.30s}
+    #qs-panel.open .qs-mode-row{animation:modeIn .3s cubic-bezier(0.15,0,0,1) both}
+    #qs-panel.open .qs-mode-row:nth-child(1){animation-delay:.12s}
+    #qs-panel.open .qs-mode-row:nth-child(2){animation-delay:.20s}
+    #qs-panel.open .qs-mode-row:nth-child(3){animation-delay:.28s}
     @media(max-width:520px){
       .qs-header{padding:16px 16px 14px}
       .qs-body{padding:18px 16px 22px;gap:22px}
@@ -510,20 +603,21 @@
       letter-spacing:.06em;min-width:52px;text-align:center;
       transition:color .2s;line-height:1;
     }
-    #ranked-timer.warn{color:var(--red);text-shadow:0 0 16px var(--red-glow)}
+    @keyframes timerPulse{0%,100%{opacity:1}50%{opacity:.55}}
+    #ranked-timer.warn{color:var(--red);text-shadow:0 0 16px var(--red-glow);animation:timerPulse .65s ease-in-out infinite}
     #ranked-score-disp{font-family:var(--mono);font-size:.56rem;letter-spacing:.18em;text-transform:uppercase;color:var(--sub)}
     #ranked-score-disp span{font-family:var(--display);font-size:1.4rem;letter-spacing:.06em;color:var(--text)}
 
     /* ─── DATE BAR ──────────────────────────────────────── */
     #date-bar{
-      display:none;align-items:center;justify-content:center;gap:20px;height:36px;
+      display:none;align-items:center;justify-content:center;gap:24px;height:44px;
       border-bottom:1px solid var(--line);flex-shrink:0;position:relative;z-index:90;
-      background:rgba(6,4,4,0.75);backdrop-filter:blur(4px);
+      background:rgba(6,4,4,0.85);backdrop-filter:blur(6px);
     }
     #date-bar.show{display:flex}
-    #date-bar button{font-family:var(--mono);font-size:.9rem;background:none;border:none;color:var(--sub);cursor:pointer;padding:0 4px;transition:color .1s}
-    #date-bar button:hover{color:var(--red)}
-    #date-label{font-family:var(--mono);font-size:.56rem;letter-spacing:.16em;text-transform:uppercase;color:var(--sub)}
+    #date-bar button{font-family:var(--mono);font-size:1.1rem;background:none;border:none;color:rgba(242,233,228,0.7);cursor:pointer;padding:0 6px;transition:color .15s,transform .15s}
+    #date-bar button:hover{color:var(--red);transform:scale(1.25)}
+    #date-label{font-family:var(--mono);font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;color:rgba(242,233,228,0.85);font-weight:600}
 
     /* ─── MAIN ──────────────────────────────────────────── */
     main{
@@ -626,10 +720,11 @@
       font-family:var(--worn);
       font-size:1.1rem;color:var(--text);
       line-height:2.4;word-spacing:8px;max-width:700px;
-      max-height:6rem;overflow:hidden;
-      -webkit-mask-image:linear-gradient(to bottom, rgba(0,0,0,0.25) 0%, black 35%);
-      mask-image:linear-gradient(to bottom, rgba(0,0,0,0.25) 0%, black 35%);
+      max-height:6rem;overflow-y:scroll;scrollbar-width:none;
+      -webkit-mask-image:linear-gradient(to top, rgba(0,0,0,0.18) 0%, black 35%);
+      mask-image:linear-gradient(to top, rgba(0,0,0,0.18) 0%, black 35%);
     }
+    #word-history::-webkit-scrollbar{display:none}
     #word-history:empty{display:none}
     #current-word{
       font-family:var(--display);
@@ -670,9 +765,10 @@
     #song-input::placeholder{color:var(--sub);text-transform:uppercase;font-size:.65rem;letter-spacing:.14em}
     #song-input:focus{
       background:rgba(10,6,6,0.97);
-      border-top-color:rgba(255,255,255,0.18);
-      border-bottom-color:rgba(255,255,255,0.18);
-      box-shadow:inset 0 0 0 1px rgba(227,28,18,0.08);
+      border-top-color:rgba(255,255,255,0.22);
+      border-bottom-color:rgba(255,255,255,0.22);
+      box-shadow:inset 0 0 0 1px rgba(227,28,18,0.08),-4px 0 24px rgba(227,28,18,0.08);
+      outline:none;
     }
 
     #reveal-btn{
@@ -925,6 +1021,8 @@
       font-family:var(--display);font-size:.9rem;letter-spacing:.15em;
       color:rgba(227,28,18,0.28);
     }
+    .ft-link{font-family:var(--mono);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--sub);text-decoration:none;transition:color .14s}
+    .ft-link:hover{color:rgba(227,28,18,0.8)}
 
     /* ─── DAILY UNAVAILABLE ──────────────────────────────── */
     #daily-unavailable{
@@ -979,7 +1077,8 @@
     .shake{animation:shake .25s ease}
 
     /* ─── TOUCH TARGETS ─────────────────────────────────── */
-    button{touch-action:manipulation}
+    button{touch-action:manipulation;cursor:pointer}
+    :focus-visible{outline:2px solid rgba(227,28,18,0.45);outline-offset:2px}
 
     /* ─── MOBILE ────────────────────────────────────────── */
     @media(max-width:520px){
@@ -996,8 +1095,8 @@
       .mode-card:nth-child(3){grid-column:1/-1}
       .mode-card{padding:16px 14px 14px}
       .mc-name{font-size:1rem}
-      .mc-desc{font-size:.5rem}
-      .mc-arrow{font-size:.5rem;margin-top:10px}
+      .mc-desc{font-size:.62rem}
+      .mc-arrow{font-size:.56rem;margin-top:10px}
 
       /* game */
       #lyric-block{margin-bottom:28px;gap:14px}
@@ -1013,12 +1112,13 @@
       .settings-inner{padding:20px 18px;gap:24px}
       .seg-ctrl button{padding:10px 14px}
 
-      /* mode bar */
-      .mode-bar-btn{padding:12px 6px;font-size:.62rem;letter-spacing:.08em;gap:5px}
-      .mode-bar-btn svg{display:none}
+      /* mode bar: icon-only on mobile */
+      .mode-bar-btn{padding:12px 8px;font-size:0;letter-spacing:0;gap:0}
+      .mode-bar-btn svg{display:block}
 
       /* date bar */
-      #date-bar{gap:14px}
+      #date-bar{gap:16px;height:40px}
+      #date-label{font-size:.65rem}
 
       /* footer: stack vertically */
       footer{
@@ -1038,6 +1138,13 @@
       .re-board{max-height:180px}
       .re-actions{padding:12px 16px}
       .re-play-again{padding:12px}
+
+      /* reduce background visual noise */
+      #bg-tag,#bg-year{display:none}
+      /* nav buttons: icon-only */
+      #howto-btn,#settings-btn{font-size:0;gap:0;padding:8px 11px}
+      /* adequate touch targets for action buttons */
+      #giveup-btn,#next-btn{min-height:44px}
     }
 
     /* ─── RANKED END OVERLAY ─────────────────────────────── */
@@ -1152,8 +1259,128 @@
     .ss-dist-count{font-family:var(--mono);font-size:.56rem;color:var(--sub2);text-align:right}
     @media(max-width:520px){
       #splash-stats{margin-top:24px}
+      .ss-kpis{grid-template-columns:repeat(2,1fr)}
       .ss-kpi-val{font-size:1.5rem}
       .ss-kpi{padding:12px 6px 8px}
+    }
+
+    /* ─── CALENDAR BUTTON ───────────────────────────────── */
+    #cal-btn{
+      background:none;border:1px solid rgba(255,255,255,0.1);
+      color:var(--sub);cursor:pointer;padding:7px 14px;
+      display:flex;align-items:center;gap:6px;
+      font-family:var(--mono);font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;
+      transition:color .12s,border-color .12s,background .12s;flex-shrink:0;
+    }
+    #cal-btn:hover{color:var(--text);border-color:rgba(255,255,255,0.22)}
+
+    /* ─── CALENDAR MODAL ─────────────────────────────────── */
+    #cal-overlay{
+      display:none;position:fixed;inset:0;z-index:300;
+      background:rgba(0,0,0,0.72);
+      backdrop-filter:blur(3px);
+      cursor:pointer;
+    }
+    #cal-overlay.show{display:block}
+    #cal-panel{
+      position:fixed;top:50%;left:50%;z-index:301;
+      transform:translate(-50%,-50%) scale(0.96);
+      width:min(390px,92vw);
+      background:rgba(8,5,5,0.99);
+      border:1px solid rgba(255,255,255,0.08);
+      border-top:3px solid var(--red);
+      display:none;
+      flex-direction:column;
+      transition:transform .22s cubic-bezier(0.15,0,0,1),opacity .18s;
+      opacity:0;
+      cursor:default;
+    }
+    #cal-panel.open{display:flex;transform:translate(-50%,-50%) scale(1);opacity:1}
+    .cal-head{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:16px 18px 14px;
+      border-bottom:1px solid rgba(255,255,255,0.07);
+      flex-shrink:0;
+    }
+    .cal-nav{display:flex;align-items:center;gap:8px}
+    .cal-nav-btn{
+      background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);
+      color:var(--sub);cursor:pointer;padding:5px 12px;
+      font-size:.88rem;line-height:1;
+      transition:color .12s,border-color .12s,background .12s;
+    }
+    .cal-nav-btn:hover{color:var(--text);border-color:rgba(255,255,255,0.22);background:rgba(255,255,255,0.06)}
+    .cal-nav-btn:disabled{opacity:.22;cursor:default;pointer-events:none}
+    .cal-month-lbl{
+      font-family:var(--display);font-size:1.35rem;letter-spacing:.06em;
+      text-transform:uppercase;color:var(--text);min-width:155px;text-align:center;
+    }
+    #cal-close{
+      background:none;border:1px solid rgba(255,255,255,0.1);
+      color:var(--sub);cursor:pointer;padding:7px 12px;
+      font-size:.9rem;line-height:1;
+      transition:color .12s,border-color .12s;
+    }
+    #cal-close:hover{color:var(--red);border-color:rgba(227,28,18,0.35)}
+    .cal-body{padding:14px 16px 18px}
+    .cal-dow{
+      display:grid;grid-template-columns:repeat(7,1fr);
+      margin-bottom:4px;
+    }
+    .cal-dow span{
+      font-family:var(--mono);font-size:.48rem;letter-spacing:.1em;
+      text-transform:uppercase;color:var(--sub);text-align:center;padding:3px 0;
+    }
+    .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px}
+    .cal-day{
+      display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+      padding:5px 2px 6px;gap:4px;
+    }
+    .cal-day-num{
+      font-family:var(--mono);font-size:.66rem;letter-spacing:.02em;
+      color:rgba(242,233,228,0.3);line-height:1;
+    }
+    .cal-day.today .cal-day-num{color:var(--text);font-size:.74rem;font-weight:bold}
+    .cal-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+    .cal-dot.correct{background:var(--ok);box-shadow:0 0 4px rgba(79,200,90,0.55)}
+    .cal-dot.giveup{background:rgba(227,28,18,0.85);box-shadow:0 0 4px rgba(227,28,18,0.4)}
+    .cal-dot.progress{background:rgba(255,255,255,0.22)}
+    .cal-dot.empty{background:rgba(255,255,255,0.07)}
+    .cal-divider{
+      height:1px;
+      background:linear-gradient(90deg,transparent 0%,rgba(227,28,18,0.18) 30%,rgba(227,28,18,0.18) 70%,transparent 100%);
+      margin:10px 0 8px;
+    }
+    .cal-legend{
+      display:flex;gap:14px;justify-content:center;
+      font-family:var(--mono);font-size:.5rem;letter-spacing:.1em;text-transform:uppercase;
+      margin-bottom:12px;
+    }
+    .cal-leg-item{display:flex;align-items:center;gap:5px;color:var(--sub)}
+    .cal-leg-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+    .cal-leg-dot.correct{background:var(--ok)}
+    .cal-leg-dot.giveup{background:rgba(227,28,18,0.85)}
+    .cal-leg-dot.progress{background:rgba(255,255,255,0.22)}
+    .cal-streaks{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+    .cal-streak-card{
+      background:rgba(10,6,6,0.75);
+      border:1px solid rgba(255,255,255,0.06);
+      border-top:2px solid rgba(255,255,255,0.07);
+      padding:12px 8px 10px;text-align:center;
+    }
+    .cal-streak-lbl{
+      font-family:var(--mono);font-size:.42rem;letter-spacing:.18em;
+      text-transform:uppercase;color:var(--sub);margin-bottom:6px;
+    }
+    .cal-streak-val{
+      font-family:var(--display);font-size:2.2rem;letter-spacing:.04em;
+      color:var(--ok);line-height:1;
+    }
+    .cal-streak-card.best .cal-streak-val{color:rgba(255,200,40,0.9)}
+    @media(max-width:520px){
+      .cal-month-lbl{font-size:1.1rem;min-width:130px}
+      .cal-day-num{font-size:.6rem}
+      .cal-day.today .cal-day-num{font-size:.68rem}
     }
   </style>
 </head>
@@ -1169,6 +1396,10 @@
 <nav>
   <a class="wordmark" href="/" id="home-link">C<span class="wm-hl">otso</span>zanuta<span class="wm-sub">.pl</span></a>
   <div style="display:flex;align-items:center;gap:10px">
+    <button id="cal-btn" aria-label="Kalendarz">
+      <svg width="14" height="14" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2" y="4" width="18" height="16" rx="1"/><line x1="2" y1="9" x2="20" y2="9"/><line x1="7" y1="2" x2="7" y2="6"/><line x1="15" y1="2" x2="15" y2="6"/></svg>
+      historia
+    </button>
     <button id="howto-btn" aria-label="Jak grać">
       <svg width="14" height="14" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="9" cy="9" r="8"/><path d="M6.8 6.8c.3-1 1.2-1.7 2.2-1.5 1 .15 1.6.9 1.6 1.7 0 1-1 1.5-1.6 2v.6"/><circle cx="9" cy="13.5" r=".7" fill="currentColor" stroke="none"/></svg>
       jak grać?
@@ -1202,6 +1433,12 @@
     <button id="qs-close" aria-label="Zamknij">&#10005;</button>
   </div>
   <div class="qs-body">
+    <div class="qs-demo">
+      <div class="qs-demo-label">słowo z tekstu</div>
+      <div class="qs-demo-word"><span id="qs-demo-text"></span><span class="qs-demo-cursor"></span></div>
+      <div class="qs-demo-sub">zgadnij tytuł piosenki Otsochodzi</div>
+    </div>
+    <div class="qs-divider"></div>
     <div>
       <div class="qs-section-label">zasady</div>
       <div class="qs-steps">
@@ -1272,6 +1509,40 @@
       </div>
     </div>
     <button class="qs-start-btn" id="qs-play-btn">zagraj teraz &#8594;</button>
+  </div>
+</div>
+
+<div id="cal-overlay"></div>
+<div id="cal-panel" role="dialog" aria-modal="true" aria-label="Twoja historia dzienna">
+  <div class="cal-head">
+    <div class="cal-nav">
+      <button class="cal-nav-btn" id="cal-prev">&#8592;</button>
+      <span class="cal-month-lbl" id="cal-month-lbl"></span>
+      <button class="cal-nav-btn" id="cal-next">&#8594;</button>
+    </div>
+    <button id="cal-close" aria-label="Zamknij">&#10005;</button>
+  </div>
+  <div class="cal-body">
+    <div class="cal-dow">
+      <span>Pn</span><span>Wt</span><span>&#346;r</span><span>Cz</span><span>Pt</span><span>So</span><span>Nd</span>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+    <div class="cal-divider"></div>
+    <div class="cal-legend">
+      <div class="cal-leg-item"><div class="cal-leg-dot correct"></div>Odgadni&#x0119;te</div>
+      <div class="cal-leg-item"><div class="cal-leg-dot giveup"></div>Przegrane</div>
+      <div class="cal-leg-item"><div class="cal-leg-dot progress"></div>Nisko&#x0144;czone</div>
+    </div>
+    <div class="cal-streaks">
+      <div class="cal-streak-card">
+        <div class="cal-streak-lbl">Aktualny Streak</div>
+        <div class="cal-streak-val" id="cal-streak-cur">0</div>
+      </div>
+      <div class="cal-streak-card best">
+        <div class="cal-streak-lbl">Najlepszy Streak</div>
+        <div class="cal-streak-val" id="cal-streak-best">0</div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1403,7 +1674,7 @@
     <div id="controls">
       <div class="input-row">
         <input id="song-input" type="text" placeholder="nazwa piosenki&#8230;" autocomplete="off" spellcheck="false">
-        <button id="reveal-btn">+1 word</button>
+        <button id="reveal-btn">+1 słowo</button>
         <ul id="ac-list"></ul>
       </div>
       <div id="feedback"></div>
@@ -1420,8 +1691,8 @@
 <footer>
   <span class="ft-left">otsochodzi &nbsp;&#183;&nbsp; zgadnij piosenkę z tekstu</span>
   <span class="ft-right" style="display:flex;align-items:center;gap:16px">
-    <a href="/regulamin" style="font-family:var(--mono);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--sub);text-decoration:none;transition:color .12s" onmouseover="this.style.color='rgba(227,28,18,0.8)'" onmouseout="this.style.color=''">Regulamin</a>
-    <a href="/polityka-prywatnosci" style="font-family:var(--mono);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--sub);text-decoration:none;transition:color .12s" onmouseover="this.style.color='rgba(227,28,18,0.8)'" onmouseout="this.style.color=''">Prywatność</a>
+    <a class="ft-link" href="/regulamin">Regulamin</a>
+    <a class="ft-link" href="/polityka-prywatnosci">Prywatność</a>
     made by <a href="https://www.kijmoshi.xyz" target="_blank" rel="noopener" style="color:inherit; text-decoration:underline">kijmoshi.xyz</a> 
   </span>
 </footer>
@@ -1615,15 +1886,17 @@
       raf=requestAnimationFrame(loop)
     }
   })()
-  function renderWords(){
-    const past=revealedWords.slice(0,-1)
+  function renderWords(n=1){
+    const batch=revealedWords.slice(-n)
+    const past=revealedWords.slice(0,-n)
     historyEl.innerHTML=past.length===0?'':past.map((w,i)=>{
       const age=past.length-i,op=Math.max(0.14,0.62-age*0.1).toFixed(2)
       return '<span style="opacity:'+op+'">'+esc(w)+'</span>'
     }).join(' ')
+    historyEl.scrollTop=historyEl.scrollHeight
     currentEl.classList.remove('word-anim')
     void currentEl.offsetWidth
-    currentEl.textContent=revealedWords.at(-1)||''
+    currentEl.textContent=batch.join(' ')
     currentEl.classList.add('word-anim')
   }
   async function fetchWord(){
@@ -1860,7 +2133,7 @@
       if(w===null){if(added===0)setFeedback('koniec słów','info');break}
       revealedWords.push(w);wordIndex++;revealCount++;added++
     }
-    if(added>0){renderWords();setFeedback('');saveDailyProgress('in-progress');updateHintLock()}
+    if(added>0){renderWords(added);setFeedback('');saveDailyProgress('in-progress');updateHintLock()}
     const wLabel='+'+settings.wordsPerReveal+' słowo'
     revealBtn.textContent=revealCount>0?wLabel+' \u00b7 '+revealCount:wLabel
   })
@@ -2088,6 +2361,37 @@
   // ─── QUICKSTART MODAL ────────────────────────────────────
   const qsOverlay=document.getElementById('qs-overlay')
   const qsPanel=document.getElementById('qs-panel')
+
+  // Demo word typewriter
+  const QS_DEMO_WORDS=["Jestem głodny rapu", "rozjebmy blok"]
+  let _demoIdx=0,_demoTimer=null
+  function _demoRun(){
+    const el=document.getElementById('qs-demo-text')
+    if(!el)return
+    const word=QS_DEMO_WORDS[_demoIdx%QS_DEMO_WORDS.length]
+    _demoIdx++
+    let i=0
+    function typeIn(){
+      if(i<=word.length){el.textContent=word.slice(0,i);i++;_demoTimer=setTimeout(typeIn,90)}
+      else _demoTimer=setTimeout(typeOut,1800)
+    }
+    function typeOut(){
+      let j=word.length
+      function step(){
+        if(j>=0){el.textContent=word.slice(0,j);j--;_demoTimer=setTimeout(step,50)}
+        else _demoTimer=setTimeout(_demoRun,350)
+      }
+      step()
+    }
+    typeIn()
+  }
+  function _demoStop(){
+    clearTimeout(_demoTimer)
+    _demoTimer=null
+    const el=document.getElementById('qs-demo-text')
+    if(el)el.textContent=''
+  }
+
   function openQs(){
     qsPanel.style.display='flex'
     requestAnimationFrame(()=>{
@@ -2095,12 +2399,14 @@
       qsOverlay.classList.add('show')
     })
     document.body.style.overflow='hidden'
+    setTimeout(_demoRun,320)
   }
   function closeQs(){
+    _demoStop()
     qsPanel.classList.remove('open')
     qsOverlay.classList.remove('show')
     document.body.style.overflow=''
-    setTimeout(()=>{if(!qsPanel.classList.contains('open'))qsPanel.style.display='none'},220)
+    setTimeout(()=>{if(!qsPanel.classList.contains('open'))qsPanel.style.display='none'},280)
   }
   document.getElementById('howto-btn').addEventListener('click',openQs)
   document.getElementById('qs-close').addEventListener('click',closeQs)
@@ -2214,6 +2520,96 @@
       }
     })
   }
+
+  // ─── CALENDAR MODAL ───────────────────────────────────
+  let calYear=new Date().getFullYear(),calMonth=new Date().getMonth()
+  const CAL_MONTHS=['Styczeń','Luty','Marzec','Kwiecień','Maj','Czerwiec','Lipiec','Sierpień','Wrzesień','Październik','Listopad','Grudzień']
+  function getDailyHistory(){
+    const h={}
+    try{
+      for(let i=0;i<localStorage.length;i++){
+        const k=localStorage.key(i)
+        if(!k||!k.startsWith('daily_'))continue
+        const date=k.slice(6)
+        try{const d=JSON.parse(localStorage.getItem(k));if(d&&d.outcome)h[date]=d.outcome}catch(e){}
+      }
+    }catch(e){}
+    return h
+  }
+  function calcDailyStreaks(h){
+    const correct=new Set(Object.entries(h).filter(([,v])=>v==='correct').map(([k])=>k))
+    let cur=0
+    const sd=new Date()
+    if(!correct.has(fmtISO(sd)))sd.setDate(sd.getDate()-1)
+    while(correct.has(fmtISO(sd))){cur++;sd.setDate(sd.getDate()-1)}
+    const sorted=[...correct].sort()
+    let best=0,run=0
+    for(let i=0;i<sorted.length;i++){
+      run=i===0?1:((new Date(sorted[i])-new Date(sorted[i-1]))/86400000===1?run+1:1)
+      if(run>best)best=run
+    }
+    return{cur,best}
+  }
+  function renderCal(){
+    const h=getDailyHistory()
+    const today=fmtISO(new Date())
+    document.getElementById('cal-month-lbl').textContent=CAL_MONTHS[calMonth]+' '+calYear
+    const now=new Date()
+    document.getElementById('cal-next').disabled=calYear===now.getFullYear()&&calMonth===now.getMonth()
+    const firstDow=new Date(calYear,calMonth,1).getDay()
+    const startOffset=firstDow===0?6:firstDow-1
+    const daysInMonth=new Date(calYear,calMonth+1,0).getDate()
+    let html=''
+    for(let i=0;i<startOffset;i++)html+='<div class="cal-day"></div>'
+    for(let day=1;day<=daysInMonth;day++){
+      const ds=calYear+'-'+String(calMonth+1).padStart(2,'0')+'-'+String(day).padStart(2,'0')
+      const isToday=ds===today,isFuture=ds>today
+      const outcome=h[ds]
+      let dotCls=''
+      if(!isFuture){
+        if(outcome==='correct')dotCls='correct'
+        else if(outcome==='giveup')dotCls='giveup'
+        else if(outcome==='in-progress')dotCls='progress'
+        else dotCls='empty'
+      }
+      html+='<div class="cal-day'+(isToday?' today':'')+'"><span class="cal-day-num">'+day+'</span>'+(isFuture?'':'<div class="cal-dot '+dotCls+'"></div>')+'</div>'
+    }
+    document.getElementById('cal-grid').innerHTML=html
+    const{cur,best}=calcDailyStreaks(h)
+    document.getElementById('cal-streak-cur').textContent=cur
+    document.getElementById('cal-streak-best').textContent=best
+  }
+  function openCal(){
+    calYear=new Date().getFullYear();calMonth=new Date().getMonth()
+    renderCal()
+    const panel=document.getElementById('cal-panel')
+    panel.style.display='flex'
+    requestAnimationFrame(()=>{
+      panel.classList.add('open')
+      document.getElementById('cal-overlay').classList.add('show')
+    })
+    document.body.style.overflow='hidden'
+  }
+  function closeCal(){
+    const panel=document.getElementById('cal-panel')
+    panel.classList.remove('open')
+    document.getElementById('cal-overlay').classList.remove('show')
+    document.body.style.overflow=''
+    setTimeout(()=>{if(!panel.classList.contains('open'))panel.style.display='none'},220)
+  }
+  document.getElementById('cal-btn').addEventListener('click',openCal)
+  document.getElementById('cal-close').addEventListener('click',closeCal)
+  document.getElementById('cal-overlay').addEventListener('click',closeCal)
+  document.getElementById('cal-prev').addEventListener('click',()=>{
+    calMonth--;if(calMonth<0){calMonth=11;calYear--};renderCal()
+  })
+  document.getElementById('cal-next').addEventListener('click',()=>{
+    const now=new Date()
+    if(calYear<now.getFullYear()||(calYear===now.getFullYear()&&calMonth<now.getMonth())){
+      calMonth++;if(calMonth>11){calMonth=0;calYear++};renderCal()
+    }
+  })
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('cal-panel').classList.contains('open'))closeCal()})
 </script>
 </body>
 </html>

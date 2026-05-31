@@ -40,6 +40,12 @@ const saveSongCache = () => {
     2000
   );
 };
+const flushSongCache = () => {
+  if (_saveSongCacheTimer === null) return;
+  clearTimeout(_saveSongCacheTimer);
+  _saveSongCacheTimer = null;
+  fs.writeFileSync(path.join(cacheDir, "songs.json"), JSON.stringify(Array.from(songCache.entries())));
+};
 const saveLyricsCache = () =>
   fs.writeFileSync(path.join(cacheDir, "lyrics.json"), JSON.stringify(Array.from(lyricsCache.entries())));
 
@@ -61,16 +67,6 @@ const loadCache = () => {
 
 // Load cache on startup
 loadCache();
-
-const getSongListForArtist = async (artistId) => {
-  try {
-    const response = await api.get(`/artists/${artistId}/songs`);
-    return response.data.response.songs;
-  } catch (error) {
-    console.error("Error fetching songs for artist:", error.message);
-    return [];
-  }
-};
 
 const getArtistIdByName = async (artistName) => {
   const cacheKey = artistName.toLowerCase();
@@ -139,24 +135,6 @@ const scrapeLyrics = async (songUrl) => {
   }
 };
 
-const getSongLyrics = async (songId) => {
-  if (lyricsCache.has(songId)) {
-    return lyricsCache.get(songId);
-  }
-
-  try {
-    const response = await api.get(`/songs/${songId}`);
-    const song = response.data.response.song;
-    const lyrics = await scrapeLyrics(song.url);
-    lyricsCache.set(songId, lyrics);
-    saveLyricsCache();
-    return lyrics;
-  } catch (error) {
-    console.error("Error fetching song lyrics:", error.message);
-    return null;
-  }
-};
-
 const getAllSongs = async (artistId) => {
   const cacheKey = `artist_${artistId}`;
   
@@ -192,7 +170,7 @@ const getAllSongs = async (artistId) => {
         album: s.album ? { id: s.album.id, name: s.album.name } : null,
       }));
       songs = songs.concat(newSongs);
-      hasMore = response.data.response.songs.length > 0;
+      hasMore = response.data.response.next_page != null;
       page++;
       retries = 0;
     } catch (error) {
@@ -339,50 +317,6 @@ const getSongById = async (songId) => {
   return promise;
 };
 
-const getArtistInfo = async (artistId) => {
-  try {
-    const response = await api.get(`/artists/${artistId}`);
-    const artist = response.data.response.artist;
-    return {
-      id: artist.id,
-      name: artist.name,
-      url: artist.url,
-      imageUrl: artist.image_url,
-      description: artist.description?.plain || null,
-    };
-  } catch (error) {
-    console.error("Error fetching artist info:", error.message);
-    return null;
-  }
-};
-
-const searchArtistsByName = async (artistName) => {
-  try {
-    const response = await api.get("/search", {
-      params: { q: artistName },
-    });
-    
-    const hits = response.data.response.hits;
-    const artists = new Map();
-    
-    hits.forEach(hit => {
-      const artist = hit.result.primary_artist;
-      if (!artists.has(artist.id)) {
-        artists.set(artist.id, {
-          id: artist.id,
-          name: artist.name,
-          url: artist.url,
-        });
-      }
-    });
-    
-    return Array.from(artists.values());
-  } catch (error) {
-    console.error("Error searching artists:", error.message);
-    return [];
-  }
-};
-
 const clearCache = () => {
   artistCache.clear();
   songCache.clear();
@@ -417,16 +351,13 @@ const getWordArray = async (songId) => {
 
 module.exports = {
   getArtistIdByName,
-  getSongListForArtist,
-  getSongLyrics,
   getAllSongs,
   searchSongsByName,
   getSongById,
   getSongCacheEntry,
   getWordArray,
   isArtistSong,
-  getArtistInfo,
-  searchArtistsByName,
   searchCachedSongsByName,
   clearCache,
+  flushSongCache,
 };

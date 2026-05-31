@@ -113,6 +113,8 @@
     .kpi-val { font-size: 1.6rem; letter-spacing: .04em; color: var(--text); line-height: 1; margin-bottom: 4px; }
     .kpi-val.green { color: var(--ok); }
     .kpi-val.red   { color: var(--red); }
+    .kpi-val.up    { color: var(--ok); }
+    .kpi-val.down  { color: var(--red); }
     .kpi-label { font-size: .5rem; letter-spacing: .18em; text-transform: uppercase; color: var(--sub2); }
 
     .chart-wrap { position: relative; width: 100%; }
@@ -135,6 +137,14 @@
     select { background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: var(--mono);
       font-size: .68rem; padding: 6px 10px; outline: none; cursor: pointer; }
     select:focus { border-color: rgba(227,28,18,0.4); }
+
+    .kpi-sub { font-size: .48rem; color: var(--sub2); letter-spacing: .1em; margin-top: 2px; }
+    .mini-lb { width: 100%; border-collapse: collapse; font-size: .62rem; }
+    .mini-lb th { text-align: left; padding: 5px 10px; color: var(--sub); letter-spacing: .1em; text-transform: uppercase; border-bottom: 1px solid var(--border); }
+    .mini-lb td { padding: 6px 10px; border-bottom: 1px solid rgba(255,255,255,0.03); }
+    .mini-lb tr:hover td { background: rgba(255,255,255,0.02); }
+    .mini-lb .rank { color: var(--sub2); }
+    .mini-lb .score-val { color: var(--ok); font-weight: bold; }
   </style>
 </head>
 <body>
@@ -191,7 +201,7 @@
     <div id="stats-loading" style="color:var(--sub2);font-size:.6rem;letter-spacing:.1em"><span class="spinner-sm"></span>ładowanie…</div>
     <div id="stats-content" style="display:none">
 
-      <!-- KPIs -->
+      <!-- KPIs row 1 -->
       <div class="kpi-row">
         <div class="kpi"><div class="kpi-val" id="kpi-total">—</div><div class="kpi-label">łączne gry</div></div>
         <div class="kpi"><div class="kpi-val green" id="kpi-correct">—</div><div class="kpi-label">zgadnięte</div></div>
@@ -199,6 +209,17 @@
         <div class="kpi"><div class="kpi-val" id="kpi-rate">—</div><div class="kpi-label">% sukcesu</div></div>
         <div class="kpi"><div class="kpi-val" id="kpi-days">—</div><div class="kpi-label">aktywnych dni</div></div>
         <div class="kpi"><div class="kpi-val" id="kpi-avg-day">—</div><div class="kpi-label">gier / dzień</div></div>
+      </div>
+
+      <!-- KPIs row 2 — growth & difficulty -->
+      <div class="kpi-row" style="margin-bottom:20px">
+        <div class="kpi"><div class="kpi-val" id="kpi-streak-cur">—</div><div class="kpi-label">seria dni</div></div>
+        <div class="kpi"><div class="kpi-val" id="kpi-streak-best">—</div><div class="kpi-label">najlepsza seria</div></div>
+        <div class="kpi"><div class="kpi-val" id="kpi-peak">—</div><div class="kpi-label">rekordowy dzień</div><div class="kpi-sub" id="kpi-peak-date"></div></div>
+        <div class="kpi"><div class="kpi-val" id="kpi-week-trend">—</div><div class="kpi-label">t/t tydzień</div><div class="kpi-sub" id="kpi-week-sub"></div></div>
+        <div class="kpi"><div class="kpi-val" id="kpi-month-trend">—</div><div class="kpi-label">t/t miesiąc</div><div class="kpi-sub" id="kpi-month-sub"></div></div>
+        <div class="kpi"><div class="kpi-val" id="kpi-avg-correct-w">—</div><div class="kpi-label">śr. słów (sukces)</div></div>
+        <div class="kpi"><div class="kpi-val red" id="kpi-avg-giveup-w">—</div><div class="kpi-label">śr. słów (poddanie)</div></div>
       </div>
 
       <!-- bar charts -->
@@ -229,6 +250,31 @@
       </div>
       <div id="dist-bars" class="guess-dist-bars"></div>
 
+    </div>
+  </div>
+
+  <!-- RANKED MODE -->
+  <div class="panel">
+    <h2>tryb rankingowy</h2>
+    <div id="ranked-loading" style="color:var(--sub2);font-size:.6rem;letter-spacing:.1em"><span class="spinner-sm"></span>ładowanie…</div>
+    <div id="ranked-content" style="display:none">
+      <div class="kpi-row" style="margin-bottom:16px">
+        <div class="kpi"><div class="kpi-val" id="kpi-r-total">—</div><div class="kpi-label">zgłoszenia</div></div>
+        <div class="kpi"><div class="kpi-val" id="kpi-r-avg">—</div><div class="kpi-label">śr. wynik</div></div>
+        <div class="kpi"><div class="kpi-val green" id="kpi-r-top">—</div><div class="kpi-label">rekord wszechczasów</div></div>
+      </div>
+      <div class="charts-grid" style="margin-bottom:16px">
+        <div class="chart-wrap">
+          <div class="chart-title">zgłoszenia rankingowe miesięcznie</div>
+          <canvas class="chart" id="chart-ranked-monthly"></canvas>
+        </div>
+        <div class="chart-wrap">
+          <div class="chart-title">śr. wynik miesięcznie</div>
+          <canvas class="chart" id="chart-ranked-avg"></canvas>
+        </div>
+      </div>
+      <div class="chart-title" style="margin-bottom:10px">top 10 graczy wszechczasów</div>
+      <div id="ranked-lb"></div>
     </div>
   </div>
 
@@ -450,6 +496,7 @@
     if (r.ok) allSongs = await r.json()
     await loadSchedule()
     await loadStats()
+    loadRanked()  // fire-and-forget, independent of other panels
   }
 
   // ── STATS ──────────────────────────────────────────────────
@@ -468,6 +515,29 @@
     document.getElementById('kpi-rate').textContent    = rate + '%'
     document.getElementById('kpi-days').textContent    = d.perDay.length
     document.getElementById('kpi-avg-day').textContent = d.perDay.length ? (d.totals.plays / d.perDay.length).toFixed(1) : '—'
+
+    // KPIs row 2
+    document.getElementById('kpi-streak-cur').textContent  = d.streak?.current ?? '—'
+    document.getElementById('kpi-streak-best').textContent = d.streak?.best    ?? '—'
+    if (d.peakDay) {
+      document.getElementById('kpi-peak').textContent      = d.peakDay.plays
+      document.getElementById('kpi-peak-date').textContent = d.peakDay.date
+    }
+    function trendFmt(pct, thisVal, lastVal) {
+      if (pct === null || pct === undefined) return { text: '—', cls: '', sub: '' }
+      const sign = pct > 0 ? '+' : ''
+      return { text: sign + pct + '%', cls: pct > 0 ? 'up' : pct < 0 ? 'down' : '', sub: lastVal + ' → ' + thisVal }
+    }
+    const wt = trendFmt(d.trends?.week,  d.trends?.thisWeekPlays,  d.trends?.lastWeekPlays)
+    const mt = trendFmt(d.trends?.month, d.trends?.thisMonthPlays, d.trends?.lastMonthPlays)
+    const weekEl  = document.getElementById('kpi-week-trend')
+    const monthEl = document.getElementById('kpi-month-trend')
+    weekEl.textContent  = wt.text; weekEl.className  = 'kpi-val ' + wt.cls
+    monthEl.textContent = mt.text; monthEl.className = 'kpi-val ' + mt.cls
+    document.getElementById('kpi-week-sub').textContent  = wt.sub
+    document.getElementById('kpi-month-sub').textContent = mt.sub
+    document.getElementById('kpi-avg-correct-w').textContent = d.avgWords?.correct ?? '—'
+    document.getElementById('kpi-avg-giveup-w').textContent  = d.avgWords?.giveup  ?? '—'
 
     // last 30 days for bar charts
     const last30 = d.perDay.slice(-30)
@@ -524,6 +594,42 @@
     requestAnimationFrame(() => {
       el.querySelectorAll('.gd-fill-c,.gd-fill-g').forEach(b => b.style.width = b.dataset.w + '%')
     })
+  }
+
+  // ── RANKED OVERVIEW ────────────────────────────────────────
+  async function loadRanked() {
+    const r = await API('/api/admin/ranked-overview')
+    document.getElementById('ranked-loading').style.display = 'none'
+    if (!r.ok) return
+    const d = await r.json()
+    document.getElementById('ranked-content').style.display = 'block'
+
+    document.getElementById('kpi-r-total').textContent = d.total || '—'
+    document.getElementById('kpi-r-avg').textContent   = d.total ? d.avgScore : '—'
+    document.getElementById('kpi-r-top').textContent   = d.total ? d.topScore : '—'
+
+    if (d.byMonth.length) {
+      drawBarChart('chart-ranked-monthly', d.byMonth.map(x => x.month), [
+        { values: d.byMonth.map(x => x.submissions), color: 'rgba(240,236,232,0.55)' }
+      ])
+      drawLineChart('chart-ranked-avg', d.byMonth.map(x => x.month),
+        d.byMonth.map(x => x.avgScore), 'rgba(34,197,94,0.8)')
+    }
+
+    const lbEl = document.getElementById('ranked-lb')
+    if (d.topScores.length) {
+      lbEl.innerHTML = `<table class="mini-lb">
+        <thead><tr><th>#</th><th>gracz</th><th>wynik</th><th>data</th></tr></thead>
+        <tbody>${d.topScores.map((e, i) => `<tr>
+          <td class="rank">${i + 1}</td>
+          <td>${esc(e.name)}</td>
+          <td class="score-val">${e.score}</td>
+          <td style="color:var(--sub)">${e.date}</td>
+        </tr>`).join('')}</tbody>
+      </table>`
+    } else {
+      lbEl.innerHTML = '<div style="color:var(--sub2);font-size:.6rem;letter-spacing:.1em">brak danych rankingowych</div>'
+    }
   }
 
   // ── PURE-CANVAS CHARTS ─────────────────────────────────────

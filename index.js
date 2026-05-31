@@ -109,6 +109,7 @@ let cachedAlbums  = null; // populated lazily on first /api/albums request; rese
           if (i + CONCURRENCY < toWarm.length) await new Promise(r => setTimeout(r, BATCH_DELAY));
         }
         console.log(`[WARM] Background warm-up complete — all ${toWarm.length} songs cached`);
+        cachedAlbums = null; // reset so /api/albums reflects newly warmed album data
       })();
     } else {
       console.log(`[WARM] All ${allSongs.length} songs already cached`);
@@ -117,6 +118,60 @@ let cachedAlbums  = null; // populated lazily on first /api/albums request; rese
     console.error("[WARM] Startup warm-up failed:", e.message);
   }
 })();
+
+// ── Song picker (shared by endless and ranked) ───────────────
+// Returns { song, moreSongInfo } or null if no suitable song found.
+// albumsParam: comma-separated album IDs/names for pool filtering (endless only)
+// usedSongs:   Set of already-played songIds to exclude (ranked only)
+async function pickSong(artistId, { albumsParam = '', usedSongs = null } = {}) {
+    const allSongs = await genius.getAllSongs(artistId);
+    if (!allSongs.length) return null;
+    const filtered = allSongs.filter(s => !SKIP_PATTERNS.test(s.title));
+
+    const isPrimary = (s) => s.artists.some(a => String(a.id) === String(artistId));
+    const albumTracks = [], features = [], singles = [];
+    for (const s of filtered) {
+        const cached = genius.getSongCacheEntry(s.id);
+        const album  = cached?.album !== undefined ? cached.album : s.album;
+        if (!isPrimary(s)) features.push(s);
+        else if (album)    albumTracks.push(s);
+        else               singles.push(s);
+    }
+
+    let customPool = null;
+    if (albumsParam) {
+        const albumIds = new Set(albumsParam.split(',').slice(0, 50).map(a => a.trim()).filter(Boolean));
+        const albumFiltered = filtered.filter(s => {
+            const cached = genius.getSongCacheEntry(s.id);
+            const album  = cached?.album !== undefined ? cached.album : s.album;
+            return album && albumIds.has(String(album.id ?? album.name));
+        });
+        if (albumFiltered.length > 0) customPool = albumFiltered;
+    }
+
+    const exclude  = (pool) => usedSongs ? pool.filter(s => !usedSongs.has(s.id)) : pool;
+    const pickPool = () => {
+        if (customPool) return exclude(customPool);
+        const ap = exclude(albumTracks), fp = exclude(features), sp = exclude(singles);
+        const roll = Math.random();
+        if (roll < 0.93 && ap.length) return ap;
+        if (roll < 0.97 && fp.length) return fp;
+        if (sp.length) return sp;
+        return ap.length ? ap : exclude(filtered);
+    };
+
+    const seen = new Set();
+    for (let i = 0; i < 15; i++) {
+        const pool = pickPool();
+        if (!pool.length) break;
+        const candidate = pool[Math.floor(Math.random() * pool.length)];
+        if (seen.has(candidate.id)) continue;
+        seen.add(candidate.id);
+        const info = await genius.getSongById(candidate.id);
+        if (info?.lyrics) return { song: candidate, moreSongInfo: info };
+    }
+    return null;
+}
 
 // Serve static files; images get a 7-day cache, ETag enables conditional GETs.
 app.use("/images", express.static(path.join(__dirname, "public/images"), {
@@ -258,86 +313,98 @@ app.get("/api/admin/stats-overview", adminAuth, (req, res) => {
             return acc;
         }, { plays: 0, correct: 0, giveup: 0 });
 
-        res.json({ dates, perDay, byMonth: Object.values(byMonth).sort((a, b) => a.month.localeCompare(b.month)), totals });
+        // ── Streaks ──────────────────────────────────────────────
+        const todayStr = new Date().toISOString().split('T')[0];
+        const dateSet  = new Set(dates);
+        let currentStreak = 0;
+        { const d = new Date(todayStr); while (dateSet.has(d.toISOString().split('T')[0])) { currentStreak++; d.setDate(d.getDate() - 1); } }
+        let bestStreak = 0, runStreak = 0;
+        for (let i = 0; i < dates.length; i++) {
+            if (i === 0) { runStreak = 1; }
+            else { runStreak = (new Date(dates[i]) - new Date(dates[i - 1])) / 86400000 === 1 ? runStreak + 1 : 1; }
+            if (runStreak > bestStreak) bestStreak = runStreak;
+        }
+
+        // ── Peak day ─────────────────────────────────────────────
+        const peakDay = perDay.length ? perDay.reduce((best, d) => d.plays > best.plays ? d : best) : null;
+
+        // ── Week & month trends ───────────────────────────────────
+        const nowMs = Date.now();
+        const thisWeekPlays = perDay.filter(d => (nowMs - new Date(d.date).getTime()) / 86400000 < 7).reduce((s, d) => s + d.plays, 0);
+        const lastWeekPlays = perDay.filter(d => { const age = (nowMs - new Date(d.date).getTime()) / 86400000; return age >= 7 && age < 14; }).reduce((s, d) => s + d.plays, 0);
+        const weekTrend = lastWeekPlays ? Math.round((thisWeekPlays - lastWeekPlays) / lastWeekPlays * 100) : null;
+        const prevMonthDate = new Date(todayStr); prevMonthDate.setDate(1); prevMonthDate.setMonth(prevMonthDate.getMonth() - 1);
+        const thisMonth = todayStr.slice(0, 7), lastMonth = prevMonthDate.toISOString().slice(0, 7);
+        const thisMonthPlays = perDay.filter(d => d.date.startsWith(thisMonth)).reduce((s, d) => s + d.plays, 0);
+        const lastMonthPlays = perDay.filter(d => d.date.startsWith(lastMonth)).reduce((s, d) => s + d.plays, 0);
+        const monthTrend = lastMonthPlays ? Math.round((thisMonthPlays - lastMonthPlays) / lastMonthPlays * 100) : null;
+
+        // ── Avg words per outcome ─────────────────────────────────
+        const allCorrectWords = Object.values(raw).flatMap(d => d.correct);
+        const allGiveupWords  = Object.values(raw).flatMap(d => d.giveup);
+        const avgWordsCorrect = allCorrectWords.length ? Math.round(allCorrectWords.reduce((a, b) => a + b, 0) / allCorrectWords.length * 10) / 10 : null;
+        const avgWordsGiveup  = allGiveupWords.length  ? Math.round(allGiveupWords.reduce((a, b) => a + b, 0) / allGiveupWords.length  * 10) / 10 : null;
+
+        res.json({
+            dates, perDay, totals,
+            byMonth: Object.values(byMonth).sort((a, b) => a.month.localeCompare(b.month)),
+            streak:   { current: currentStreak, best: bestStreak },
+            peakDay,
+            trends:   { week: weekTrend, month: monthTrend, thisWeekPlays, lastWeekPlays, thisMonthPlays, lastMonthPlays },
+            avgWords: { correct: avgWordsCorrect, giveup: avgWordsGiveup },
+        });
     } catch (e) {
         res.status(500).json({ error: "Failed to build stats overview" });
     }
 })
 
+app.get("/api/admin/ranked-overview", adminAuth, (req, res) => {
+    try {
+        const stats    = db.getRankedStats();
+        const byMonth  = db.getRankedByMonth().map(r => ({
+            month:       r.month,
+            submissions: r.submissions,
+            avgScore:    Math.round((r.avgScore || 0) * 10) / 10,
+            topScore:    r.topScore || 0,
+        }));
+        const topScores = db.getLeaderboard(10);
+        res.json({
+            total:    stats.total    || 0,
+            avgScore: stats.avgScore ? Math.round(stats.avgScore * 10) / 10 : 0,
+            topScore: stats.topScore || 0,
+            byMonth,
+            topScores,
+        });
+    } catch (e) {
+        res.status(500).json({ error: "Failed to fetch ranked overview" });
+    }
+})
 
-app.get("/api/game/endless", async (req, res) => {
+
+app.get("/api/game/endless", rankedSongLimiter, async (req, res) => {
     if (!otsochodziId) return res.status(503).json({ error: "Server is initializing, try again shortly" });
 
     const { sessionId } = req.query;
     const rankedSession = sessionId ? rankedSessions.get(String(sessionId)) : null;
 
     try {
-        const allSongs = await genius.getAllSongs(otsochodziId);
-        if (!allSongs.length) return res.status(503).json({ error: "Song list unavailable" });
-        const filtered = allSongs.filter(s => !SKIP_PATTERNS.test(s.title));
-
-        const isPrimary = (s) => s.artists.some(a => String(a.id) === String(otsochodziId));
-        const albumTracks = [], features = [], singles = [];
-        for (const s of filtered) {
-            const cached = genius.getSongCacheEntry(s.id);
-            // Prefer per-song cache (has full data); fall back to album field from artist list.
-            const album = cached?.album !== undefined ? cached.album : s.album;
-            if (!isPrimary(s)) {
-                features.push(s);
-            } else if (album) {
-                albumTracks.push(s);
-            } else {
-                singles.push(s);
-            }
-        }
-        const albumPool = albumTracks;
-
-        // Album filter (endless mode only; ignored in ranked)
-        let customPool = null;
         const albumsParam = !rankedSession ? String(req.query.albums || '').trim() : '';
-        if (albumsParam) {
-            const albumIds = new Set(albumsParam.split(',').slice(0, 50).map(a => a.trim()).filter(Boolean));
-            const albumFiltered = filtered.filter(s => {
-                const cached = genius.getSongCacheEntry(s.id);
-                const album = cached?.album !== undefined ? cached.album : s.album;
-                if (!album) return false;
-                return albumIds.has(String(album.id ?? album.name));
-            });
-            if (albumFiltered.length > 0) customPool = albumFiltered;
-        }
-
-        function pickPool() {
-            if (customPool) return customPool;
-            const roll = Math.random();
-            if (roll < 0.93 && albumPool.length) return albumPool;
-            if (roll < 0.97 && features.length)  return features;
-            if (singles.length)                  return singles;
-            return albumPool.length ? albumPool : filtered;
-        }
-
-        let moreSongInfo = null;
-        let song = null;
-        const seen = new Set();
-        for (let i = 0; i < 15; i++) {
-            const pool = pickPool();
-            if (!pool.length) break;
-            const candidate = pool[Math.floor(Math.random() * pool.length)];
-            if (seen.has(candidate.id)) continue;
-            seen.add(candidate.id);
-            const info = await genius.getSongById(candidate.id);
-            if (info?.lyrics) { song = candidate; moreSongInfo = info; break; }
-        }
-        if (!moreSongInfo?.lyrics) return res.status(500).json({ error: "Could not find a song with lyrics" });
+        const picked = await pickSong(otsochodziId, {
+            albumsParam,
+            usedSongs: rankedSession ? rankedSession.usedSongs : null,
+        });
+        if (!picked) return res.status(500).json({ error: "Could not find a song with lyrics" });
+        const { song, moreSongInfo } = picked;
 
         const words = await genius.getWordArray(song.id);
         const response = {
-            songId: song.id,
-            title: song.title,
+            songId:    song.id,
+            title:     song.title,
             wordCount: words.length,
-            words: words,
-            cover: moreSongInfo.cover || song.cover || null,
-            artists: moreSongInfo.artists || song.artists || [],
-            featured: moreSongInfo.featured || [],
+            words,
+            cover:     moreSongInfo.cover || song.cover || null,
+            artists:   moreSongInfo.artists || song.artists || [],
+            featured:  moreSongInfo.featured || [],
         };
         // Hints are not sent in ranked mode — enforced server-side.
         if (!rankedSession) {
@@ -355,7 +422,10 @@ app.get("/api/game/endless", async (req, res) => {
 app.get("/api/game/daily/:date", async (req, res) => {
     const { date } = req.params;
     try {
-        if (new Date(date) > new Date()) {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+            return res.status(400).json({ error: "Invalid date format" });
+        }
+        if (date > new Date().toISOString().split("T")[0]) {
             return res.status(400).json({ error: "Date cannot be in the future" });
         }
         
@@ -523,64 +593,21 @@ app.get("/api/ranked/song", rankedSongLimiter, async (req, res) => {
     }
 
     try {
-        const allSongs = await genius.getAllSongs(otsochodziId);
-        if (!allSongs.length) return res.status(503).json({ error: "Song list unavailable" });
-        const filtered = allSongs.filter(s => !SKIP_PATTERNS.test(s.title));
-
-        const isPrimary = (s) => s.artists.some(a => String(a.id) === String(otsochodziId));
-        const albumTracks = [], features = [], singles = [];
-        for (const s of filtered) {
-            const cached = genius.getSongCacheEntry(s.id);
-            const album = cached?.album !== undefined ? cached.album : s.album;
-            if (!isPrimary(s)) {
-                features.push(s);
-            } else if (album) {
-                albumTracks.push(s);
-            } else {
-                singles.push(s);
-            }
-        }
-        const albumPool = albumTracks;
-
-        // Exclude songs already used this session
-        function filterUsed(pool) {
-            return pool.filter(s => !session.usedSongs.has(s.id));
-        }
-        function pickBucket() {
-            const ap = filterUsed(albumPool);
-            const fp = filterUsed(features);
-            const sp = filterUsed(singles);
-            const roll = Math.random();
-            if (roll < 0.93 && ap.length) return ap;
-            if (roll < 0.97 && fp.length) return fp;
-            if (sp.length) return sp;
-            return ap.length ? ap : filterUsed(filtered);
-        }
-
-        let moreSongInfo = null;
-        let song = null;
-        for (let i = 0; i < 15; i++) {
-            const pool = pickBucket();
-            if (!pool.length) break;
-            song = pool[Math.floor(Math.random() * pool.length)];
-            moreSongInfo = await genius.getSongById(song.id);
-            if (moreSongInfo?.lyrics) break;
-            moreSongInfo = null;
-        }
-        if (!moreSongInfo?.lyrics) return res.status(500).json({ error: "Could not find a song with lyrics" });
-
+        const picked = await pickSong(otsochodziId, { usedSongs: session.usedSongs });
+        if (!picked) return res.status(500).json({ error: "Could not find a song with lyrics" });
+        const { song, moreSongInfo } = picked;
         session.pendingId = song.id;
 
         const words = await genius.getWordArray(song.id);
         res.json({
-            songId: song.id,
-            title: song.title,
+            songId:    song.id,
+            title:     song.title,
             wordCount: words.length,
-            words: words,
-            cover: moreSongInfo.cover || song.cover || null,
-            artists: moreSongInfo.artists || song.artists || [],
-            featured: moreSongInfo.featured || [],
-            hints: { album: moreSongInfo.album?.name, releaseDate: moreSongInfo.releaseDate }
+            words,
+            cover:     moreSongInfo.cover || song.cover || null,
+            artists:   moreSongInfo.artists || song.artists || [],
+            featured:  moreSongInfo.featured || [],
+            hints:     { album: moreSongInfo.album?.name, releaseDate: moreSongInfo.releaseDate },
         });
     } catch (error) {
         console.error(error);
@@ -671,10 +698,8 @@ app.post("/api/leaderboard", leaderboardLimiter, (req, res) => {
     if (!safeName) return res.status(400).json({ error: "Invalid name" });
 
     const today = new Date().toISOString().split("T")[0];
-    db.insertLeaderboard({ name: safeName, score, date: today });
-    const board = db.getLeaderboard(200);
-    const rank = board.findIndex(e => e.name === safeName && e.score === score && e.date === today) + 1;
-    res.json({ rank });
+    const rank = db.insertLeaderboard({ name: safeName, score, date: today });
+    res.json({ rank: rank || 0 });
 });
 
 // ── 404 catch-all ───────────────────────────────────────────
@@ -689,6 +714,7 @@ const server = app.listen(PORT, () => {
 // ── Graceful shutdown ────────────────────────────────────────
 function shutdown(signal) {
     console.log(`[${signal}] Shutting down gracefully…`);
+    genius.flushSongCache(); // flush any pending debounced cache write
     server.close(() => {
         console.log("[SHUTDOWN] HTTP server closed");
         process.exit(0);
