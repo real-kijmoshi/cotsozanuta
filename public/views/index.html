@@ -8,10 +8,10 @@
 
   <!-- Open Graph -->
   <meta property="og:type" content="website">
-  <meta property="og:url" content="__SITE_URL__/">
+  <meta property="og:url" content="https://cotsozahit.pl/">
   <meta property="og:title" content="Cotsozanuta – Zgadnij piosenkę Otsochodzi">
   <meta property="og:description" content="Gra słowna: odgadnij tytuł piosenki Otsochodzi na podstawie jednego słowa z tekstu. Tryb dzienny i bez końca.">
-  <meta property="og:image" content="__SITE_URL__/images/og-image.png">
+  <meta property="og:image" content="https://cotsozahit.pl/images/og-image.png">
   <meta property="og:locale" content="pl_PL">
   <meta property="og:site_name" content="Cotsozanuta">
 
@@ -19,10 +19,11 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Cotsozanuta – Zgadnij piosenkę Otsochodzi">
   <meta name="twitter:description" content="Gra słowna: odgadnij tytuł piosenki Otsochodzi na podstawie jednego słowa z tekstu.">
-  <meta name="twitter:image" content="__SITE_URL__/images/og-image.png">
+  <meta name="twitter:image" content="https://cotsozahit.pl/images/og-image.png">
 
-  <link rel="canonical" href="__SITE_URL__/">
+  <link rel="canonical" href="https://cotsozahit.pl/">
   <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="favicon" type="image/png" href="/images/favicon.png">
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Share+Tech+Mono&family=Barlow+Condensed:ital,wght@0,400;0,700;0,900;1,900&family=Special+Elite&display=swap" rel="stylesheet">
   <style>
@@ -154,10 +155,17 @@
       color:var(--text);
       user-select:none;
       line-height:1;
+      text-decoration:none;
+      cursor:pointer;
     }
     .wm-hl{
       color:var(--red);
       text-shadow:0 0 24px var(--red-glow),2px 2px 0 rgba(0,0,0,0.5);
+    }
+    .wm-sub{
+      font-size:.75em;
+      color:var(--sub);
+      letter-spacing:.08em;
     }
 
     .mode-switch{
@@ -217,43 +225,72 @@
 
     /* ─── MODE CARDS ────────────────────────────────────── */
     #mode-cards{
-      display:flex;gap:20px;justify-content:center;
-      flex-wrap:wrap;margin-top:36px;
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:12px;
+      justify-content:center;
+      margin-top:36px;
+      width:100%;
+      max-width:640px;
     }
     .mode-card{
       position:relative;
-      width:210px;
-      background:rgba(10,6,6,0.82);
-      border:1px solid rgba(255,255,255,0.07);
-      border-top:3px solid rgba(255,255,255,0.08);
-      padding:26px 22px 22px;
+      background:rgba(10,6,6,0.85);
+      border:1px solid rgba(255,255,255,0.06);
+      border-top:2px solid rgba(255,255,255,0.08);
+      padding:24px 20px 20px;
       cursor:pointer;
       text-align:left;
-      transition:border-color .15s,background .15s,transform .15s;
+      transition:border-color .18s,background .18s,transform .18s,box-shadow .18s;
       overflow:hidden;
+      display:flex;
+      flex-direction:column;
     }
     .mode-card::before{
       content:'';
       position:absolute;inset:0;
-      background:linear-gradient(135deg,rgba(227,28,18,0.06) 0%,transparent 60%);
-      opacity:0;transition:opacity .15s;
+      background:linear-gradient(145deg,var(--mc-glow,rgba(227,28,18,0.07)) 0%,transparent 55%);
+      opacity:0;transition:opacity .18s;
     }
-    .mode-card:hover{border-color:rgba(227,28,18,0.4);background:rgba(15,8,8,0.92);transform:translateY(-2px)}
+    /* per-mode accent colours */
+    .mode-card[data-mode="endless"]{--mc-color:rgba(0,207,255,0.7);--mc-glow:rgba(0,207,255,0.07)}
+    .mode-card[data-mode="daily"]{--mc-color:rgba(255,200,60,0.7);--mc-glow:rgba(255,200,60,0.07)}
+    .mode-card[data-mode="ranked"]{--mc-color:var(--red);--mc-glow:rgba(227,28,18,0.09)}
+    .mode-card:hover{
+      border-color:var(--mc-color,rgba(227,28,18,0.4));
+      background:rgba(14,8,8,0.95);
+      transform:translateY(-3px);
+      box-shadow:0 8px 32px rgba(0,0,0,0.5);
+    }
     .mode-card:hover::before{opacity:1}
-    .mode-card.active{border-top-color:var(--red);border-color:rgba(227,28,18,0.35)}
+    .mode-card:hover .mc-arrow{transform:translateX(4px);opacity:1}
+    .mode-card.active{
+      border-top:2px solid var(--mc-color,var(--red));
+      border-color:var(--mc-color,rgba(227,28,18,0.35));
+    }
     .mode-card.active::before{opacity:1}
     .mc-icon{
-      display:block;margin-bottom:13px;color:var(--red);
+      display:block;margin-bottom:14px;
+      color:var(--mc-color,var(--red));
       line-height:1;
     }
     .mc-icon svg{display:block}
     .mc-name{
-      font-family:var(--display);font-size:1.5rem;letter-spacing:.1em;
-      text-transform:uppercase;color:var(--text);display:block;margin-bottom:9px;
+      font-family:var(--display);font-size:1.45rem;letter-spacing:.1em;
+      text-transform:uppercase;color:var(--text);display:block;margin-bottom:8px;
     }
     .mc-desc{
-      font-family:var(--mono);font-size:.72rem;letter-spacing:.06em;
-      color:rgba(242,233,228,0.55);line-height:1.65;display:block;
+      font-family:var(--mono);font-size:.68rem;letter-spacing:.05em;
+      color:rgba(242,233,228,0.5);line-height:1.65;display:block;flex:1;
+    }
+    .mc-arrow{
+      display:inline-block;
+      font-family:var(--mono);font-size:.58rem;letter-spacing:.14em;
+      text-transform:uppercase;
+      color:var(--mc-color,var(--red));
+      margin-top:14px;
+      opacity:0.4;
+      transition:transform .18s,opacity .18s;
     }
 
     #settings-btn{
@@ -265,6 +302,108 @@
     }
     #settings-btn:hover{color:var(--text);border-color:rgba(255,255,255,0.22)}
     #settings-btn.active{color:var(--red);border-color:rgba(227,28,18,0.4);background:rgba(227,28,18,0.06)}
+
+    #howto-btn{
+      background:none;border:1px solid rgba(227,28,18,0.3);
+      color:rgba(227,28,18,0.7);cursor:pointer;padding:7px 14px;
+      display:flex;align-items:center;gap:6px;
+      font-family:var(--mono);font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;
+      transition:color .12s,border-color .12s,background .12s;flex-shrink:0;
+    }
+    #howto-btn:hover{color:var(--red);border-color:rgba(227,28,18,0.6);background:rgba(227,28,18,0.06)}
+
+    /* ─── QUICKSTART OVERLAY ──────────────────────────────── */
+    #qs-overlay{
+      display:none;position:fixed;inset:0;z-index:300;
+      background:rgba(0,0,0,0.72);
+      backdrop-filter:blur(3px);
+      cursor:pointer;
+    }
+    #qs-overlay.show{display:block}
+    #qs-panel{
+      position:fixed;top:50%;left:50%;z-index:301;
+      transform:translate(-50%,-50%) scale(0.96);
+      width:min(520px,92vw);
+      max-height:88dvh;
+      overflow-y:auto;
+      background:rgba(8,5,5,0.99);
+      border:1px solid rgba(255,255,255,0.08);
+      border-top:3px solid var(--red);
+      display:none;
+      flex-direction:column;
+      transition:transform .22s cubic-bezier(0.15,0,0,1),opacity .18s;
+      opacity:0;
+      cursor:default;
+    }
+    #qs-panel.open{
+      display:flex;transform:translate(-50%,-50%) scale(1);opacity:1;
+    }
+    .qs-header{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:22px 26px 16px;
+      border-bottom:1px solid rgba(255,255,255,0.07);
+      flex-shrink:0;
+    }
+    .qs-title{font-family:var(--display);font-size:1.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text)}
+    .qs-title span{color:var(--red)}
+    #qs-close{
+      background:none;border:1px solid rgba(255,255,255,0.1);
+      color:var(--sub);cursor:pointer;padding:7px 12px;
+      font-size:.9rem;line-height:1;
+      transition:color .12s,border-color .12s;
+    }
+    #qs-close:hover{color:var(--red);border-color:rgba(227,28,18,0.35)}
+    .qs-body{padding:26px 26px 28px;display:flex;flex-direction:column;gap:28px}
+    .qs-steps{display:flex;flex-direction:column;gap:14px}
+    .qs-step{
+      display:flex;gap:14px;align-items:flex-start;
+    }
+    .qs-num{
+      flex-shrink:0;
+      width:26px;height:26px;
+      background:var(--red);
+      font-family:var(--display);font-size:1rem;letter-spacing:.04em;
+      color:#fff;display:flex;align-items:center;justify-content:center;
+      line-height:1;
+    }
+    .qs-step-body{display:flex;flex-direction:column;gap:4px;padding-top:3px}
+    .qs-step-title{font-family:var(--display);font-size:1.05rem;letter-spacing:.08em;text-transform:uppercase;color:var(--text)}
+    .qs-step-desc{font-family:var(--mono);font-size:.7rem;letter-spacing:.04em;color:var(--sub);line-height:1.6}
+    .qs-step-desc b{color:rgba(242,233,228,0.8);font-weight:normal}
+    .qs-divider{
+      height:1px;
+      background:linear-gradient(90deg,transparent 0%,rgba(227,28,18,0.2) 30%,rgba(227,28,18,0.2) 70%,transparent 100%);
+    }
+    .qs-modes{display:flex;flex-direction:column;gap:10px}
+    .qs-mode-row{
+      display:flex;align-items:flex-start;gap:12px;
+      padding:10px 12px;
+      background:rgba(255,255,255,0.02);
+      border-left:2px solid rgba(227,28,18,0.35);
+    }
+    .qs-mode-icon{color:var(--red);flex-shrink:0;margin-top:1px}
+    .qs-mode-body{display:flex;flex-direction:column;gap:3px}
+    .qs-mode-name{font-family:var(--display);font-size:.95rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text)}
+    .qs-mode-desc{font-family:var(--mono);font-size:.68rem;letter-spacing:.04em;color:var(--sub);line-height:1.55}
+    .qs-section-label{
+      font-family:var(--mono);font-size:.58rem;letter-spacing:.2em;
+      text-transform:uppercase;color:rgba(242,233,228,0.3);
+      margin-bottom:2px;
+    }
+    .qs-start-btn{
+      margin-top:4px;
+      font-family:var(--display);font-size:.95rem;
+      letter-spacing:.12em;text-transform:uppercase;
+      background:var(--red);border:none;
+      padding:11px 32px;color:#fff;cursor:pointer;
+      transition:opacity .12s;align-self:flex-start;
+    }
+    .qs-start-btn:hover{opacity:.85}
+    @media(max-width:520px){
+      .qs-header{padding:16px 16px 14px}
+      .qs-body{padding:18px 16px 22px;gap:22px}
+      #qs-panel{max-height:96dvh}
+    }
 
     /* ─── SETTINGS OVERLAY ──────────────────────────────── */
     #settings-overlay{
@@ -318,6 +457,46 @@
     .seg-ctrl button:last-child{border-right:none}
     .seg-ctrl button.active{background:var(--red);color:#fff}
 
+    /* ─── ALBUM PICKER ──────────────────────────────────── */
+    #album-picker{
+      margin-top:8px;
+      max-height:180px;
+      overflow-y:auto;
+      border:1px solid rgba(255,255,255,0.07);
+      background:rgba(0,0,0,0.2);
+      padding:4px 0;
+    }
+    .album-cb-row{
+      display:flex;align-items:center;gap:9px;
+      padding:6px 12px;cursor:pointer;
+      transition:background .07s;
+    }
+    .album-cb-row:hover{background:rgba(255,255,255,0.04)}
+    .album-cb-row input[type=checkbox]{display:none}
+    .album-cb-box{
+      width:13px;height:13px;
+      border:1px solid rgba(255,255,255,0.22);
+      flex-shrink:0;position:relative;
+      transition:background .1s,border-color .1s;
+    }
+    .album-cb-row input:checked+.album-cb-box{background:var(--red);border-color:var(--red)}
+    .album-cb-row input:checked+.album-cb-box::after{
+      content:'';display:block;position:absolute;
+      left:2px;top:1px;width:7px;height:4px;
+      border-left:1.5px solid #fff;border-bottom:1.5px solid #fff;
+      transform:rotate(-45deg);
+    }
+    .album-cb-name{
+      font-family:var(--mono);font-size:.7rem;letter-spacing:.04em;
+      color:var(--sub);line-height:1.2;
+    }
+    .album-cb-row:hover .album-cb-name{color:var(--text)}
+    #album-picker-msg{
+      padding:10px 12px;
+      font-family:var(--mono);font-size:.62rem;
+      letter-spacing:.1em;color:var(--sub2);text-align:center;
+    }
+
     /* ─── RANKED BAR ────────────────────────────────────── */
     #ranked-bar{
       display:none;align-items:center;justify-content:center;gap:32px;
@@ -355,7 +534,7 @@
     }
 
     /* ─── SPLASH ────────────────────────────────────────── */
-    #splash{text-align:center;position:relative}
+    #splash{text-align:center;position:relative;width:100%;max-width:640px}
 
     /* big red GUESS behind everything */
     .splash-bg-word{
@@ -420,30 +599,36 @@
     @keyframes spin{to{transform:rotate(360deg)}}
 
     /* ─── GAME ──────────────────────────────────────────── */
-    #game{display:none;flex-direction:column;align-items:center;width:100%;max-width:640px}
+    #game{display:none;flex-direction:column;align-items:center;width:100%;max-width:620px}
     #game.show{display:flex}
 
-    #hints{display:flex;gap:14px;margin-bottom:42px;flex-wrap:wrap;justify-content:center}
+    .hidden{display:none!important}
+    #hints{display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:36px}
+    #hint-lock{font-family:var(--mono);font-size:.72rem;letter-spacing:.08em;color:var(--sub);cursor:default;text-transform:uppercase}
+    #hint-lock.ready{color:var(--red);cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}
+    #hint-tags{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
     .tag{
-      font-family:var(--mono);font-size:.78rem;letter-spacing:.12em;
-      text-transform:uppercase;color:rgba(242,233,228,0.65);
-      border-left:2px solid var(--red);padding:3px 0 3px 10px;
+      font-family:var(--mono);font-size:.7rem;letter-spacing:.12em;
+      text-transform:uppercase;color:rgba(242,233,228,0.6);
+      border-left:2px solid var(--red);
+      padding:4px 10px;
+      background:rgba(227,28,18,0.04);
     }
     .tag:empty{display:none}
 
     /* ─── LYRIC BLOCK ───────────────────────────────────── */
     #lyric-block{
-      width:100%;text-align:center;margin-bottom:52px;
-      min-height:140px;display:flex;flex-direction:column;
-      align-items:center;gap:22px;
+      width:100%;text-align:center;margin-bottom:44px;
+      min-height:130px;display:flex;flex-direction:column;
+      align-items:center;gap:20px;
     }
     #word-history{
       font-family:var(--worn);
-      font-size:1rem;color:var(--text);
+      font-size:1.1rem;color:var(--text);
       line-height:2.4;word-spacing:8px;max-width:700px;
-      max-height:4.5rem;overflow:hidden;
-      -webkit-mask-image:linear-gradient(to bottom, transparent 0%, black 50%);
-      mask-image:linear-gradient(to bottom, transparent 0%, black 50%);
+      max-height:6rem;overflow:hidden;
+      -webkit-mask-image:linear-gradient(to bottom, rgba(0,0,0,0.25) 0%, black 35%);
+      mask-image:linear-gradient(to bottom, rgba(0,0,0,0.25) 0%, black 35%);
     }
     #word-history:empty{display:none}
     #current-word{
@@ -472,24 +657,30 @@
 
     #song-input{
       flex:1;min-width:0;
-      background:rgba(6,4,4,0.82);
+      background:rgba(6,4,4,0.88);
       border:1px solid rgba(255,255,255,0.1);
       border-right:none;
       border-left:3px solid var(--red);
-      padding:13px 18px;
+      padding:14px 18px;
       font-family:var(--mono);font-size:.88rem;letter-spacing:.04em;
       color:var(--text);outline:none;
       backdrop-filter:blur(10px);
-      transition:background .15s,border-color .15s;
+      transition:background .15s,border-color .15s,box-shadow .15s;
     }
     #song-input::placeholder{color:var(--sub);text-transform:uppercase;font-size:.65rem;letter-spacing:.14em}
-    #song-input:focus{background:rgba(10,6,6,0.94);border-top-color:rgba(255,255,255,0.18);border-bottom-color:rgba(255,255,255,0.18)}
+    #song-input:focus{
+      background:rgba(10,6,6,0.97);
+      border-top-color:rgba(255,255,255,0.18);
+      border-bottom-color:rgba(255,255,255,0.18);
+      box-shadow:inset 0 0 0 1px rgba(227,28,18,0.08);
+    }
 
     #reveal-btn{
       flex-shrink:0;
-      background:rgba(6,4,4,0.82);
+      background:rgba(6,4,4,0.88);
       border:1px solid rgba(255,255,255,0.1);
-      padding:13px 18px;
+      border-left:1px solid rgba(255,255,255,0.06);
+      padding:14px 16px;
       font-family:var(--mono);font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;
       color:var(--sub);cursor:pointer;white-space:nowrap;
       backdrop-filter:blur(10px);
@@ -644,6 +835,84 @@
     }
     .ds-count{font-family:var(--mono);font-size:.64rem;color:var(--sub2);text-align:right}
 
+    /* ─── LEADERBOARD ─────────────────────────────────────── */
+    #splash-leaderboard{
+      margin-top:36px;
+      width:100%;max-width:640px;
+      text-align:left;
+    }
+    .slb-header{
+      display:flex;align-items:center;justify-content:space-between;
+      margin-bottom:12px;
+    }
+    .slb-title{
+      font-family:var(--mono);font-size:.58rem;letter-spacing:.2em;text-transform:uppercase;
+      color:var(--sub);
+    }
+    .slb-title::before{content:'■ ';color:var(--red);opacity:.6}
+    .slb-subtitle{
+      font-family:var(--mono);font-size:.55rem;letter-spacing:.12em;text-transform:uppercase;
+      color:rgba(242,233,228,0.2);
+    }
+    .slb-rows{display:flex;flex-direction:column;gap:2px}
+    .slb-row{
+      display:grid;grid-template-columns:32px 1fr auto;
+      align-items:center;gap:10px;
+      padding:9px 12px;
+      background:rgba(255,255,255,0.02);
+      border-left:2px solid transparent;
+      transition:background .12s,border-color .12s;
+      position:relative;
+      overflow:hidden;
+    }
+    .slb-row::after{
+      content:'';position:absolute;inset:0;
+      background:linear-gradient(90deg,var(--slb-glow,transparent) 0%,transparent 60%);
+      opacity:.06;pointer-events:none;
+    }
+    .slb-row:hover{background:rgba(255,255,255,0.05)}
+    .slb-row.gold{border-left-color:rgba(255,200,40,0.6);--slb-glow:rgba(255,200,40,0.8)}
+    .slb-row.silver{border-left-color:rgba(192,192,192,0.45);--slb-glow:rgba(192,192,192,0.8)}
+    .slb-row.bronze{border-left-color:rgba(205,127,50,0.5);--slb-glow:rgba(205,127,50,0.8)}
+    .slb-rank{
+      font-family:var(--mono);font-size:.62rem;letter-spacing:.06em;
+      color:var(--sub2);text-align:center;
+      line-height:1;
+    }
+    .slb-row.gold .slb-rank{color:rgba(255,200,40,0.85);font-size:.88rem}
+    .slb-row.silver .slb-rank{color:rgba(192,192,192,0.75);font-size:.78rem}
+    .slb-row.bronze .slb-rank{color:rgba(205,127,50,0.8);font-size:.72rem}
+    .slb-name{
+      font-family:var(--mono);font-size:.78rem;color:var(--text);
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+      letter-spacing:.02em;
+    }
+    .slb-row.gold .slb-name{color:#fff}
+    .slb-score-wrap{
+      display:flex;align-items:baseline;gap:3px;
+    }
+    .slb-score{
+      font-family:var(--display);font-size:1.2rem;letter-spacing:.06em;
+      color:var(--text);text-align:right;
+    }
+    .slb-row.gold .slb-score{color:rgba(255,200,40,0.9)}
+    .slb-score-unit{
+      font-family:var(--mono);font-size:.44rem;letter-spacing:.1em;
+      text-transform:uppercase;color:var(--sub2);
+    }
+    .slb-empty{
+      font-family:var(--mono);font-size:.56rem;letter-spacing:.14em;
+      text-transform:uppercase;color:var(--sub2);text-align:center;padding:18px 0;
+    }
+    .slb-divider{
+      width:100%;height:1px;
+      background:linear-gradient(90deg,transparent 0%,rgba(227,28,18,0.18) 30%,rgba(227,28,18,0.18) 70%,transparent 100%);
+      margin:10px 0;
+    }
+    @media(max-width:520px){
+      #splash-leaderboard{margin-top:28px}
+    }
+
     /* ─── FOOTER ────────────────────────────────────────── */
     footer{
       border-top:1px solid rgba(227,28,18,0.15);
@@ -656,6 +925,54 @@
       font-family:var(--display);font-size:.9rem;letter-spacing:.15em;
       color:rgba(227,28,18,0.28);
     }
+
+    /* ─── DAILY UNAVAILABLE ──────────────────────────────── */
+    #daily-unavailable{
+      display:none;flex-direction:column;align-items:center;justify-content:center;
+      text-align:center;width:100%;max-width:480px;
+      animation:correctPop .3s cubic-bezier(0.15,0,0,1.1) forwards;
+    }
+    #daily-unavailable.show{display:flex}
+    .du-icon{
+      color:rgba(227,28,18,0.35);
+      margin-bottom:20px;
+    }
+    .du-title{
+      font-family:var(--display);font-size:2rem;letter-spacing:.1em;
+      text-transform:uppercase;color:var(--text);margin-bottom:8px;
+    }
+    .du-title span{color:var(--red)}
+    .du-date{
+      font-family:var(--mono);font-size:.62rem;letter-spacing:.18em;
+      text-transform:uppercase;color:var(--sub);margin-bottom:24px;
+    }
+    .du-card{
+      width:100%;padding:20px 24px;
+      background:rgba(10,6,6,0.85);
+      border:1px solid rgba(255,255,255,0.06);
+      border-left:3px solid rgba(227,28,18,0.4);
+      display:flex;flex-direction:column;gap:10px;
+      margin-bottom:28px;
+    }
+    .du-msg{
+      font-family:var(--mono);font-size:.78rem;letter-spacing:.04em;
+      color:var(--sub);line-height:1.65;
+    }
+    .du-msg b{color:rgba(242,233,228,0.75);font-weight:normal}
+    .du-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+    .du-btn-primary{
+      font-family:var(--display);font-size:.85rem;letter-spacing:.12em;text-transform:uppercase;
+      background:var(--red);border:none;padding:9px 26px 8px;
+      color:#fff;cursor:pointer;transition:opacity .12s;
+    }
+    .du-btn-primary:hover{opacity:.85}
+    .du-btn-secondary{
+      font-family:var(--mono);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;
+      background:none;border:1px solid rgba(255,255,255,0.12);
+      padding:9px 20px;color:var(--sub);cursor:pointer;
+      transition:color .12s,border-color .12s;
+    }
+    .du-btn-secondary:hover{color:var(--text);border-color:rgba(255,255,255,0.25)}
 
     /* ─── SHAKE ─────────────────────────────────────────── */
     @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}60%{transform:translateX(5px)}80%{transform:translateX(-3px)}}
@@ -671,11 +988,16 @@
 
       /* splash */
       .splash-bg-word{display:none}
-      #mode-cards{gap:10px;margin-top:20px}
-      /* two cards per row, third centres below */
-      .mode-card{width:calc(50% - 5px);padding:16px 14px 14px}
+      #mode-cards{
+        grid-template-columns:1fr 1fr;
+        gap:8px;margin-top:20px;
+      }
+      /* third card spans full width */
+      .mode-card:nth-child(3){grid-column:1/-1}
+      .mode-card{padding:16px 14px 14px}
       .mc-name{font-size:1rem}
       .mc-desc{font-size:.5rem}
+      .mc-arrow{font-size:.5rem;margin-top:10px}
 
       /* game */
       #lyric-block{margin-bottom:28px;gap:14px}
@@ -767,6 +1089,72 @@
       color:#fff;cursor:pointer;transition:opacity .12s;
     }
     .re-play-again:hover{opacity:.85}
+
+    /* ─── SPLASH PERSONAL STATS ──────────────────────── */
+    #splash-stats{
+      margin-top:36px;
+      width:100%;max-width:640px;
+      text-align:left;
+    }
+    .ss-header{
+      display:flex;align-items:center;justify-content:space-between;
+      margin-bottom:12px;
+    }
+    .ss-title{
+      font-family:var(--mono);font-size:.58rem;letter-spacing:.2em;text-transform:uppercase;
+      color:var(--sub);
+    }
+    .ss-title::before{content:'■ ';color:var(--red);opacity:.6}
+    .ss-reset-btn{
+      background:none;border:none;
+      font-family:var(--mono);font-size:.52rem;letter-spacing:.1em;text-transform:uppercase;
+      color:var(--sub2);cursor:pointer;padding:3px 0;
+      transition:color .12s;
+    }
+    .ss-reset-btn:hover{color:rgba(227,28,18,0.7)}
+    .ss-kpis{
+      display:grid;grid-template-columns:repeat(4,1fr);
+      gap:3px;margin-bottom:14px;
+    }
+    .ss-kpi{
+      background:rgba(10,6,6,0.75);
+      border:1px solid rgba(255,255,255,0.05);
+      border-top:2px solid rgba(255,255,255,0.06);
+      padding:14px 8px 10px;text-align:center;
+      transition:border-color .15s;
+    }
+    .ss-kpi:hover{border-color:rgba(255,255,255,0.1)}
+    .ss-kpi-val{
+      font-family:var(--display);font-size:2rem;letter-spacing:.04em;
+      color:var(--text);line-height:1;
+    }
+    .ss-kpi-val.accent{
+      color:var(--red);
+      text-shadow:0 0 20px rgba(227,28,18,0.3);
+    }
+    .ss-kpi-lbl{
+      font-family:var(--mono);font-size:.44rem;letter-spacing:.14em;
+      text-transform:uppercase;color:var(--sub);margin-top:6px;
+    }
+    .ss-dist-title{
+      font-family:var(--mono);font-size:.52rem;letter-spacing:.16em;
+      text-transform:uppercase;color:var(--sub2);margin-bottom:8px;
+    }
+    .ss-dist-rows{display:flex;flex-direction:column;gap:5px}
+    .ss-dist-row{display:grid;grid-template-columns:60px 1fr 28px;align-items:center;gap:8px}
+    .ss-dist-lbl{font-family:var(--mono);font-size:.56rem;letter-spacing:.04em;color:var(--sub);text-align:right}
+    .ss-dist-track{height:11px;background:rgba(255,255,255,0.04);position:relative;overflow:hidden}
+    .ss-dist-fill{
+      position:absolute;top:0;left:0;height:100%;
+      background:var(--red);opacity:.75;
+      transition:width .6s cubic-bezier(0.15,0,0,1);
+    }
+    .ss-dist-count{font-family:var(--mono);font-size:.56rem;color:var(--sub2);text-align:right}
+    @media(max-width:520px){
+      #splash-stats{margin-top:24px}
+      .ss-kpi-val{font-size:1.5rem}
+      .ss-kpi{padding:12px 6px 8px}
+    }
   </style>
 </head>
 <body>
@@ -779,11 +1167,17 @@
 <div id="bg-year">2020</div>
 
 <nav>
-  <span class="wordmark" onclick="location.href='/'">C<span class="wm-hl">otso</span>zanuta</span>
-  <button id="settings-btn" aria-label="Ustawienia">
-    <svg width="15" height="11" viewBox="0 0 15 11" fill="none"><line x1="0" y1="1.8" x2="15" y2="1.8" stroke="currentColor" stroke-width="1.3"/><circle cx="5" cy="1.8" r="2" fill="rgba(6,4,4,0.9)" stroke="currentColor" stroke-width="1.3"/><line x1="0" y1="9.2" x2="15" y2="9.2" stroke="currentColor" stroke-width="1.3"/><circle cx="10" cy="9.2" r="2" fill="rgba(6,4,4,0.9)" stroke="currentColor" stroke-width="1.3"/></svg>
-    Ustawienia
-  </button>
+  <a class="wordmark" href="/" id="home-link">C<span class="wm-hl">otso</span>zanuta<span class="wm-sub">.pl</span></a>
+  <div style="display:flex;align-items:center;gap:10px">
+    <button id="howto-btn" aria-label="Jak grać">
+      <svg width="14" height="14" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="9" cy="9" r="8"/><path d="M6.8 6.8c.3-1 1.2-1.7 2.2-1.5 1 .15 1.6.9 1.6 1.7 0 1-1 1.5-1.6 2v.6"/><circle cx="9" cy="13.5" r=".7" fill="currentColor" stroke="none"/></svg>
+      jak grać?
+    </button>
+    <button id="settings-btn" aria-label="Ustawienia">
+      <svg width="15" height="11" viewBox="0 0 15 11" fill="none"><line x1="0" y1="1.8" x2="15" y2="1.8" stroke="currentColor" stroke-width="1.3"/><circle cx="5" cy="1.8" r="2" fill="rgba(6,4,4,0.9)" stroke="currentColor" stroke-width="1.3"/><line x1="0" y1="9.2" x2="15" y2="9.2" stroke="currentColor" stroke-width="1.3"/><circle cx="10" cy="9.2" r="2" fill="rgba(6,4,4,0.9)" stroke="currentColor" stroke-width="1.3"/></svg>
+      Ustawienia
+    </button>
+  </div>
 </nav>
 
 <div id="mode-bar">
@@ -799,6 +1193,86 @@
     <svg width="18" height="18" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="12" r="8"/><line x1="11" y1="12" x2="11" y2="7"/><line x1="11" y1="12" x2="15" y2="14"/><line x1="8" y1="2" x2="14" y2="2"/></svg>
     Rankingowy
   </button>
+</div>
+
+<div id="qs-overlay"></div>
+<div id="qs-panel" role="dialog" aria-modal="true" aria-label="Jak grać">
+  <div class="qs-header">
+    <span class="qs-title">Jak <span>grać</span>?</span>
+    <button id="qs-close" aria-label="Zamknij">&#10005;</button>
+  </div>
+  <div class="qs-body">
+    <div>
+      <div class="qs-section-label">zasady</div>
+      <div class="qs-steps">
+        <div class="qs-step">
+          <div class="qs-num">1</div>
+          <div class="qs-step-body">
+            <span class="qs-step-title">Jedno słowo z tekstu</span>
+            <span class="qs-step-desc">Na ekranie pojawia się <b>jedno losowe słowo</b> z tekstu piosenki Otsochodzi. Na tej podstawie próbujesz odgadnąć tytuł.</span>
+          </div>
+        </div>
+        <div class="qs-step">
+          <div class="qs-num">2</div>
+          <div class="qs-step-body">
+            <span class="qs-step-title">Wpisz tytuł piosenki</span>
+            <span class="qs-step-desc">Zacznij pisać w polu i wybierz piosenkę z podpowiedzi. Autocomplete zawiera <b>całą dyskografię</b> &mdash; nie musisz wpisywać dokładnie.</span>
+          </div>
+        </div>
+        <div class="qs-step">
+          <div class="qs-num">3</div>
+          <div class="qs-step-body">
+            <span class="qs-step-title">Odkrywaj więcej słów</span>
+            <span class="qs-step-desc">Nie wiesz? Kliknij <b>+1 słowo</b>, żeby zobaczyć kolejne słowo z tekstu. Im więcej słów potrzebujesz, tym trudniejsza zagadka &mdash; spróbuj zgadnąć na jak najmniejszej liczbie słów.</span>
+          </div>
+        </div>
+        <div class="qs-step">
+          <div class="qs-num">4</div>
+          <div class="qs-step-body">
+            <span class="qs-step-title">Podaj się lub zdobądź punkt</span>
+            <span class="qs-step-desc">Trafisz? Wygrywasz rundę i możesz grać dalej. Nie dajesz rady? Kliknij <b>poddaj się</b>, żeby ujawnić odpowiedź.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="qs-divider"></div>
+    <div>
+      <div class="qs-section-label">tryby gry</div>
+      <div class="qs-modes">
+        <div class="qs-mode-row">
+          <span class="qs-mode-icon"><svg width="20" height="13" viewBox="0 0 28 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 9 C5 2,9 2,14 9 S23 16,26 9"/></svg></span>
+          <div class="qs-mode-body">
+            <span class="qs-mode-name">Bez końca</span>
+            <span class="qs-mode-desc">Losowe piosenki, grasz ile chcesz. Idealny na rozgrzewkę lub luźną sesję.</span>
+          </div>
+        </div>
+        <div class="qs-mode-row">
+          <span class="qs-mode-icon"><svg width="18" height="18" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2" y="4" width="18" height="16" rx="1"/><line x1="2" y1="9" x2="20" y2="9"/><line x1="7" y1="2" x2="7" y2="6"/><line x1="15" y1="2" x2="15" y2="6"/></svg></span>
+          <div class="qs-mode-body">
+            <span class="qs-mode-name">Dzienny</span>
+            <span class="qs-mode-desc">Jedna piosenka dziennie &mdash; <b>ta sama dla wszystkich</b>. Sprawdź ile słów potrzebowałeś i porównaj ze statystykami innych graczy.</span>
+          </div>
+        </div>
+        <div class="qs-mode-row">
+          <span class="qs-mode-icon"><svg width="18" height="18" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="12" r="8"/><line x1="11" y1="12" x2="11" y2="7"/><line x1="11" y1="12" x2="15" y2="14"/><line x1="8" y1="2" x2="14" y2="2"/></svg></span>
+          <div class="qs-mode-body">
+            <span class="qs-mode-name">Rankingowy</span>
+            <span class="qs-mode-desc"><b>60 sekund</b> na zgadnięcie jak największej liczby piosenek. Zdobyte punkty możesz zapisać na liście najlepszych wyników.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="qs-divider"></div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="qs-section-label">wskazówki</div>
+      <div style="font-family:var(--mono);font-size:.72rem;letter-spacing:.04em;color:var(--sub);line-height:1.7">
+        &#9632;&nbsp; W ustawieniach możesz zmienić ile słów odkrywa się naraz (+1, +2 lub +3).<br>
+        &#9632;&nbsp; Hinty (album, rok) odblokowują się po odkryciu 5 słów &mdash; kliknij by je zobaczyć. Niedostępne w rankingowym.<br>
+        &#9632;&nbsp; W trybie rankingowym pomiń piosenkę przyciskiem <b>pomiń</b> &mdash; czas leci!
+      </div>
+    </div>
+    <button class="qs-start-btn" id="qs-play-btn">zagraj teraz &#8594;</button>
+  </div>
 </div>
 
 <div id="settings-overlay"></div>
@@ -829,6 +1303,17 @@
       </div>
       <p class="settings-hint">Od którego miejsca w tekście zaczyna się zgadywanie.</p>
     </div>
+    <div class="settings-row">
+      <div class="settings-row-top">
+        <span class="settings-label">pula piosenek</span>
+        <div class="seg-ctrl" id="album-mode-ctrl">
+          <button data-val="all" class="active">wszystkie</button>
+          <button data-val="albums">albumy</button>
+        </div>
+      </div>
+      <p class="settings-hint">Ogranicza tryb bez końca do wybranych albumów. Nie działa w rankingowym.</p>
+      <div id="album-picker" style="display:none"></div>
+    </div>
   </div>
 </div>
 
@@ -847,33 +1332,69 @@
   <div id="splash">
     <div class="splash-bg-word">RAP</div>
     <div class="splash-pill">zgadnij nute otsika</div>
-    <h1><div>C<em>otso</em></div><div>za nuta</div>.pl</h1>
+    <h1><div>C<em>otso</em></div><div>za nuta</div></h1>
     <div id="mode-cards">
       <button class="mode-card" data-mode="endless">
         <span class="mc-icon"><svg width="28" height="18" viewBox="0 0 28 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 9 C5 2,9 2,14 9 S23 16,26 9"/></svg></span>
         <span class="mc-name">Bez końca</span>
         <span class="mc-desc">Losowe piosenki,<br>graj ile chcesz</span>
+        <span class="mc-arrow">zagraj &#8594;</span>
       </button>
       <button class="mode-card" data-mode="daily">
         <span class="mc-icon"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2" y="4" width="18" height="16" rx="1"/><line x1="2" y1="9" x2="20" y2="9"/><line x1="7" y1="2" x2="7" y2="6"/><line x1="15" y1="2" x2="15" y2="6"/><line x1="6" y1="13" x2="8" y2="13"/><line x1="6" y1="16" x2="8" y2="16"/><line x1="10.5" y1="13" x2="12.5" y2="13"/><line x1="15" y1="13" x2="17" y2="13"/></svg></span>
         <span class="mc-name">Dzienny</span>
         <span class="mc-desc">Jedna piosenka dziennie,<br>ta sama dla wszystkich</span>
+        <span class="mc-arrow">zagraj &#8594;</span>
       </button>
       <button class="mode-card" data-mode="ranked">
         <span class="mc-icon"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="12" r="8"/><line x1="11" y1="12" x2="11" y2="7"/><line x1="11" y1="12" x2="15" y2="14"/><line x1="8" y1="2" x2="14" y2="2"/></svg></span>
         <span class="mc-name">Rankingowy</span>
         <span class="mc-desc">60 sekund &mdash; zgadnij<br>ile tylko możesz</span>
+        <span class="mc-arrow">zagraj &#8594;</span>
       </button>
+    </div>
+    <div id="splash-stats"></div>
+    <div id="splash-leaderboard">
+      <div class="slb-header">
+        <span class="slb-title">&#9632;&nbsp; top 10 &mdash; rankingowy</span>
+        <span class="slb-subtitle">najlepsze wyniki</span>
+      </div>
+      <div class="slb-divider"></div>
+      <div class="slb-rows" id="slb-rows"><div class="slb-empty">ładowanie&#8230;</div></div>
     </div>
   </div>
   <div id="loading">
     <div class="spinner"></div>
     <p>ładowanie&#8230;</p>
   </div>
+  <div id="daily-unavailable">
+    <div class="du-icon">
+      <svg width="52" height="52" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
+        <rect x="2" y="4" width="18" height="16" rx="1"/>
+        <line x1="2" y1="9" x2="20" y2="9"/>
+        <line x1="7" y1="2" x2="7" y2="6"/>
+        <line x1="15" y1="2" x2="15" y2="6"/>
+        <line x1="8" y1="13" x2="14" y2="17"/>
+        <line x1="14" y1="13" x2="8" y2="17"/>
+      </svg>
+    </div>
+    <div class="du-title">Brak <span>zagadki</span></div>
+    <div class="du-date" id="du-date-label"></div>
+    <div class="du-card">
+      <div class="du-msg" id="du-msg">Na ten dzień nie ustawiono jeszcze piosenki dziennej.<br>Wróć jutro lub zagraj w innym trybie.</div>
+    </div>
+    <div class="du-actions">
+      <button class="du-btn-primary" id="du-endless-btn">Bez końca &#8594;</button>
+      <button class="du-btn-secondary" id="du-prev-day-btn">&#8592; poprzedni dzień</button>
+    </div>
+  </div>
   <div id="game">
     <div id="hints">
-      <span class="tag" id="hint-album"></span>
-      <span class="tag" id="hint-release"></span>
+      <span id="hint-lock"></span>
+      <div id="hint-tags" class="hidden">
+        <span class="tag" id="hint-album"></span>
+        <span class="tag" id="hint-release"></span>
+      </div>
     </div>
     <div id="lyric-block">
       <div id="word-history"></div>
@@ -924,13 +1445,13 @@
 </div>
 
 <script>
-  let songId=null,wordIndex=0,revealedWords=[],solved=false,dailyDate=new Date(),acFocused=-1,activeMode='endless',revealCount=0,songTitle=null
-  let songCover=null,songArtists=[],songFeatured=[]
-  let settings={wordsPerReveal:1,startMode:'random'}
-  try{const s=JSON.parse(localStorage.getItem('settings'));if(s){settings.wordsPerReveal=s.wordsPerReveal||1;settings.startMode=s.startMode||'random'}}catch(e){}
+  let songId=null,wordIndex=0,revealedWords=[],solved=false,dailyDate=new Date(),acFocused=-1,activeMode='endless',revealCount=0,songTitle=null,hintsUnlocked=false
+  let songCover=null,songArtists=[],songFeatured=[],lyricWords=null
+  let settings={wordsPerReveal:1,startMode:'random',albumMode:'all',selectedAlbums:[]}
+  try{const s=JSON.parse(localStorage.getItem('settings'));if(s){settings.wordsPerReveal=s.wordsPerReveal||1;settings.startMode=s.startMode||'random';settings.albumMode=s.albumMode||'all';settings.selectedAlbums=Array.isArray(s.selectedAlbums)?s.selectedAlbums:[]}}catch(e){}
   function saveSettings(){try{localStorage.setItem('settings',JSON.stringify(settings))}catch(e){}}
-  let rankedActive=false,rankedScore=0,rankedTimer=null,rankedSecondsLeft=60
-  const splash=document.getElementById('splash'),loading=document.getElementById('loading'),game=document.getElementById('game')
+  let rankedActive=false,rankedScore=0,rankedTimer=null,rankedSecondsLeft=60,rankedSessionId=null
+  const splash=document.getElementById('splash'),loading=document.getElementById('loading'),game=document.getElementById('game'),dailyUnavailable=document.getElementById('daily-unavailable')
   const dateBar=document.getElementById('date-bar'),dateLabel=document.getElementById('date-label')
   const historyEl=document.getElementById('word-history'),currentEl=document.getElementById('current-word')
   const input=document.getElementById('song-input'),acList=document.getElementById('ac-list')
@@ -948,6 +1469,7 @@
     settingsBtn.classList.add('active')
     settingsOverlay.classList.add('show')
     document.body.style.overflow='hidden'
+    loadAlbums()
   }
   function closeSettings(){
     settingsPanel.classList.remove('open')
@@ -981,6 +1503,56 @@
     })
   })
 
+  // ─── ALBUM FILTER SETTINGS ───────────────────────────────
+  let albumList=[]
+  function renderAlbumPicker(){
+    const picker=document.getElementById('album-picker')
+    if(!picker)return
+    if(!albumList.length){picker.innerHTML='<div id="album-picker-msg">brak danych o albumach</div>';return}
+    picker.innerHTML=albumList.map(a=>{
+      const checked=settings.selectedAlbums.includes(a.id)?' checked':''
+      return'<label class="album-cb-row"><input type="checkbox" value="'+esc(a.id)+'"'+checked+'>'
+        +'<div class="album-cb-box"></div>'
+        +'<span class="album-cb-name">'+esc(a.name)+'</span></label>'
+    }).join('')
+    picker.querySelectorAll('input[type=checkbox]').forEach(cb=>{
+      cb.addEventListener('change',()=>{
+        settings.selectedAlbums=[...picker.querySelectorAll('input[type=checkbox]:checked')].map(c=>c.value)
+        saveSettings()
+      })
+    })
+  }
+  async function loadAlbums(){
+    const picker=document.getElementById('album-picker')
+    if(albumList.length>0){if(settings.albumMode==='albums')renderAlbumPicker();return}
+    if(picker&&settings.albumMode==='albums')picker.innerHTML='<div id="album-picker-msg">ładowanie&#8230;</div>'
+    try{
+      const r=await fetch('/api/albums')
+      const data=await r.json()
+      if(Array.isArray(data))albumList=data
+      if(settings.albumMode==='albums')renderAlbumPicker()
+    }catch(e){if(picker&&settings.albumMode==='albums')picker.innerHTML='<div id="album-picker-msg">błąd ładowania</div>'}
+  }
+  // Apply saved album mode to UI
+  document.querySelectorAll('#album-mode-ctrl button').forEach(b=>b.classList.toggle('active',b.dataset.val===settings.albumMode))
+  const _albumPicker=document.getElementById('album-picker')
+  if(settings.albumMode==='albums'&&_albumPicker)_albumPicker.style.display='block'
+  document.querySelectorAll('#album-mode-ctrl button').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      document.querySelectorAll('#album-mode-ctrl button').forEach(b=>b.classList.remove('active'))
+      btn.classList.add('active')
+      settings.albumMode=btn.dataset.val
+      saveSettings()
+      const picker=document.getElementById('album-picker')
+      if(settings.albumMode==='albums'){
+        picker.style.display='block'
+        loadAlbums()
+      }else{
+        picker.style.display='none'
+      }
+    })
+  })
+
   function fmtISO(d){return d.toISOString().split('T')[0]}
   function fmtLabel(d){return d.toLocaleDateString('pl-PL',{day:'numeric',month:'short',year:'numeric'})}
   function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
@@ -989,6 +1561,8 @@
     splash.style.display=s==='splash'?'':'none'
     loading.classList.toggle('show',s==='loading')
     game.classList.toggle('show',s==='game')
+    dailyUnavailable.classList.toggle('show',s==='daily-unavailable')
+    if(s==='splash')renderStats()
   }
   function setFeedback(text,type){feedback.textContent=text;feedback.className=type||''}
 
@@ -999,7 +1573,8 @@
     let particles=[],raf=null
     const COLORS=['#4fc85a','#e31c12','#f2e9e4','#ffd700','#00cfff','#ff6bff']
     function resize(){canvas.width=window.innerWidth;canvas.height=window.innerHeight}
-    window.addEventListener('resize',resize);resize()
+    let resizeTimer;
+    window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(resize,100)},{passive:true});resize()
     function Particle(x,y){
       this.x=x;this.y=y
       this.vx=(Math.random()-0.5)*9
@@ -1052,6 +1627,14 @@
     currentEl.classList.add('word-anim')
   }
   async function fetchWord(){
+    if(lyricWords){
+      while(wordIndex<lyricWords.length){
+        const w=lyricWords[wordIndex]
+        if(isHeader(w)){wordIndex++;continue}
+        return w
+      }
+      return null
+    }
     while(true){
       const r=await fetch('/api/lyrics?songId='+songId+'&wordIndex='+wordIndex)
       const d=await r.json()
@@ -1064,6 +1647,7 @@
     showState('loading')
     songId=data.songId;songTitle=data.title||null;songCover=data.cover||null
     songArtists=data.artists||[];songFeatured=data.featured||[]
+    lyricWords=Array.isArray(data.words)?data.words:null
     revealedWords=[];solved=false;revealCount=0
     if(activeMode==='endless'&&settings.startMode==='random'&&data.wordCount>1){
       wordIndex=Math.floor(Math.random()*Math.max(1,data.wordCount-20))
@@ -1080,9 +1664,11 @@
     answerReveal.classList.remove('show');answerReveal.innerHTML=''
     const _ds=document.getElementById('daily-stats');if(_ds){_ds.classList.remove('show');_ds.innerHTML=''}
     setFeedback('')
-    document.getElementById('hints').classList.toggle('hidden',activeMode==='ranked')
+    hintsUnlocked=false
     document.getElementById('hint-album').textContent=data.hints&&data.hints.album?data.hints.album:''
     document.getElementById('hint-release').textContent=data.hints&&data.hints.releaseDate?data.hints.releaseDate:''
+    document.getElementById('hint-tags').classList.add('hidden')
+    updateHintLock()
     const w=await fetchWord()
     if(w===null){setFeedback('brak tekstu','info');showState('splash');return}
     revealedWords.push(w);wordIndex++
@@ -1090,7 +1676,11 @@
   }
   async function loadEndless(){
     showState('loading');setFeedback('')
-    const r=await fetch('/api/game/endless'),d=await r.json()
+    let endlessUrl='/api/game/endless'
+    if(settings.albumMode==='albums'&&settings.selectedAlbums.length){
+      endlessUrl+='?albums='+encodeURIComponent(settings.selectedAlbums.join(','))
+    }
+    const r=await fetch(endlessUrl),d=await r.json()
     if(d.error){setFeedback(d.error,'info');showState('splash');return}
     await startGame(d)
   }
@@ -1171,9 +1761,11 @@
     document.getElementById('next-btn').classList.remove('show')
     answerReveal.classList.remove('show');answerReveal.innerHTML=''
     setFeedback('')
-    document.getElementById('hints').classList.remove('hidden')
+    hintsUnlocked=saved.outcome==='correct'||saved.outcome==='giveup'
     document.getElementById('hint-album').textContent=hints&&hints.album?hints.album:''
     document.getElementById('hint-release').textContent=hints&&hints.releaseDate?hints.releaseDate:''
+    document.getElementById('hint-tags').classList.toggle('hidden',!hintsUnlocked)
+    updateHintLock()
     renderWords()
     if(saved.outcome==='correct'){
       input.disabled=true;revealBtn.disabled=true
@@ -1198,7 +1790,16 @@
   async function loadDaily(){
     showState('loading');setFeedback('')
     const r=await fetch('/api/game/daily/'+fmtISO(dailyDate)),d=await r.json()
-    if(d.error){setFeedback(d.error,'info');showState('splash');return}
+    if(r.status===404||r.status===400||d.error){
+      document.getElementById('du-date-label').textContent=fmtLabel(dailyDate)
+      const duMsg=document.getElementById('du-msg')
+      if(r.status===400){
+        duMsg.innerHTML='Nie można załadować piosenki dla tej daty.<br>Wybierz inny dzień lub tryb gry.'
+      }else{
+        duMsg.innerHTML='Na ten dzień nie ustawiono jeszcze piosenki dziennej.<br>Wróć jutro lub zagraj w innym trybie.'
+      }
+      showState('daily-unavailable');return
+    }
     try{
       const raw=localStorage.getItem(dailyKey(dailyDate))
       if(raw){
@@ -1222,7 +1823,35 @@
     btn.addEventListener('click',()=>startMode(btn.dataset.mode))
   })
   document.getElementById('prev-day').addEventListener('click',()=>{dailyDate.setDate(dailyDate.getDate()-1);dateLabel.textContent=fmtLabel(dailyDate);loadDaily()})
+  document.getElementById('du-prev-day-btn').addEventListener('click',()=>{dailyDate.setDate(dailyDate.getDate()-1);dateLabel.textContent=fmtLabel(dailyDate);loadDaily()})
+  document.getElementById('du-endless-btn').addEventListener('click',()=>startMode('endless'))
   document.getElementById('next-day').addEventListener('click',()=>{if(fmtISO(dailyDate)<fmtISO(new Date())){dailyDate.setDate(dailyDate.getDate()+1);dateLabel.textContent=fmtLabel(dailyDate);loadDaily()}})
+  const HINT_WORDS_NEEDED=5
+  function updateHintLock(){
+    const lock=document.getElementById('hint-lock')
+    if(!lock)return
+    if(activeMode==='ranked'){lock.textContent='';return}
+    const hasHintData=!!(document.getElementById('hint-album').textContent||document.getElementById('hint-release').textContent)
+    if(!hasHintData){lock.textContent='';return}
+    if(hintsUnlocked){lock.textContent='';return}
+    const left=Math.max(0,HINT_WORDS_NEEDED-revealCount)
+    if(left>0){
+      lock.textContent='wskazówka dostępna za '+left+' '+(left===1?'słowo':left>=2&&left<=4?'słowa':'słów')
+      lock.classList.remove('ready')
+    }else{
+      lock.textContent='wskazówka dostępna'
+      lock.classList.add('ready')
+    }
+  }
+  document.getElementById('hint-lock').addEventListener('click',()=>{
+    if(activeMode==='ranked')return
+    if(revealCount<HINT_WORDS_NEEDED)return
+    if(hintsUnlocked)return
+    hintsUnlocked=true
+    document.getElementById('hint-tags').classList.remove('hidden')
+    document.getElementById('hint-lock').textContent=''
+    document.getElementById('hint-lock').classList.remove('ready')
+  })
   revealBtn.addEventListener('click',async()=>{
     if(solved)return
     let added=0
@@ -1231,46 +1860,65 @@
       if(w===null){if(added===0)setFeedback('koniec słów','info');break}
       revealedWords.push(w);wordIndex++;revealCount++;added++
     }
-    if(added>0){renderWords();setFeedback('');saveDailyProgress('in-progress')}
+    if(added>0){renderWords();setFeedback('');saveDailyProgress('in-progress');updateHintLock()}
     const wLabel='+'+settings.wordsPerReveal+' słowo'
     revealBtn.textContent=revealCount>0?wLabel+' \u00b7 '+revealCount:wLabel
   })
-  let acTimer=null
+  let acTimer=null,acController=null
+  // Small client-side cache so backtracking or re-typing the same query is free.
+  const acCache=new Map()
+  function acCacheSet(k,v){if(acCache.size>40)acCache.delete(acCache.keys().next().value);acCache.set(k,v)}
   input.addEventListener('input',()=>{
     clearTimeout(acTimer)
+    if(acController){acController.abort();acController=null}
     const q=input.value.trim()
-    if(!q){acList.innerHTML='';acList.classList.remove('show');acFocused=-1;return}
+    if(q.length<2){acList.innerHTML='';acList.classList.remove('show');acFocused=-1;return}
     acTimer=setTimeout(async()=>{
-      const r=await fetch('/api/autocomplete/songs?query='+encodeURIComponent(q)),songs=await r.json()
-      acList.innerHTML='';acFocused=-1
-      if(!songs.length){acList.classList.remove('show');return}
-      songs.slice(0,8).forEach(song=>{
-        const li=document.createElement('li')
-        li.dataset.id=song.id
-        const img=document.createElement('img')
-        img.className='ac-cover'
-        img.src=song.cover||''
-        img.alt=''
-        img.onerror=()=>img.style.display='none'
-        if(!song.cover)img.style.display='none'
-        const info=document.createElement('div')
-        info.className='ac-info'
-        const titleEl=document.createElement('span')
-        titleEl.className='ac-title'
-        titleEl.textContent=song.title
-        const artistEl=document.createElement('span')
-        artistEl.className='ac-artists'
-        artistEl.textContent=(song.artists||[]).map(a=>a.name).join(', ')
-        info.appendChild(titleEl)
-        if(song.artists&&song.artists.length)info.appendChild(artistEl)
-        li.appendChild(img)
-        li.appendChild(info)
-        li.addEventListener('mousedown',e=>{e.preventDefault();selectSong(song.id,song.title)})
-        acList.appendChild(li)
-      })
-      acList.classList.add('show')
-    },200)
+      // Serve from cache when available — no network round-trip needed.
+      if(acCache.has(q)){
+        renderAcResults(acCache.get(q));return
+      }
+      acController=new AbortController()
+      try{
+        const r=await fetch('/api/autocomplete/songs?query='+encodeURIComponent(q),{signal:acController.signal})
+        const songs=await r.json()
+        if(!Array.isArray(songs)){acList.classList.remove('show');return}
+        acCacheSet(q,songs)
+        renderAcResults(songs)
+      }catch(e){if(e.name!=='AbortError')console.error(e)}
+    },250)
   })
+  function renderAcResults(songs){
+    acList.innerHTML='';acFocused=-1
+    if(!songs.length){acList.classList.remove('show');return}
+    songs.forEach(song=>{
+          const li=document.createElement('li')
+          li.dataset.id=song.id
+          const img=document.createElement('img')
+          img.className='ac-cover'
+          img.src=song.cover||''
+          img.alt=''
+          img.loading='lazy'
+          img.decoding='async'
+          img.onerror=()=>img.style.display='none'
+          if(!song.cover)img.style.display='none'
+          const info=document.createElement('div')
+          info.className='ac-info'
+          const titleEl=document.createElement('span')
+          titleEl.className='ac-title'
+          titleEl.textContent=song.title
+          const artistEl=document.createElement('span')
+          artistEl.className='ac-artists'
+          artistEl.textContent=(song.artists||[]).map(a=>a.name).join(', ')
+          info.appendChild(titleEl)
+          if(song.artists&&song.artists.length)info.appendChild(artistEl)
+          li.appendChild(img)
+          li.appendChild(info)
+          li.addEventListener('mousedown',e=>{e.preventDefault();selectSong(song.id,song.title)})
+          acList.appendChild(li)
+        })
+        acList.classList.add('show')
+  }
   input.addEventListener('keydown',e=>{
     const items=acList.querySelectorAll('li')
     if(e.key==='ArrowDown'){e.preventDefault();acFocused=Math.min(acFocused+1,items.length-1);items.forEach((el,i)=>el.classList.toggle('focused',i===acFocused))}
@@ -1309,14 +1957,20 @@
   function endGame(type){
     solved=true;input.disabled=true;revealBtn.disabled=true
     giveupBtn.classList.remove('show')
+    if(activeMode!=='ranked'){hintsUnlocked=true;document.getElementById('hint-tags').classList.remove('hidden');document.getElementById('hint-lock').textContent='';document.getElementById('hint-lock').classList.remove('ready')}
     if(type==='correct'){
       setFeedback('trafiłeś ✓','correct')
       launchConfetti()
       if(activeMode==='ranked'){
+        // Notify server about the correct guess (server tracks score authoritatively)
+        if(rankedSessionId){
+          fetch('/api/ranked/correct',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:rankedSessionId,songId})})
+            .then(r=>r.ok?r.json():null).then(d=>{if(d&&typeof d.score==='number'){rankedScore=d.score;rankedScoreVal.textContent=rankedScore}}).catch(()=>{})
+        }
         rankedScore++;rankedScoreVal.textContent=rankedScore
         setTimeout(async()=>{
           if(!rankedActive)return
-          const r=await fetch('/api/game/endless'),d=await r.json()
+          const r=await fetch('/api/game/endless?sessionId='+encodeURIComponent(rankedSessionId)),d=await r.json()
           if(d.error||!rankedActive)return
           await startGame(d)
         },600)
@@ -1326,13 +1980,14 @@
         saveDailyProgress('correct')
         postDailyStats('correct').then(()=>showDailyStats())
       }
+      recordGameResult('correct',revealCount)
       answerReveal.innerHTML=buildRevealCard('zgadłeś ✓')
       answerReveal.classList.add('show')
       if(activeMode==='endless')document.getElementById('next-btn').classList.add('show')
     }else if(type==='skip'){
       setTimeout(async()=>{
         if(!rankedActive)return
-        const r=await fetch('/api/game/endless'),d=await r.json()
+        const r=await fetch('/api/game/endless?sessionId='+encodeURIComponent(rankedSessionId)),d=await r.json()
         if(d.error||!rankedActive)return
         await startGame(d)
       },0)
@@ -1345,6 +2000,7 @@
         saveDailyProgress('giveup')
         postDailyStats('giveup').then(()=>showDailyStats())
       }
+      recordGameResult('giveup',revealCount)
       if(activeMode==='endless')document.getElementById('next-btn').classList.add('show')
     }
     input.blur()
@@ -1386,10 +2042,12 @@
   }
   reSubmitBtn.addEventListener('click',async()=>{
     const name=reNameInput.value.trim()
-    if(!name)return
+    if(!name||!rankedSessionId)return
     reSubmitBtn.disabled=true
     try{
-      await fetch('/api/leaderboard',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,score:rankedScore})})
+      const r=await fetch('/api/leaderboard',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,sessionId:rankedSessionId})})
+      const d=await r.json()
+      if(!r.ok){reSubmitBtn.disabled=false;return}
       await loadLeaderboard(rankedScore)
       reNameInput.value=''
     }catch(e){reSubmitBtn.disabled=false}
@@ -1400,15 +2058,162 @@
   })
   async function loadRanked(){
     stopRankedTimer()
+    rankedSessionId=null
     showState('loading');setFeedback('')
-    const r=await fetch('/api/game/endless'),d=await r.json()
+    // Start server-side session first, then fetch first song
+    let sid=null
+    try{
+      const sr=await fetch('/api/ranked/start',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})
+      const sd=await sr.json()
+      if(sd.sessionId)sid=sd.sessionId
+    }catch(e){setFeedback('błąd serwera','info');showState('splash');return}
+    if(!sid){setFeedback('błąd serwera','info');showState('splash');return}
+    const r=await fetch('/api/game/endless?sessionId='+encodeURIComponent(sid)),d=await r.json()
     if(d.error){setFeedback(d.error,'info');showState('splash');return}
+    rankedSessionId=sid
     await startGame(d)
     startRankedTimer()
   }
   giveupBtn.addEventListener('click',()=>{if(!solved)endGame(activeMode==='ranked'?'skip':'giveup')})
   document.getElementById('next-btn').addEventListener('click',()=>{loadEndless()})
+  document.getElementById('home-link').addEventListener('click',e=>{
+    e.preventDefault()
+    stopRankedTimer()
+    dateBar.classList.remove('show')
+    document.querySelectorAll('.mode-card,.mode-bar-btn').forEach(c=>c.classList.remove('active'))
+    showState('splash')
+  })
   showState('splash')
+
+  // ─── QUICKSTART MODAL ────────────────────────────────────
+  const qsOverlay=document.getElementById('qs-overlay')
+  const qsPanel=document.getElementById('qs-panel')
+  function openQs(){
+    qsPanel.style.display='flex'
+    requestAnimationFrame(()=>{
+      qsPanel.classList.add('open')
+      qsOverlay.classList.add('show')
+    })
+    document.body.style.overflow='hidden'
+  }
+  function closeQs(){
+    qsPanel.classList.remove('open')
+    qsOverlay.classList.remove('show')
+    document.body.style.overflow=''
+    setTimeout(()=>{if(!qsPanel.classList.contains('open'))qsPanel.style.display='none'},220)
+  }
+  document.getElementById('howto-btn').addEventListener('click',openQs)
+  document.getElementById('qs-close').addEventListener('click',closeQs)
+  qsOverlay.addEventListener('click',closeQs)
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&qsPanel.classList.contains('open'))closeQs()})
+  document.getElementById('qs-play-btn').addEventListener('click',()=>{closeQs();startMode('endless')})
+  // Show quickstart on first visit
+  if(!localStorage.getItem('qs-seen')){
+    localStorage.setItem('qs-seen','1')
+    setTimeout(openQs,400)
+  }
+
+  // ─── SPLASH LEADERBOARD ───────────────────────────────────
+  async function loadSplashLeaderboard(){
+    const el=document.getElementById('slb-rows')
+    if(!el)return
+    try{
+      const r=await fetch('/api/leaderboard')
+      const board=await r.json()
+      if(!Array.isArray(board)||!board.length){
+        el.innerHTML='<div class="slb-empty">brak wyników &mdash; bądź pierwszy!</div>'
+        return
+      }
+      const medalClass=['gold','silver','bronze']
+      el.innerHTML=board.slice(0,10).map((e,i)=>{
+        const mc=i<3?' '+medalClass[i]:''
+        const rankLabel=i===0?'&#x1F947;':i===1?'&#x1F948;':i===2?'&#x1F949;':'#'+(i+1)
+        return '<div class="slb-row'+mc+'">'
+          +'<span class="slb-rank">'+rankLabel+'</span>'
+          +'<span class="slb-name">'+esc(e.name)+'</span>'
+          +'<span class="slb-score-wrap"><span class="slb-score">'+e.score+'</span><span class="slb-score-unit">pkt</span></span>'
+          +'</div>'
+      }).join('')
+    }catch(e){
+      el.innerHTML='<div class="slb-empty">błąd ładowania</div>'
+    }
+  }
+  loadSplashLeaderboard()
+
+  // ─── PLAYER STATS ─────────────────────────────────────
+  const STATS_KEY='czs_stats'
+  function getStats(){
+    try{
+      const s=JSON.parse(localStorage.getItem(STATS_KEY))
+      if(s&&typeof s==='object')return{gamesPlayed:s.gamesPlayed||0,gamesWon:s.gamesWon||0,gamesGivenUp:s.gamesGivenUp||0,currentStreak:s.currentStreak||0,maxStreak:s.maxStreak||0,lastWinDate:s.lastWinDate||null,totalWordsToWin:s.totalWordsToWin||0,dist:s.dist||{}}
+    }catch(e){}
+    return{gamesPlayed:0,gamesWon:0,gamesGivenUp:0,currentStreak:0,maxStreak:0,lastWinDate:null,totalWordsToWin:0,dist:{}}
+  }
+  function saveStats(s){try{localStorage.setItem(STATS_KEY,JSON.stringify(s))}catch(e){}}
+  function recordGameResult(outcome,wordsRevealed){
+    if(activeMode==='ranked')return
+    const st=getStats(),today=fmtISO(new Date()),yesterday=fmtISO(new Date(Date.now()-86400000))
+    st.gamesPlayed++
+    if(outcome==='correct'){
+      st.gamesWon++
+      const wv=Math.max(1,wordsRevealed+1)
+      st.totalWordsToWin+=wv
+      if(st.lastWinDate!==today){
+        st.currentStreak=st.lastWinDate===yesterday?st.currentStreak+1:1
+        st.maxStreak=Math.max(st.maxStreak,st.currentStreak)
+        st.lastWinDate=today
+      }
+      const key=wv>=15?'15+':String(wv)
+      st.dist[key]=(st.dist[key]||0)+1
+    }else{
+      st.gamesGivenUp++
+    }
+    saveStats(st)
+  }
+  function renderStats(){
+    const panel=document.getElementById('splash-stats')
+    if(!panel)return
+    const st=getStats()
+    if(st.gamesPlayed===0){panel.innerHTML='';return}
+    const winRate=Math.round(st.gamesWon/st.gamesPlayed*100)
+    const avgWords=st.gamesWon>0?(st.totalWordsToWin/st.gamesWon).toFixed(1):'—'
+    const allKeys=[]
+    for(let i=1;i<=14;i++){if(st.dist[String(i)])allKeys.push(String(i))}
+    if(st.dist['15+'])allKeys.push('15+')
+    const maxCount=allKeys.reduce((m,k)=>Math.max(m,st.dist[k]||0),1)
+    const pw=n=>n===1?'słowo':n<5?'słowa':'słów'
+    const distHtml=allKeys.map(k=>{
+      const cnt=st.dist[k]||0,pct=Math.round(cnt/maxCount*100)
+      const isPlus=k==='15+',n=isPlus?15:parseInt(k)
+      const lbl=isPlus?'15+ słów':(n+' '+pw(n))
+      return'<div class="ss-dist-row"><div class="ss-dist-lbl">'+lbl+'</div><div class="ss-dist-track"><div class="ss-dist-fill" style="width:0%" data-w="'+pct+'"></div></div><div class="ss-dist-count">'+cnt+'</div></div>'
+    }).join('')
+    panel.innerHTML=
+      '<div class="ss-header">'
+        +'<span class="ss-title">&#9632;&nbsp; twoje statystyki</span>'
+        +'<button id="stats-reset-btn" class="ss-reset-btn">usuń</button>'
+      +'</div>'
+      +'<div class="slb-divider"></div>'
+      +'<div class="ss-kpis">'
+        +'<div class="ss-kpi"><div class="ss-kpi-val accent">'+winRate+'%</div><div class="ss-kpi-lbl">winrate</div></div>'
+        +'<div class="ss-kpi"><div class="ss-kpi-val">'+st.gamesPlayed+'</div><div class="ss-kpi-lbl">rozegrane</div></div>'
+        +'<div class="ss-kpi"><div class="ss-kpi-val">'+st.currentStreak+'</div><div class="ss-kpi-lbl">seria 🔥</div></div>'
+        +'<div class="ss-kpi"><div class="ss-kpi-val">'+avgWords+'</div><div class="ss-kpi-lbl">śr. słów</div></div>'
+      +'</div>'
+      +(distHtml?'<div class="ss-dist-title">słowa do trafienia</div><div class="ss-dist-rows">'+distHtml+'</div>':'')
+    requestAnimationFrame(()=>panel.querySelectorAll('.ss-dist-fill').forEach(b=>b.style.width=b.dataset.w+'%'))
+    document.getElementById('stats-reset-btn').addEventListener('click',function(){
+      if(this.dataset.confirm==='1'){
+        localStorage.removeItem(STATS_KEY)
+        renderStats()
+      }else{
+        this.dataset.confirm='1'
+        this.textContent='na pewno?'
+        const self=this
+        setTimeout(()=>{if(self.dataset.confirm==='1'){self.dataset.confirm='';self.textContent='usuń'}},3000)
+      }
+    })
+  }
 </script>
 </body>
 </html>

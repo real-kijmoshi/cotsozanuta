@@ -18,27 +18,30 @@ const cacheDir = path.join(__dirname, "../db/cache");
 const artistCache = new Map();
 const songCache = new Map();
 const lyricsCache = new Map();
+// In-flight deduplication: multiple concurrent callers for the same uncached
+// song share one promise instead of hammering the Genius API in parallel.
+const inFlightSongs = new Map();
 
 // Initialize cache directory
 if (!fs.existsSync(cacheDir)) {
   fs.mkdirSync(cacheDir, { recursive: true });
 }
 
-// Save cache to disk
-const saveCache = () => {
-  fs.writeFileSync(
-    path.join(cacheDir, "artists.json"),
-    JSON.stringify(Array.from(artistCache.entries()))
-  );
-  fs.writeFileSync(
-    path.join(cacheDir, "songs.json"),
-    JSON.stringify(Array.from(songCache.entries()))
-  );
-  fs.writeFileSync(
-    path.join(cacheDir, "lyrics.json"),
-    JSON.stringify(Array.from(lyricsCache.entries()))
+// Granular per-cache saves — only write the file that actually changed.
+// saveSongCache is debounced (2 s) to batch the write storm during warm-up
+// when many songs are fetched concurrently.
+const saveArtistCache = () =>
+  fs.writeFileSync(path.join(cacheDir, "artists.json"), JSON.stringify(Array.from(artistCache.entries())));
+let _saveSongCacheTimer = null;
+const saveSongCache = () => {
+  clearTimeout(_saveSongCacheTimer);
+  _saveSongCacheTimer = setTimeout(
+    () => fs.writeFileSync(path.join(cacheDir, "songs.json"), JSON.stringify(Array.from(songCache.entries()))),
+    2000
   );
 };
+const saveLyricsCache = () =>
+  fs.writeFileSync(path.join(cacheDir, "lyrics.json"), JSON.stringify(Array.from(lyricsCache.entries())));
 
 // Load cache from disk
 const loadCacheFile = (filename, map) => {
@@ -73,7 +76,6 @@ const getArtistIdByName = async (artistName) => {
   const cacheKey = artistName.toLowerCase();
   
   if (artistCache.has(cacheKey)) {
-    console.log(`[CACHE] Artist "${artistName}" found`);
     return artistCache.get(cacheKey);
   }
   
@@ -87,7 +89,7 @@ const getArtistIdByName = async (artistName) => {
     if (hits.length > 0) {
       const artistId = hits[0].result.primary_artist.id;
       artistCache.set(cacheKey, artistId);
-      saveCache();
+      saveArtistCache();
       return artistId;
     }
     
@@ -139,7 +141,6 @@ const scrapeLyrics = async (songUrl) => {
 
 const getSongLyrics = async (songId) => {
   if (lyricsCache.has(songId)) {
-    console.log(`[CACHE] Lyrics for song ${songId} found`);
     return lyricsCache.get(songId);
   }
 
@@ -148,7 +149,7 @@ const getSongLyrics = async (songId) => {
     const song = response.data.response.song;
     const lyrics = await scrapeLyrics(song.url);
     lyricsCache.set(songId, lyrics);
-    saveCache();
+    saveLyricsCache();
     return lyrics;
   } catch (error) {
     console.error("Error fetching song lyrics:", error.message);
@@ -160,14 +161,21 @@ const getAllSongs = async (artistId) => {
   const cacheKey = `artist_${artistId}`;
   
   if (songCache.has(cacheKey)) {
-    console.log(`[CACHE] All songs for artist ${artistId} found`);
-    return songCache.get(cacheKey);
+    const cached = songCache.get(cacheKey);
+    // Re-fetch if the cached list predates album support (old format has no album property).
+    if (!cached.length || cached[0].album !== undefined) {
+      return cached;
+    }
+    console.log(`[CACHE] Stale song list (no album data), re-fetching...`);
+    songCache.delete(cacheKey);
   }
   
   let songs = [];
   let page = 1;
   let hasMore = true;
 
+  let retries = 0;
+  const MAX_RETRIES = 3;
   while (hasMore) {
     try {
       const response = await api.get(`/artists/${artistId}/songs`, {
@@ -181,14 +189,17 @@ const getAllSongs = async (artistId) => {
           ? s.primary_artists.map(a => ({ id: a.id, name: a.name }))
           : [{ id: s.primary_artist.id, name: s.primary_artist.name }],
         url: s.url,
+        album: s.album ? { id: s.album.id, name: s.album.name } : null,
       }));
       songs = songs.concat(newSongs);
       hasMore = response.data.response.songs.length > 0;
       page++;
+      retries = 0;
     } catch (error) {
       console.error("Error fetching songs for artist:", error.message);
-      if (error.code === "ECONNABORTED") {
-        console.log("Request timed out. Retrying...");
+      if (error.code === "ECONNABORTED" && retries < MAX_RETRIES) {
+        retries++;
+        console.log(`Request timed out. Retry ${retries}/${MAX_RETRIES}...`);
         await new Promise(resolve => setTimeout(resolve, 2000));
         continue;
       }
@@ -197,7 +208,7 @@ const getAllSongs = async (artistId) => {
   }
   
   songCache.set(cacheKey, songs);
-  saveCache();
+  saveSongCache();
   return songs;
 };
 
@@ -224,18 +235,21 @@ const searchSongsByName = async (songName) => {
 };
 
 const searchCachedSongsByName = (songName) => {
-  //search songs in cache by name
-  const results = [];
+  // Normalise query once; split into buckets by match quality so results are
+  // ranked: exact > prefix > substring.
+  const q = songName.toLowerCase();
+  const exact = [], prefix = [], substring = [];
   for (const [key, songs] of songCache.entries()) {
-    if (key.startsWith("artist_")) {
-      songs.forEach(song => {
-        if (song.title.toLowerCase().includes(songName.toLowerCase())) {
-          results.push(song);
-        }
-      });
+    if (!key.startsWith("artist_")) continue;
+    for (const song of songs) {
+      const t = song.title.toLowerCase();
+      if (t === q)           exact.push(song);
+      else if (t.startsWith(q)) prefix.push(song);
+      else if (t.includes(q))   substring.push(song);
     }
   }
-  return results;
+  // Cap server-side so the wire payload stays small.
+  return [...exact, ...prefix, ...substring].slice(0, 10);
 };
 
 const matchSingleWithAlbum = async (song) => {
@@ -268,54 +282,61 @@ const matchSingleWithAlbum = async (song) => {
 
 const getSongById = async (songId) => {
   const cacheKey = String(songId);
-  if (songCache.has(cacheKey)) {
-    return songCache.get(cacheKey);
-  }
+  if (songCache.has(cacheKey)) return songCache.get(cacheKey);
 
-  try {
-    const response = await api.get(`/songs/${songId}`);
-    const song = response.data.response.song;
-    
-    const feats = song.featured_artists && song.featured_artists.length > 0
-      ? song.featured_artists.map(a => ({ id: a.id, name: a.name }))
-      : [];
+  // If another caller is already fetching this song, share that promise.
+  if (inFlightSongs.has(cacheKey)) return inFlightSongs.get(cacheKey);
 
-    const lyrics = lyricsCache.has(song.id)
-      ? lyricsCache.get(song.id)
-      : await scrapeLyrics(song.url);
+  const promise = (async () => {
+    try {
+      const response = await api.get(`/songs/${songId}`);
+      const song = response.data.response.song;
 
-    if (!lyricsCache.has(song.id)) {
-      lyricsCache.set(song.id, lyrics);
-    }
+      const feats = song.featured_artists && song.featured_artists.length > 0
+        ? song.featured_artists.map(a => ({ id: a.id, name: a.name }))
+        : [];
 
-    const result = {
-      id: song.id,
-      title: song.title,
-      cover: song.song_art_image_url || null,
-      artists: song.primary_artists && song.primary_artists.length > 0
-        ? song.primary_artists.map(a => ({ id: a.id, name: a.name }))
-        : [{ id: song.primary_artist.id, name: song.primary_artist.name }],
-      album: song.album ? { id: song.album.id, name: song.album.name } : null,
-      releaseDate: song.release_date_for_display || null,
-      featured: feats,
-      lyrics,
-    };
-
-    if (!song.album && song.release_date) {
-      const albumInfo = await matchSingleWithAlbum(song);
-      if (albumInfo) {
-        result.album = { id: null, name: albumInfo.albumTitle };
-        result.cover = albumInfo.albumCover;
+      let lyrics = lyricsCache.get(song.id) ?? null;
+      if (lyrics === null) {
+        lyrics = await scrapeLyrics(song.url);
+        lyricsCache.set(song.id, lyrics);
+        saveLyricsCache();
       }
-    }
 
-    songCache.set(String(songId), result);
-    saveCache();
-    return result;
-  } catch (error) {
-    console.error("Error fetching song:", error.message);
-    return null;
-  }
+      const result = {
+        id: song.id,
+        title: song.title,
+        cover: song.song_art_image_url || null,
+        artists: song.primary_artists && song.primary_artists.length > 0
+          ? song.primary_artists.map(a => ({ id: a.id, name: a.name }))
+          : [{ id: song.primary_artist.id, name: song.primary_artist.name }],
+        album: song.album ? { id: song.album.id, name: song.album.name } : null,
+        releaseDate: song.release_date_for_display || null,
+        featured: feats,
+        lyrics,
+      };
+
+      if (!song.album && song.release_date) {
+        const albumInfo = await matchSingleWithAlbum(song);
+        if (albumInfo) {
+          result.album = { id: null, name: albumInfo.albumTitle };
+          result.cover = albumInfo.albumCover;
+        }
+      }
+
+      songCache.set(cacheKey, result);
+      saveSongCache();
+      return result;
+    } catch (error) {
+      console.error("Error fetching song:", error.message);
+      return null;
+    } finally {
+      inFlightSongs.delete(cacheKey);
+    }
+  })();
+
+  inFlightSongs.set(cacheKey, promise);
+  return promise;
 };
 
 const getArtistInfo = async (artistId) => {

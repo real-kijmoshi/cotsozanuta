@@ -1,3 +1,10 @@
 .env
-/node_modules
+node_modules/
+server.log
+*.log
 db/cache/
+db/leaderboard.json
+db/daily-stats.json
+db/app.db
+db/app.db-shm
+db/app.db-wal

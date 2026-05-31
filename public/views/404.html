@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>404 – Cotsozanuta</title>
+  <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="favicon" type="image/png" href="/images/favicon.png">
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Share+Tech+Mono&family=Barlow+Condensed:ital,wght@0,400;0,700;0,900;1,900&family=Special+Elite&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{font-size:16px}
+    :root{
+      --bg:#060404;
+      --panel:rgba(6,4,4,0.82);
+      --line:rgba(255,255,255,0.07);
+      --line2:rgba(255,255,255,0.13);
+      --text:#f2e9e4;
+      --sub:rgba(242,233,228,0.38);
+      --sub2:rgba(242,233,228,0.16);
+      --red:#e31c12;
+      --red-dim:rgba(227,28,18,0.22);
+      --red-glow:rgba(227,28,18,0.4);
+      --ok:#4fc85a;
+      --mono:'Share Tech Mono',monospace;
+      --display:'Anton',sans-serif;
+      --cond:'Barlow Condensed',sans-serif;
+      --worn:'Special Elite',cursive;
+    }
+
+    body{
+      font-family:var(--cond);
+      background:var(--bg);
+      color:var(--text);
+      min-height:100dvh;
+      display:flex;
+      flex-direction:column;
+      position:relative;
+      overflow-x:hidden;
+    }
+
+    #bg-photo{
+      position:fixed;
+      inset:0;z-index:-2;
+      background:
+        radial-gradient(ellipse 140% 80% at 50% 30%, rgba(40,10,8,0.6) 0%, transparent 70%),
+        var(--bg);
+    }
+
+    #bg-noise{
+      position:fixed;
+      inset:0;z-index:-1;
+      opacity:.12;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='500' height='500'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='500' height='500' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+      background-size:250px;
+      mix-blend-mode:screen;
+    }
+
+    #bg-scan{
+      position:fixed;
+      inset:0;z-index:9990;pointer-events:none;
+      background:repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 3px,
+        rgba(0,0,0,0.06) 3px,
+        rgba(0,0,0,0.06) 4px
+      );
+    }
+
+    #bg-vignette{
+      position:fixed;
+      inset:0;z-index:0;pointer-events:none;
+      background:radial-gradient(ellipse 100% 80% at 50% 50%, transparent 40%, rgba(227,28,18,0.04) 100%);
+    }
+
+    #bg-tag{
+      position:fixed;
+      bottom:-8vw; left:-2vw;
+      font-family:var(--display);
+      font-size:28vw;
+      color:rgba(227,28,18,0.05);
+      letter-spacing:-.02em;
+      line-height:1;
+      pointer-events:none;
+      z-index:1;
+      white-space:nowrap;
+      transform:rotate(-3deg);
+      user-select:none;
+    }
+
+    #bg-year{
+      position:fixed;
+      top:10vh; right:-1vw;
+      font-family:var(--display);
+      font-size:22vw;
+      color:rgba(227,28,18,0.04);
+      letter-spacing:.04em;
+      pointer-events:none;
+      z-index:1;
+      user-select:none;
+      transform:rotate(2deg);
+    }
+
+    /* ─── NAV ──────────────────────────────────────────── */
+    nav{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:0 20px;
+      height:54px;
+      border-bottom:1px solid rgba(227,28,18,0.2);
+      flex-shrink:0;
+      position:relative;z-index:100;
+      background:linear-gradient(to bottom, rgba(6,4,4,0.96) 0%, rgba(6,4,4,0.8) 100%);
+      backdrop-filter:blur(6px);
+    }
+    nav::after{
+      content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
+      background:linear-gradient(90deg, transparent 0%, rgba(227,28,18,0.6) 30%, rgba(227,28,18,0.6) 70%, transparent 100%);
+    }
+
+    .wordmark{
+      font-family:var(--display);
+      font-size:1.45rem;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+      color:var(--text);
+      user-select:none;
+      line-height:1;
+      text-decoration:none;
+      cursor:pointer;
+    }
+    .wm-hl{
+      color:var(--red);
+      text-shadow:0 0 24px var(--red-glow),2px 2px 0 rgba(0,0,0,0.5);
+    }
+    .wm-sub{
+      font-size:.75em;
+      color:var(--sub);
+      letter-spacing:.08em;
+    }
+
+    /* ─── MAIN ──────────────────────────────────────────── */
+    main{
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      padding:60px 20px;
+      position:relative;
+      z-index:10;
+      text-align:center;
+    }
+
+    .err-code{
+      font-family:var(--display);
+      font-size:clamp(7rem, 22vw, 14rem);
+      letter-spacing:.06em;
+      line-height:.9;
+      color:var(--red);
+      text-shadow:0 0 60px var(--red-glow), 4px 4px 0 rgba(0,0,0,0.6);
+      user-select:none;
+    }
+
+    .err-divider{
+      width:80px;
+      height:2px;
+      background:linear-gradient(90deg, transparent, var(--red), transparent);
+      margin:28px auto 24px;
+      opacity:.7;
+    }
+
+    .err-title{
+      font-family:var(--display);
+      font-size:clamp(1.4rem, 4vw, 2.2rem);
+      letter-spacing:.12em;
+      text-transform:uppercase;
+      color:var(--text);
+      margin-bottom:12px;
+    }
+
+    .err-desc{
+      font-family:var(--mono);
+      font-size:.78rem;
+      letter-spacing:.06em;
+      color:var(--sub);
+      line-height:1.7;
+      max-width:340px;
+      margin:0 auto 36px;
+    }
+
+    .err-btn{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      font-family:var(--mono);
+      font-size:.72rem;
+      letter-spacing:.16em;
+      text-transform:uppercase;
+      color:#fff;
+      background:var(--red);
+      border:none;
+      padding:12px 28px;
+      cursor:pointer;
+      text-decoration:none;
+      transition:background .15s, box-shadow .15s;
+    }
+    .err-btn:hover{
+      background:#c91610;
+      box-shadow:0 0 24px var(--red-glow);
+    }
+
+    /* ─── FOOTER ────────────────────────────────────────── */
+    footer{
+      border-top:1px solid rgba(227,28,18,0.15);
+      height:38px;display:flex;align-items:center;justify-content:space-between;
+      padding:0 20px;flex-shrink:0;position:relative;z-index:100;
+      background:rgba(6,4,4,0.88);backdrop-filter:blur(6px);
+    }
+    .ft-left{font-family:var(--mono);font-size:.64rem;letter-spacing:.12em;text-transform:uppercase;color:var(--sub)}
+    .ft-right{
+      font-family:var(--display);font-size:.9rem;letter-spacing:.15em;
+      color:rgba(227,28,18,0.28);
+      display:flex;align-items:center;gap:16px;
+    }
+    .ft-right a{
+      font-family:var(--mono);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;
+      color:var(--sub);text-decoration:none;transition:color .12s;
+    }
+    .ft-right a:hover{color:rgba(227,28,18,0.8)}
+
+    @media(max-width:520px){
+      .err-code{font-size:clamp(5rem,30vw,9rem)}
+    }
+  </style>
+</head>
+<body>
+
+<div id="bg-photo"></div>
+<div id="bg-noise"></div>
+<div id="bg-scan"></div>
+<div id="bg-vignette"></div>
+<div id="bg-tag">404</div>
+<div id="bg-year">OTS</div>
+
+<nav>
+  <a class="wordmark" href="/">C<span class="wm-hl">otso</span>zanuta<span class="wm-sub">.pl</span></a>
+</nav>
+
+<main>
+  <div class="err-code">404</div>
+  <div class="err-divider"></div>
+  <div class="err-title">Nie znaleziono strony</div>
+  <p class="err-desc">Ta strona nie istnieje lub została przeniesiona.<br>Wróć na stronę główną i zagraj.</p>
+  <a class="err-btn" href="/">wróć do gry &#8594;</a>
+</main>
+
+<footer>
+  <span class="ft-left">otsochodzi &nbsp;&#183;&nbsp; zgadnij piosenkę z tekstu</span>
+  <span class="ft-right">
+    <a href="/regulamin">Regulamin</a>
+    <a href="/polityka-prywatnosci">Prywatność</a>
+    made by <a href="https://www.kijmoshi.xyz" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">kijmoshi.xyz</a>
+  </span>
+</footer>
+
+</body>
+</html>
