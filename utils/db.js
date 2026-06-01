@@ -11,6 +11,7 @@ const db = new Database(path.join(DB_DIR, "app.db"));
 db.pragma("journal_mode = WAL");
 db.pragma("foreign_keys = ON");
 
+// ── Base schema (no user_id index yet – added after migration below) ─
 db.exec(`
   CREATE TABLE IF NOT EXISTS daily (
     date       TEXT PRIMARY KEY,
@@ -22,8 +23,7 @@ db.exec(`
     id      INTEGER PRIMARY KEY AUTOINCREMENT,
     name    TEXT    NOT NULL,
     score   INTEGER NOT NULL,
-    date    TEXT    NOT NULL,
-    user_id TEXT
+    date    TEXT    NOT NULL
   );
 
   CREATE TABLE IF NOT EXISTS daily_stats (
@@ -35,16 +35,34 @@ db.exec(`
 
   CREATE TABLE IF NOT EXISTS game_plays (
     id        INTEGER PRIMARY KEY AUTOINCREMENT,
-    mode      TEXT NOT NULL, -- 'endless', 'ranked'
-    date      TEXT NOT NULL, -- YYYY-MM-DD
+    mode      TEXT NOT NULL,
+    date      TEXT NOT NULL,
     timestamp INTEGER NOT NULL
   );
 
-  CREATE INDEX IF NOT EXISTS idx_daily_stats_date ON daily_stats(date);
-  CREATE INDEX IF NOT EXISTS idx_lb_score         ON leaderboard(score DESC);
+  CREATE INDEX IF NOT EXISTS idx_daily_stats_date     ON daily_stats(date);
+  CREATE INDEX IF NOT EXISTS idx_lb_score             ON leaderboard(score DESC);
   CREATE INDEX IF NOT EXISTS idx_game_plays_mode_date ON game_plays(mode, date);
-  CREATE INDEX IF NOT EXISTS idx_lb_user_id       ON leaderboard(user_id);
-`);const columns = db.prepare("PRAGMA table_info(leaderboard)").all();if (!columns.some(col => col.name === "user_id")) {  try {    db.exec(`      ALTER TABLE leaderboard ADD COLUMN user_id TEXT;      CREATE INDEX IF NOT EXISTS idx_lb_user_id ON leaderboard(user_id);    `);    console.log("[DB] Added user_id column to leaderboard table.");  } catch (err) {    console.error("[DB] Failed to migrate user_id column:", err.message);  }}
+`);
+
+// ── Migrate: add user_id column to existing leaderboard table ──────────
+(function migrateUserIdColumn() {
+  const cols = db.prepare("PRAGMA table_info(leaderboard)").all();
+  if (!cols.some(c => c.name === "user_id")) {
+    try {
+      db.exec("ALTER TABLE leaderboard ADD COLUMN user_id TEXT;");
+      console.log("[DB] Added user_id column to leaderboard.");
+    } catch (err) {
+      console.error("[DB] Failed to add user_id column:", err.message);
+    }
+  }
+  // Index must be created after the column exists
+  try {
+    db.exec("CREATE INDEX IF NOT EXISTS idx_lb_user_id ON leaderboard(user_id);");
+  } catch (err) {
+    console.error("[DB] Failed to create idx_lb_user_id:", err.message);
+  }
+})();
 
 // ── One-time migration from legacy JSON files ────────────────
 (function migrate() {
