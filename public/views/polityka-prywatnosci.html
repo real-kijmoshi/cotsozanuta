@@ -196,9 +196,14 @@
       </thead>
       <tbody>
         <tr>
-          <td>Nick + wynik punktowy</td>
-          <td>Tablica wyników rankingowych (leaderboard) – zachowywany jest tylko jeden, najwyższy uzyskany wynik dla danego pseudonimu (nicku)</td>
-          <td>Na serwerze, publicznie widoczne</td>
+          <td>Nick + wynik punktowy oraz unikalny token urządzenia</td>
+          <td>Tablica wyników rankingowych (leaderboard) – zachowywany jest tylko jeden, najwyższy uzyskany wynik dla danego gracza i urządzenia (na podstawie wygenerowanego w przeglądarce unikalnego, losowego kodu UUID), uniemożliwiając powstawanie duplikatów.</td>
+          <td>Na serwerze, publicznie widoczne (tylko nick, wynik i data)</td>
+        </tr>
+        <tr>
+          <td>Unikalny identyfikator urządzenia (UUID)</td>
+          <td>Deduplikacja tabeli wyników oraz łączenie zmian nicków z tym samym kontem</td>
+          <td>W pamięci localStorage użytkownika oraz w bazie danych serwera (pole user_id)</td>
         </tr>
         <tr>
           <td>Zdarzenia gry (wybór trybu, start sesji bez końca/rankingowej)</td>

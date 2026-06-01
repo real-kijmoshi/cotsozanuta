@@ -19,10 +19,11 @@ db.exec(`
   );
 
   CREATE TABLE IF NOT EXISTS leaderboard (
-    id    INTEGER PRIMARY KEY AUTOINCREMENT,
-    name  TEXT    NOT NULL,
-    score INTEGER NOT NULL,
-    date  TEXT    NOT NULL
+    id      INTEGER PRIMARY KEY AUTOINCREMENT,
+    name    TEXT    NOT NULL,
+    score   INTEGER NOT NULL,
+    date    TEXT    NOT NULL,
+    user_id TEXT
   );
 
   CREATE TABLE IF NOT EXISTS daily_stats (
@@ -42,7 +43,8 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_daily_stats_date ON daily_stats(date);
   CREATE INDEX IF NOT EXISTS idx_lb_score         ON leaderboard(score DESC);
   CREATE INDEX IF NOT EXISTS idx_game_plays_mode_date ON game_plays(mode, date);
-`);
+  CREATE INDEX IF NOT EXISTS idx_lb_user_id       ON leaderboard(user_id);
+`);const columns = db.prepare("PRAGMA table_info(leaderboard)").all();if (!columns.some(col => col.name === "user_id")) {  try {    db.exec(`      ALTER TABLE leaderboard ADD COLUMN user_id TEXT;      CREATE INDEX IF NOT EXISTS idx_lb_user_id ON leaderboard(user_id);    `);    console.log("[DB] Added user_id column to leaderboard table.");  } catch (err) {    console.error("[DB] Failed to migrate user_id column:", err.message);  }}
 
 // ── One-time migration from legacy JSON files ────────────────
 (function migrate() {
@@ -99,7 +101,7 @@ db.exec(`
       fs.existsSync(legacyPaths.leaderboard)) {
     try {
       const rows = JSON.parse(fs.readFileSync(legacyPaths.leaderboard, "utf8"));
-      const stmt = db.prepare("INSERT INTO leaderboard (name, score, date) VALUES (?, ?, ?)");
+      const stmt = db.prepare("INSERT INTO leaderboard (name, score, date, user_id) VALUES (?, ?, ?, NULL)");
       db.transaction(() => rows.forEach(r => stmt.run(r.name, r.score, r.date)))();
       console.log(`[DB] Migrated ${rows.length} leaderboard entries from JSON`);
     } catch (e) { console.error("[DB] leaderboard.json migration failed:", e.message); }
@@ -129,7 +131,7 @@ const stmts = {
   deleteDaily:     db.prepare("DELETE FROM daily WHERE date = ?"),
 
   getTopLb:        db.prepare("SELECT name, score, date FROM leaderboard ORDER BY score DESC LIMIT ?"),
-  insertLb:        db.prepare("INSERT INTO leaderboard (name, score, date) VALUES (?, ?, ?)"),
+  insertLb:        db.prepare("INSERT INTO leaderboard (name, score, date, user_id) VALUES (?, ?, ?, ?)"),
   trimLb:          db.prepare("DELETE FROM leaderboard WHERE id NOT IN (SELECT id FROM leaderboard ORDER BY score DESC LIMIT 200)"),
   getRankById:     db.prepare("SELECT COUNT(*) + 1 AS rank FROM leaderboard WHERE score > (SELECT score FROM leaderboard WHERE id = ?)"),
   getRankByScore:  db.prepare("SELECT COUNT(*) + 1 AS rank FROM leaderboard WHERE score > ?"),
@@ -142,8 +144,10 @@ const stmts = {
   // Game Play logs
   logGamePlay:     db.prepare("INSERT INTO game_plays (mode, date, timestamp) VALUES (?, ?, ?)"),
   getGamePlays:    db.prepare("SELECT mode, date, COUNT(*) AS count FROM game_plays GROUP BY mode, date ORDER BY date"),
-  getExistingLb:   db.prepare("SELECT id, score FROM leaderboard WHERE LOWER(name) = ?"),
-  updateLb:        db.prepare("UPDATE leaderboard SET score = ?, date = ?, name = ? WHERE id = ?"),
+  getExistingLb:   db.prepare("SELECT id, score, name, date, user_id FROM leaderboard WHERE LOWER(name) = ?"),
+  getExistingLbByUid: db.prepare("SELECT id, score, name, date, user_id FROM leaderboard WHERE user_id = ?"),
+  updateLb:        db.prepare("UPDATE leaderboard SET score = ?, date = ?, name = ?, user_id = ? WHERE id = ?"),
+  deleteLbId:      db.prepare("DELETE FROM leaderboard WHERE id = ?"),
 };
 
 module.exports = {
@@ -155,23 +159,81 @@ module.exports = {
 
   // ── Leaderboard ──────────────────────────────────────────────
   getLeaderboard(n = 200) { return stmts.getTopLb.all(n); },
-  insertLeaderboard({ name, score, date }) {
-    const existing = stmts.getExistingLb.get(name.toLowerCase());
+  insertLeaderboard({ name, score, date, user_id }) {
+    const uid = user_id ? String(user_id).trim() : null;
+    const existingByUid = uid ? stmts.getExistingLbByUid.get(uid) : null;
+    const existingByName = stmts.getExistingLb.get(name.toLowerCase());
     let rank;
-    if (existing) {
-      if (score > existing.score) {
-        stmts.updateLb.run(score, date, name, existing.id);
+
+    if (existingByUid && existingByName) {
+      if (existingByUid.id === existingByName.id) {
+        // Same row: update if score is higher, keep highest and update name casing
+        if (score > existingByUid.score) {
+          stmts.updateLb.run(score, date, name, uid, existingByUid.id);
+          const res = stmts.getRankByScore.get(score);
+          rank = res ? res.rank : 1;
+        } else {
+          // Keep old score, old date, but refresh name casing / user_id if needed
+          stmts.updateLb.run(existingByUid.score, existingByUid.date, name, uid, existingByUid.id);
+          const res = stmts.getRankByScore.get(existingByUid.score);
+          rank = res ? res.rank : 1;
+        }
+      } else {
+        // Different rows: consolidate user's scores
+        if (existingByUid.score >= existingByName.score) {
+          stmts.deleteLbId.run(existingByName.id);
+          if (score > existingByUid.score) {
+            stmts.updateLb.run(score, date, name, uid, existingByUid.id);
+            const res = stmts.getRankByScore.get(score);
+            rank = res ? res.rank : 1;
+          } else {
+            stmts.updateLb.run(existingByUid.score, existingByUid.date, name, uid, existingByUid.id);
+            const res = stmts.getRankByScore.get(existingByUid.score);
+            rank = res ? res.rank : 1;
+          }
+        } else {
+          stmts.deleteLbId.run(existingByUid.id);
+          if (score > existingByName.score) {
+            stmts.updateLb.run(score, date, name, uid, existingByName.id);
+            const res = stmts.getRankByScore.get(score);
+            rank = res ? res.rank : 1;
+          } else {
+            stmts.updateLb.run(existingByName.score, existingByName.date, name, uid, existingByName.id);
+            const res = stmts.getRankByScore.get(existingByName.score);
+            rank = res ? res.rank : 1;
+          }
+        }
+      }
+    } else if (existingByUid) {
+      // Only UUID exists: player changed nickname
+      if (score > existingByUid.score) {
+        stmts.updateLb.run(score, date, name, uid, existingByUid.id);
         const res = stmts.getRankByScore.get(score);
         rank = res ? res.rank : 1;
       } else {
-        const res = stmts.getRankByScore.get(existing.score);
+        stmts.updateLb.run(existingByUid.score, existingByUid.date, name, uid, existingByUid.id);
+        const res = stmts.getRankByScore.get(existingByUid.score);
+        rank = res ? res.rank : 1;
+      }
+    } else if (existingByName) {
+      // Only Name matches: player either legacy, or changed device/cleared storage, or chooses exact existing name.
+      // Associate with this device's UUID.
+      if (score > existingByName.score) {
+        stmts.updateLb.run(score, date, name, uid, existingByName.id);
+        const res = stmts.getRankByScore.get(score);
+        rank = res ? res.rank : 1;
+      } else {
+        stmts.updateLb.run(existingByName.score, existingByName.date, name, uid, existingByName.id);
+        const res = stmts.getRankByScore.get(existingByName.score);
         rank = res ? res.rank : 1;
       }
     } else {
-      const { lastInsertRowid } = stmts.insertLb.run(name, score, date);
+      // Brand new entry
+      const { lastInsertRowid } = stmts.insertLb.run(name, score, date, uid);
       const { rank: newRank } = stmts.getRankById.get(lastInsertRowid);
       rank = newRank;
     }
+
     stmts.trimLb.run();
     return rank;
   },

@@ -1793,6 +1793,12 @@
   try{const s=JSON.parse(localStorage.getItem('settings'));if(s){settings.wordsPerReveal=s.wordsPerReveal||1;settings.startMode=s.startMode||'random';settings.albumMode=s.albumMode||'all';settings.selectedAlbums=Array.isArray(s.selectedAlbums)?s.selectedAlbums:[]}}catch(e){}
   function saveSettings(){try{localStorage.setItem('settings',JSON.stringify(settings))}catch(e){}}
   let rankedActive=false,rankedScore=0,rankedTimer=null,rankedSecondsLeft=60,rankedSessionId=null
+  let userId=localStorage.getItem('czs_userId')
+  if(!userId){
+    if(typeof crypto!=='undefined'&&typeof crypto.randomUUID==='function'){userId=crypto.randomUUID()}
+    else{userId='usr_'+Math.random().toString(36).slice(2,11)+'_'+Date.now().toString(36)}
+    try{localStorage.setItem('czs_userId',userId)}catch(e){}
+  }
   const splash=document.getElementById('splash'),loading=document.getElementById('loading'),game=document.getElementById('game'),dailyUnavailable=document.getElementById('daily-unavailable')
   const dateBar=document.getElementById('date-bar'),dateLabel=document.getElementById('date-label')
   const historyEl=document.getElementById('word-history'),currentEl=document.getElementById('current-word')
@@ -2368,7 +2374,7 @@
   async function endRankedRound(){
     rankedActive=false;rankedBar.classList.remove('show')
     reFinalScore.innerHTML=rankedScore+'<span>'+(rankedScore===1?'piosenka':rankedScore<5?'piosenki':'piosenek')+'</span>'
-    reNameInput.value='';reSubmitBtn.disabled=false
+    reNameInput.value=localStorage.getItem('czs_last_username')||'';reSubmitBtn.disabled=false
     await loadLeaderboard()
     rankedEnd.classList.add('show')
     reNameInput.focus()
@@ -2389,9 +2395,10 @@
     if(!name||!rankedSessionId)return
     reSubmitBtn.disabled=true
     try{
-      const r=await fetch('/api/leaderboard',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,sessionId:rankedSessionId})})
+      const r=await fetch('/api/leaderboard',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,sessionId:rankedSessionId,userId})})
       const d=await r.json()
       if(!r.ok){reSubmitBtn.disabled=false;return}
+      try{localStorage.setItem('czs_last_username',name)}catch(e){}
       await loadLeaderboard(rankedScore)
       reNameInput.value=''
     }catch(e){reSubmitBtn.disabled=false}

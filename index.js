@@ -751,7 +751,7 @@ app.get("/api/leaderboard", (req, res) => {
 
 // ── Leaderboard submit: requires a valid server-side session ──
 app.post("/api/leaderboard", leaderboardLimiter, (req, res) => {
-    const { name, sessionId } = req.body;
+    const { name, sessionId, userId } = req.body;
     if (!name || !sessionId) return res.status(400).json({ error: "Missing name or sessionId" });
 
     const session = rankedSessions.get(String(sessionId));
@@ -771,8 +771,9 @@ app.post("/api/leaderboard", leaderboardLimiter, (req, res) => {
     const safeName = String(name).replace(/[<>&"]/g, "").trim().slice(0, 32);
     if (!safeName) return res.status(400).json({ error: "Invalid name" });
 
+    const safeUserId = userId ? String(userId).trim().slice(0, 128) : null;
     const today = new Date().toISOString().split("T")[0];
-    const rank = db.insertLeaderboard({ name: safeName, score, date: today });
+    const rank = db.insertLeaderboard({ name: safeName, score, date: today, user_id: safeUserId });
     res.json({ rank: rank || 0 });
 });
 

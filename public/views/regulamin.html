@@ -198,7 +198,9 @@
     <ul>
       <li>Nick jest skracany do 32 znaków i filtrowany ze znaków specjalnych (znaki <code>&lt; &gt; &amp; "</code> są usuwane).</li>
       <li>Każda sesja rankingowa może być wysłana do tablicy wyników tylko raz.</li>
-      <li><strong>Zasada unikalności (brak duplikatów):</strong> Tablica wyników przechowuje tylko jeden, najwyższy uzyskany wynik dla danego pseudonimu (nicku) sprawdzanego w sposób niezależny od wielkości liter. Jeśli zgłosisz nowy wynik pod istniejącym już na liście nickiem, tablica zaktualizuje się tylko wtedy, gdy Twój nowy wynik będzie wyższy od Twojego poprzedniego rekordu. W przeciwnym razie zgłoszenie zostanie odrzucone lub zignorowane, pozostawiając Twój najlepszy historyczny rezultat.</li>
+      <li><strong>Zasada unikalności (brak duplikatów):</strong> Tablica wyników dba o pełną unikalność – każdy fizyczny gracz przy użyciu swojego urządzenia (zabezpieczonego unikalnym, losowym tokenem UUID zapisanym lokalnie w pamięci przeglądarki) może posiadać wyłącznie jeden wpis na liście.</li>
+      <li>Wpis jest powiązany z Twoim unikalnym indentyfikatorem urządzenia oraz wybranym pseudonimem. Jeśli zgłosisz lepszy wynik, Twoja pozycja na tablicy zostanie zaktualizowana do najwyższego osiągniętego poziomu punktowego.</li>
+      <li>Zmiana pseudonimu na tym samym urządzeniu automatycznie aktualizuje oraz przepisuje Twój poprzedni rekord do nowej nazwy, chroniąc przedzaśmiecaniem i powstawaniem duplikatów na liście. Jeśli dany nick jest już zajęty przez inne urządzenie, system złączy Twoją tożsamość z tym rekordem na podstawie Twojego wyniku.</li>
       <li>Administrator zastrzega sobie prawo do usunięcia wpisów, które naruszają zasady lub zawierają treści nieodpowiednie.</li>
     </ul>
   </div>
