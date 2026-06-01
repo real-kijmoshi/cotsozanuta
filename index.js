@@ -189,6 +189,10 @@ app.get("/admin", (req, res) => {
     res.sendFile(path.join(__dirname, "public/views/admin.html"));
 })
 
+app.get("/admin/stats", (req, res) => {
+    res.sendFile(path.join(__dirname, "public/views/admin-stats.html"));
+})
+
 app.get("/regulamin", (req, res) => {
     res.sendFile(path.join(__dirname, "public/views/regulamin.html"));
 })
@@ -284,8 +288,7 @@ app.get("/api/admin/stats-overview", adminAuth, (req, res) => {
     try {
         const raw = db.getAllStats();  // { "YYYY-MM-DD": { correct: [], giveup: [] } }
         const dates = Object.keys(raw).sort();
-        if (!dates.length) return res.json({ dates: [], perDay: [], totals: { plays: 0, correct: 0, giveup: 0 }, streaks: {} });
-
+        
         const perDay = dates.map(d => {
             const day = raw[d];
             const correct = day.correct.length;
@@ -345,6 +348,62 @@ app.get("/api/admin/stats-overview", adminAuth, (req, res) => {
         const avgWordsCorrect = allCorrectWords.length ? Math.round(allCorrectWords.reduce((a, b) => a + b, 0) / allCorrectWords.length * 10) / 10 : null;
         const avgWordsGiveup  = allGiveupWords.length  ? Math.round(allGiveupWords.reduce((a, b) => a + b, 0) / allGiveupWords.length  * 10) / 10 : null;
 
+        // ── Game Plays detailed breakdown (Daily, Endless, Ranked) ──
+        const gamePlaysRaw = db.getGamePlays(); // [{ mode, date, count }]
+        const playsByDate = {}; // { "YYYY-MM-DD": { endless: 0, ranked: 0, daily: 0 } }
+
+        // Populate endless and ranked from game_plays
+        for (const row of gamePlaysRaw) {
+            if (!playsByDate[row.date]) {
+                playsByDate[row.date] = { endless: 0, ranked: 0, daily: 0 };
+            }
+            if (row.mode === "endless") playsByDate[row.date].endless += row.count;
+            if (row.mode === "ranked") playsByDate[row.date].ranked += row.count;
+        }
+
+        // Populate daily completions from daily_stats (for backward compatibility and total accuracy)
+        for (const d of perDay) {
+            if (!playsByDate[d.date]) {
+                playsByDate[d.date] = { endless: 0, ranked: 0, daily: 0 };
+            }
+            playsByDate[d.date].daily += d.plays; // daily plays = correct + giveup in daily_stats
+        }
+
+        // Build a sorted array of all unique dates and their breakdown
+        const allStatsDates = Array.from(new Set([
+            ...Object.keys(playsByDate),
+            ...dates
+        ])).sort();
+
+        const gamePlaysBreakdown = allStatsDates.map(d => {
+            const p = playsByDate[d] || { endless: 0, ranked: 0, daily: 0 };
+            return {
+                date: d,
+                daily: p.daily,
+                endless: p.endless,
+                ranked: p.ranked,
+                total: p.daily + p.endless + p.ranked
+            };
+        });
+
+        const totalEndless = gamePlaysBreakdown.reduce((s, g) => s + g.endless, 0);
+        const totalRanked = gamePlaysBreakdown.reduce((s, g) => s + g.ranked, 0);
+        const totalDaily = gamePlaysBreakdown.reduce((s, g) => s + g.daily, 0);
+        const totalPlaysAll = totalEndless + totalRanked + totalDaily;
+
+        const monthlyGamePlays = {}; // { "YYYY-MM": { daily: 0, endless: 0, ranked: 0 } }
+        for (const g of gamePlaysBreakdown) {
+            const m = g.date.slice(0, 7);
+            if (!monthlyGamePlays[m]) {
+                monthlyGamePlays[m] = { month: m, daily: 0, endless: 0, ranked: 0, total: 0 };
+            }
+            monthlyGamePlays[m].daily += g.daily;
+            monthlyGamePlays[m].endless += g.endless;
+            monthlyGamePlays[m].ranked += g.ranked;
+            monthlyGamePlays[m].total += g.total;
+        }
+        const monthlyGamePlaysList = Object.values(monthlyGamePlays).sort((a,b) => a.month.localeCompare(b.month));
+
         res.json({
             dates, perDay, totals,
             byMonth: Object.values(byMonth).sort((a, b) => a.month.localeCompare(b.month)),
@@ -352,8 +411,19 @@ app.get("/api/admin/stats-overview", adminAuth, (req, res) => {
             peakDay,
             trends:   { week: weekTrend, month: monthTrend, thisWeekPlays, lastWeekPlays, thisMonthPlays, lastMonthPlays },
             avgWords: { correct: avgWordsCorrect, giveup: avgWordsGiveup },
+            gamePlays: {
+                breakdown: gamePlaysBreakdown,
+                totals: {
+                    daily: totalDaily,
+                    endless: totalEndless,
+                    ranked: totalRanked,
+                    all: totalPlaysAll
+                },
+                monthly: monthlyGamePlaysList
+            }
         });
     } catch (e) {
+        console.error(e);
         res.status(500).json({ error: "Failed to build stats overview" });
     }
 })
@@ -409,6 +479,8 @@ app.get("/api/game/endless", rankedSongLimiter, async (req, res) => {
         // Hints are not sent in ranked mode — enforced server-side.
         if (!rankedSession) {
             response.hints = { album: moreSongInfo.album?.name, releaseDate: moreSongInfo.releaseDate };
+            // Log endless game play
+            db.logGamePlay("endless");
         } else {
             rankedSession.pendingId = song.id;
         }
@@ -626,6 +698,8 @@ app.post("/api/ranked/start", rankedStartLimiter, (req, res) => {
         finished:  false,
         submitted: false,
     });
+    // Log ranked game play
+    db.logGamePlay("ranked");
     res.json({ sessionId });
 });
 

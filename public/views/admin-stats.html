@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>statystyki i analizy · admin · cotsozanuta</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0 }
+    :root {
+      --bg: #0e0b0b;
+      --surface: #1a1515;
+      --border: rgba(255,255,255,0.08);
+      --red: #e31c12;
+      --green: #22c55e;
+      --blue: #3b82f6;
+      --yellow: #eab308;
+      --text: #f0ece8;
+      --sub: #8a7f7a;
+      --sub2: #5a5250;
+      --mono: 'Courier New', monospace;
+    }
+    body { background: var(--bg); color: var(--text); font-family: var(--mono); min-height: 100vh; padding: 32px 16px; }
+    header { max-width: 1000px; margin: 0 auto 28px auto; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 16px; }
+    h1 { font-size: 1rem; letter-spacing: .2em; text-transform: uppercase; color: var(--red); }
+    h2 { font-size: .65rem; letter-spacing: .18em; text-transform: uppercase; color: var(--sub); margin-bottom: 20px; }
+
+    /* ── LOGIN ── */
+    #login-view { max-width: 320px; margin: 80px auto; display: flex; flex-direction: column; gap: 12px; }
+    #login-view input { background: var(--surface); border: 1px solid var(--border); color: var(--text);
+      font-family: var(--mono); font-size: .75rem; padding: 10px 14px; outline: none; letter-spacing: .1em; }
+    #login-view input:focus { border-color: rgba(227,28,18,0.4); }
+    #login-error { color: var(--red); font-size: .6rem; letter-spacing: .1em; min-height: 1em; }
+
+    /* ── NAV ── */
+    .nav-links { display: flex; gap: 16px; }
+
+    /* ── ADMIN LAYOUT ── */
+    #admin-view { display: none; max-width: 1000px; margin: 0 auto; }
+    #admin-view.show { display: block; }
+
+    .panel { background: var(--surface); border: 1px solid var(--border); padding: 24px; margin-bottom: 24px; }
+
+    /* buttons */
+    .btn { font-family: var(--mono); font-size: .65rem; letter-spacing: .12em; text-transform: uppercase;
+      padding: 8px 18px; border: 1px solid var(--border); background: transparent; color: var(--text);
+      cursor: pointer; transition: border-color .15s, color .15s; text-decoration: none; display: inline-block; }
+    .btn:hover { border-color: rgba(255,255,255,0.25); color: #fff; }
+    .btn.primary { border-color: var(--red); color: var(--red); }
+    .btn.primary:hover { background: var(--red); color: #fff; }
+    .btn:disabled { opacity: .35; cursor: default; }
+
+    /* ── STATS CARDS ── */
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .kpi { background: var(--surface); border: 1px solid var(--border); padding: 16px 20px; }
+    .kpi-val { font-size: 1.8rem; letter-spacing: .04em; color: var(--text); line-height: 1.1; margin-bottom: 6px; font-weight: bold; }
+    .kpi-val.green { color: var(--green); }
+    .kpi-val.red   { color: var(--red); }
+    .kpi-val.blue  { color: var(--blue); }
+    .kpi-val.yellow { color: var(--yellow); }
+    .kpi-label { font-size: .52rem; letter-spacing: .18em; text-transform: uppercase; color: var(--sub); }
+    .kpi-sub { font-size: .48rem; color: var(--sub2); letter-spacing: .1em; margin-top: 4px; }
+
+    /* ── CHARTS ── */
+    .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+    @media (max-width: 768px) { .charts-grid { grid-template-columns: 1fr; gap: 20px; } }
+    .chart-panel { background: var(--surface); border: 1px solid var(--border); padding: 20px; }
+    .chart-panel.full-width { grid-column: 1 / -1; }
+    @media (max-width: 768px) { .chart-panel.full-width { grid-column: auto; } }
+    .chart-wrap { position: relative; width: 100%; }
+    .chart-title { font-size: .58rem; letter-spacing: .15em; text-transform: uppercase; color: var(--sub); margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; }
+    canvas.chart { width: 100% !important; height: 180px !important; display: block; }
+
+    /* ── LEGEND ── */
+    .chart-legend { display: flex; gap: 12px; font-size: .5rem; text-transform: uppercase; letter-spacing: .1em; }
+    .legend-item { display: flex; align-items: center; gap: 5px; }
+    .legend-color { width: 10px; height: 10px; border-radius: 2px; }
+
+    /* ── TABLES ── */
+    .table-panel { background: var(--surface); border: 1px solid var(--border); padding: 24px; margin-bottom: 24px; }
+    .table-container { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: .68rem; }
+    th { text-align: left; padding: 10px 14px; color: var(--sub); letter-spacing: .12em; text-transform: uppercase; border-bottom: 2px solid var(--border); }
+    td { padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: middle; }
+    tr:hover td { background: rgba(255,255,255,0.01); }
+    .text-center { text-align: center; }
+    .text-right { text-align: right; }
+    .rank-lbl { color: var(--sub2); font-weight: bold; }
+    .score-lbl { color: var(--green); font-weight: bold; }
+
+    /* spinner */
+    .spinner-sm { display: inline-block; width: 12px; height: 10px; border: 1px solid var(--sub); border-top-color: transparent; border-radius: 50%; animation: spin .6s linear infinite; vertical-align: middle; margin-right: 6px; }
+    @keyframes spin { to { transform: rotate(360deg) } }
+
+    #toast { position: fixed; bottom: 24px; right: 24px; background: #1e1a1a; border: 1px solid var(--border);
+      padding: 10px 18px; font-size: .62rem; letter-spacing: .1em; color: var(--text);
+      opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 999; }
+    #toast.err { border-color: rgba(227,28,18,0.4); color: var(--red); }
+    #toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-view">
+  <h1>cotsozanuta / stats</h1>
+  <input type="password" id="pwd-input" placeholder="hasło…" autocomplete="current-password">
+  <div id="login-error"></div>
+  <button class="btn primary" id="login-btn">zaloguj się</button>
+</div>
+
+<!-- STATS PAGE CONTENT -->
+<div id="admin-view">
+  <header>
+    <h1>analizy i wglądy</h1>
+    <div class="nav-links">
+      <a class="btn" href="/admin">← panel główny</a>
+      <button class="btn" id="logout-btn">wyloguj</button>
+    </div>
+  </header>
+
+  <div id="stats-loading" style="text-align:center; padding: 100px 0; color:var(--sub); letter-spacing:.1em">
+    <span class="spinner-sm" style="width:24px; height:24px; border-width: 2px;"></span>ŁADOWANIE STATYSTYK SERWERA...
+  </div>
+
+  <div id="stats-content" style="display:none">
+    
+    <!-- HIGHLIGHT CARDS -->
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="kpi-val yellow" id="kpi-all-plays">—</div>
+        <div class="kpi-label">wszystkie gry</div>
+        <div class="kpi-sub">łączne uruchomienia</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-val green" id="kpi-daily-plays">—</div>
+        <div class="kpi-label">tryb dzienny</div>
+        <div class="kpi-sub" id="kpi-daily-sub">—</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-val blue" id="kpi-endless-plays">—</div>
+        <div class="kpi-label">tryb endless</div>
+        <div class="kpi-sub" id="kpi-endless-sub">—</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-val red" id="kpi-ranked-plays">—</div>
+        <div class="kpi-label">tryb rankingowy</div>
+        <div class="kpi-sub" id="kpi-ranked-sub">—</div>
+      </div>
+    </div>
+
+    <!-- DOUBLE KPI ROW FOR ADDDITIONAL INSIGHTS -->
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="kpi-val" id="kpi-streak-cur">—</div>
+        <div class="kpi-label">bieżąca seria dni</div>
+        <div class="kpi-sub" id="kpi-streak-best">—</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-val" id="kpi-peak">—</div>
+        <div class="kpi-label">rekord dobowy</div>
+        <div class="kpi-sub" id="kpi-peak-date">—</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-val green" id="kpi-success-pct">—</div>
+        <div class="kpi-label">skuteczność (daily)</div>
+        <div class="kpi-sub">procent wygranych gier</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-val" id="kpi-words-avg">—</div>
+        <div class="kpi-label">średnio słów</div>
+        <div class="kpi-sub" id="kpi-words-sub">—</div>
+      </div>
+    </div>
+
+    <!-- GROWTH & TRENDS SUMMARY PANEL -->
+    <div class="panel" style="margin-bottom: 24px; background: var(--surface); border: 1px solid var(--border);">
+      <h2 style="font-size: .65rem; color: var(--sub); letter-spacing: .15em; margin-bottom: 20px;">DYNAMIKA POPULARNOŚCI I RAPORT WZROSTÓW 📈</h2>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+        <div style="border-right: 1px solid rgba(255,255,255,0.04); padding-right: 12px;">
+          <h3 style="font-size: .52rem; color: var(--sub); letter-spacing: .12em; margin-bottom: 8px; text-transform: uppercase;">Porównanie tygodniowe (WoW)</h3>
+          <div style="display: flex; align-items: baseline; gap: 10px;">
+            <span id="trend-week-val" style="font-size: 1.5rem; font-weight: bold; color: var(--text);">—</span>
+            <span id="trend-week-pct" style="font-size: .75rem; font-weight: bold;">—</span>
+          </div>
+          <div id="trend-week-desc" style="font-size: .52rem; color: var(--sub2); margin-top: 4px; letter-spacing: .05em;">Ten tydzień: — vs ubiegły tydzień: —</div>
+        </div>
+        <div style="border-right: 1px solid rgba(255,255,255,0.04); padding-right: 12px;">
+          <h3 style="font-size: .52rem; color: var(--sub); letter-spacing: .12em; margin-bottom: 8px; text-transform: uppercase;">Porównanie miesięczne (MoM)</h3>
+          <div style="display: flex; align-items: baseline; gap: 10px;">
+            <span id="trend-month-val" style="font-size: 1.5rem; font-weight: bold; color: var(--text);">—</span>
+            <span id="trend-month-pct" style="font-size: .75rem; font-weight: bold;">—</span>
+          </div>
+          <div id="trend-month-desc" style="font-size: .52rem; color: var(--sub2); margin-top: 4px; letter-spacing: .05em;">Ten miesiąc: — vs ubiegły miesiąc: —</div>
+        </div>
+        <div>
+          <h3 style="font-size: .52rem; color: var(--sub); letter-spacing: .12em; margin-bottom: 8px; text-transform: uppercase;">Podsumowanie gier rankingowych</h3>
+          <div style="display: flex; align-items: baseline; gap: 10px;">
+            <span id="trend-ranked-avg" style="font-size: 1.5rem; font-weight: bold; color: var(--green);">—</span>
+            <span style="font-size: .52rem; text-transform: uppercase; color: var(--sub); letter-spacing: .1em;">Średni Wynik</span>
+          </div>
+          <div id="trend-ranked-desc" style="font-size: .52rem; color: var(--sub2); margin-top: 4px; letter-spacing: .05em;">Najwyższy wynik: — (łączne zgłoszenia: —)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHARTS CANVAS SECTION -->
+    <div class="charts-grid">
+      
+      <!-- stacked timeline chart -->
+      <div class="chart-panel full-width">
+        <div class="chart-title">
+          <span>Uruchomienia gier dziennie (ostatnie 30 dni)</span>
+          <div class="chart-legend">
+            <div class="legend-item"><div class="legend-color" style="background:var(--green)"></div>dzienna</div>
+            <div class="legend-item"><div class="legend-color" style="background:var(--blue)"></div>endless</div>
+            <div class="legend-item"><div class="legend-color" style="background:var(--red)"></div>rankingowa</div>
+          </div>
+        </div>
+        <div class="chart-wrap">
+          <canvas class="chart" id="chart-gameplays-daily"></canvas>
+        </div>
+      </div>
+
+      <!-- monthly stacked chart -->
+      <div class="chart-panel">
+        <div class="chart-title">
+          <span>Gry miesięcznie by mode</span>
+          <div class="chart-legend">
+            <div class="legend-item"><div class="legend-color" style="background:var(--green)"></div>dzienne</div>
+            <div class="legend-item"><div class="legend-color" style="background:var(--blue)"></div>endless</div>
+            <div class="legend-item"><div class="legend-color" style="background:var(--red)"></div>rank</div>
+          </div>
+        </div>
+        <div class="chart-wrap">
+          <canvas class="chart" id="chart-gameplays-monthly"></canvas>
+        </div>
+      </div>
+
+      <!-- success daily trend line -->
+      <div class="chart-panel">
+        <div class="chart-title">procent sukcesu w grze dziennej (ostatnie 30 dni)</div>
+        <div class="chart-wrap">
+          <canvas class="chart" id="chart-daily-success"></canvas>
+        </div>
+      </div>
+
+      <!-- average words trends -->
+      <div class="chart-panel">
+        <div class="chart-title">średnia słów do odgadnięcia (dni robocze)</div>
+        <div class="chart-wrap">
+          <canvas class="chart" id="chart-daily-words"></canvas>
+        </div>
+      </div>
+
+      <!-- ranked stats and overview charts -->
+      <div class="chart-panel">
+        <div class="chart-title">Średni wynik rankingowy miesięcznie</div>
+        <div class="chart-wrap">
+          <canvas class="chart" id="chart-ranked-avg"></canvas>
+        </div>
+      </div>
+
+      <!-- ranked submission volume -->
+      <div class="chart-panel">
+        <div class="chart-title">Zgłoszenia do tabeli wyników</div>
+        <div class="chart-wrap">
+          <canvas class="chart" id="chart-ranked-submissions"></canvas>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- LEADERBOARD & DETAILED LIST -->
+    <div class="charts-grid">
+      
+      <!-- Top players -->
+      <div class="table-panel" style="margin-bottom:0">
+        <h2>Unikalni liderzy rankingu (najlepszy wynik handlowy)</h2>
+        <div class="table-container">
+          <table id="leaderboard-table">
+            <thead>
+              <tr>
+                <th style="width:50px">#</th>
+                <th>Gracz</th>
+                <th class="text-right">Wynik</th>
+                <th class="text-right">Data</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboard-tbody">
+              <tr>
+                <td colspan="4" style="text-align:center;color:var(--sub2)">ładowanie klasyfikacji...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- detailed daily statistics table -->
+      <div class="table-panel" style="margin-bottom:0">
+        <h2>Ostatnie 15 dni gry dziennej</h2>
+        <div class="table-container">
+          <table id="daily-table">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th class="text-center">Razem</th>
+                <th class="text-center" style="color:var(--green)">Zgadnięte</th>
+                <th class="text-center" style="color:var(--red)">Poddane</th>
+                <th class="text-right">Śr. słów</th>
+              </tr>
+            </thead>
+            <tbody id="daily-tbody">
+              <tr>
+                <td colspan="5" style="text-align:center;color:var(--sub2)">ładowanie historii...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  const API = (path, opts) => fetch(path, { headers: { 'x-admin-password': sessionStorage.getItem('admpwd') || '', 'Content-Type': 'application/json', ...(opts?.headers || {}) }, ...opts })
+
+  // ── TOAST ─────────────────────────────────────────────────
+  let toastTimer
+  function toast(msg, type = 'ok') {
+    const el = document.getElementById('toast')
+    el.textContent = msg; el.className = 'show ' + type
+    clearTimeout(toastTimer)
+    toastTimer = setTimeout(() => el.className = '', 2400)
+  }
+
+  // ── LOGIN & NAV ───────────────────────────────────────────
+  const loginView = document.getElementById('login-view')
+  const adminView = document.getElementById('admin-view')
+  const pwdInput  = document.getElementById('pwd-input')
+  const loginErr  = document.getElementById('login-error')
+  const loginBtn  = document.getElementById('login-btn')
+
+  async function tryLogin(pwd) {
+    loginBtn.disabled = true; loginErr.textContent = ''
+    try {
+      const r = await fetch('/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pwd }) })
+      if (r.ok) {
+        sessionStorage.setItem('admpwd', pwd)
+        loginView.style.display = 'none'; adminView.classList.add('show')
+        await init()
+      } else {
+        loginErr.textContent = 'złe hasło'
+        sessionStorage.removeItem('admpwd')
+      }
+    } catch(e) {
+      loginErr.textContent = 'błąd połączenia'
+    }
+    loginBtn.disabled = false
+  }
+
+  loginBtn.addEventListener('click', () => tryLogin(pwdInput.value))
+  pwdInput.addEventListener('keydown', e => e.key === 'Enter' && tryLogin(pwdInput.value))
+  document.getElementById('logout-btn').addEventListener('click', () => { sessionStorage.removeItem('admpwd'); location.reload() })
+
+  // Auto-login fallback
+  if (sessionStorage.getItem('admpwd')) {
+    tryLogin(sessionStorage.getItem('admpwd'))
+  }
+
+  // ── CHARTS HELPERS ───────────────────────────────────────
+  function getCanvas(id) {
+    const el = document.getElementById(id)
+    if (!el) return null
+    const dpr = window.devicePixelRatio || 1
+    const w = el.parentElement.clientWidth || 400
+    el.width  = w * dpr; el.height = 180 * dpr
+    el.style.width  = w + 'px'; el.style.height = '180px'
+    const ctx = el.getContext('2d'); ctx.scale(dpr, dpr)
+    return { ctx, w, h: 180 }
+  }
+
+  function drawStackedBarChart(id, labels, series) {
+    const canvasData = getCanvas(id)
+    if (!canvasData) return
+    const { ctx, w, h } = canvasData
+    const pad = { t: 8, r: 8, b: 28, l: 32 }
+    const cw = w - pad.l - pad.r, ch = h - pad.t - pad.b
+    const n = labels.length
+    if (!n) return
+
+    let maxVal = 1
+    for (let i = 0; i < n; i++) {
+      let sum = 0
+      for (const sr of series) {
+        sum += (sr.values[i] || 0)
+      }
+      if (sum > maxVal) maxVal = sum
+    }
+
+    ctx.clearRect(0, 0, w, h)
+    ctx.fillStyle = 'rgba(255,255,255,0.02)'
+    ctx.fillRect(pad.l, pad.t, cw, ch)
+
+    // grid lines
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1
+    for (let g = 1; g <= 4; g++) {
+      const y = pad.t + ch - (g / 4) * ch
+      ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + cw, y); ctx.stroke()
+    }
+
+    const barW = Math.max(2, cw / n - 2)
+    const gap  = cw / n
+
+    for (let i = 0; i < n; i++) {
+      let base = 0
+      for (const sr of series) {
+        const val = sr.values[i] || 0
+        if (val === 0) continue
+        const bh  = (val / maxVal) * ch
+        const x   = pad.l + i * gap + (gap - barW) / 2
+        const y   = pad.t + ch - base - bh
+        ctx.fillStyle = sr.color
+        ctx.fillRect(x, y, barW, bh)
+        base += bh
+      }
+    }
+
+    ctx.fillStyle = 'rgba(138,127,122,0.8)'; ctx.font = '9px Courier New'; ctx.textAlign = 'center'
+    const step = Math.max(1, Math.floor(n / 6))
+    for (let i = 0; i < n; i += step) {
+      ctx.fillText(labels[i], pad.l + i * gap + gap / 2, h - 8)
+    }
+
+    ctx.textAlign = 'right'; ctx.fillText(maxVal, pad.l - 3, pad.t + 8)
+  }
+
+  function drawSimpleBarChart(id, labels, values, color) {
+    const canvasData = getCanvas(id)
+    if (!canvasData) return
+    const { ctx, w, h } = canvasData
+    const pad = { t: 8, r: 8, b: 28, l: 32 }
+    const cw = w - pad.l - pad.r, ch = h - pad.t - pad.b
+    const n = labels.length
+    if (!n) return
+
+    const maxVal = Math.max(...values, 1)
+
+    ctx.clearRect(0, 0, w, h)
+    ctx.fillStyle = 'rgba(255,255,255,0.02)'
+    ctx.fillRect(pad.l, pad.t, cw, ch)
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1
+    for (let g = 1; g <= 4; g++) {
+      const y = pad.t + ch - (g / 4) * ch
+      ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + cw, y); ctx.stroke()
+    }
+
+    const barW = Math.max(2, cw / n - 2)
+    const gap  = cw / n
+
+    for (let i = 0; i < n; i++) {
+      const val = values[i] || 0
+      const bh  = (val / maxVal) * ch
+      const x   = pad.l + i * gap + (gap - barW) / 2
+      const y   = pad.t + ch - bh
+      ctx.fillStyle = color
+      ctx.fillRect(x, y, barW, bh)
+    }
+
+    ctx.fillStyle = 'rgba(138,127,122,0.8)'; ctx.font = '9px Courier New'; ctx.textAlign = 'center'
+    const step = Math.max(1, Math.floor(n / 6))
+    for (let i = 0; i < n; i += step) {
+      ctx.fillText(labels[i], pad.l + i * gap + gap / 2, h - 8)
+    }
+
+    ctx.textAlign = 'right'; ctx.fillText(maxVal, pad.l - 3, pad.t + 8)
+  }
+
+  function drawLineChart(id, labels, values, color, yMax) {
+    const canvasData = getCanvas(id)
+    if (!canvasData) return
+    const { ctx, w, h } = canvasData
+    const pad = { t: 8, r: 8, b: 28, l: 32 }
+    const cw = w - pad.l - pad.r, ch = h - pad.t - pad.b
+    const n = labels.length
+    if (!n) return
+
+    const maxVal = yMax || Math.max(...values, 1)
+    ctx.clearRect(0, 0, w, h)
+    ctx.fillStyle = 'rgba(255,255,255,0.02)'; ctx.fillRect(pad.l, pad.t, cw, ch)
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1
+    for (let g = 1; g <= 4; g++) {
+      const y = pad.t + ch - (g / 4) * ch
+      ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + cw, y); ctx.stroke()
+    }
+
+    const pts = values.map((v, i) => ({ x: pad.l + i * (cw / (n - 1 || 1)), y: pad.t + ch - (v / maxVal) * ch }))
+
+    const grad = ctx.createLinearGradient(0, pad.t, 0, pad.t + ch)
+    grad.addColorStop(0, color.replace(/[\d.]+\)$/, '0.2)'))
+    grad.addColorStop(1, 'transparent')
+    ctx.beginPath(); ctx.moveTo(pts[0].x, pad.t + ch)
+    pts.forEach(p => ctx.lineTo(p.x, p.y))
+    ctx.lineTo(pts[pts.length - 1].x, pad.t + ch)
+    ctx.closePath(); ctx.fillStyle = grad; ctx.fill()
+
+    ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = 1.8; ctx.lineJoin = 'round'
+    pts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y))
+    ctx.stroke()
+
+    ctx.fillStyle = color
+    pts.forEach(p => { ctx.beginPath(); ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2); ctx.fill() })
+
+    ctx.fillStyle = 'rgba(138,127,122,0.8)'; ctx.font = '9px Courier New'; ctx.textAlign = 'center'
+    const step = Math.max(1, Math.floor(n / 6))
+    for (let i = 0; i < n; i += step) ctx.fillText(labels[i], pts[i].x, h - 8)
+    ctx.textAlign = 'right'; ctx.fillText(maxVal, pad.l - 3, pad.t + 8)
+  }
+
+  // ── INIT AND DATA PETITION ──────────────────────────────────
+  let cachedStats = null;
+  let cachedRanked = null;
+
+  function renderCharts() {
+    if (!cachedStats || !cachedRanked) return;
+
+    // DRAW TIMELINE CHART (30 DAYS)
+    if (cachedStats.gamePlays?.breakdown?.length) {
+      const last30 = cachedStats.gamePlays.breakdown.slice(-30)
+      const dateLabels = last30.map(x => x.date.slice(5))
+
+      drawStackedBarChart('chart-gameplays-daily', dateLabels, [
+        { name: 'Dzienny', values: last30.map(x => x.daily), color: 'rgba(34,197,94,0.75)' },
+        { name: 'Endless', values: last30.map(x => x.endless), color: 'rgba(59,130,246,0.65)' },
+        { name: 'Ranked',  values: last30.map(x => x.ranked), color: 'rgba(239,68,68,0.55)' }
+      ])
+    }
+
+    // DRAW MONTHLY CHART
+    if (cachedStats.gamePlays?.monthly?.length) {
+      const monthly = cachedStats.gamePlays.monthly
+      const mLabels = monthly.map(x => x.month)
+      drawStackedBarChart('chart-gameplays-monthly', mLabels, [
+        { name: 'Dzienny', values: monthly.map(x => x.daily), color: 'rgba(34,197,94,0.75)' },
+        { name: 'Endless', values: monthly.map(x => x.endless), color: 'rgba(59,130,246,0.65)' },
+        { name: 'Ranked',  values: monthly.map(x => x.ranked), color: 'rgba(239,68,68,0.55)' }
+      ])
+    }
+
+    // DRAW DAILY SUCCESS RATE LINE CHART
+    if (cachedStats.perDay?.length) {
+      const last30 = cachedStats.perDay.slice(-30)
+      const dateLabels = last30.map(x => x.date.slice(5))
+      const successRates = last30.map(x => x.plays ? Math.round(x.correct / x.plays * 100) : 0)
+      drawLineChart('chart-daily-success', dateLabels, successRates, 'rgba(34,197,94,0.85)', 100)
+
+      // WORDS COUNTER CHART
+      const avgWords = last30.map(x => x.avgWords)
+      drawLineChart('chart-daily-words', dateLabels, avgWords, 'rgba(59,130,246,0.8)')
+    }
+
+    // DRAW RANKED CHARTS
+    if (cachedRanked.byMonth?.length) {
+      const rMonths = cachedRanked.byMonth.map(x => x.month)
+      const rSubmissions = cachedRanked.byMonth.map(x => x.submissions)
+      const rAvgScores = cachedRanked.byMonth.map(x => x.avgScore)
+
+      drawSimpleBarChart('chart-ranked-submissions', rMonths, rSubmissions, 'rgba(234,179,8,0.65)')
+      drawLineChart('chart-ranked-avg', rMonths, rAvgScores, 'rgba(34,197,94,0.85)')
+    }
+  }
+
+  async function init() {
+    try {
+      // 1. Fetch main stats
+      const sr1 = await API('/api/admin/stats-overview')
+      const stats = await sr1.json()
+      cachedStats = stats
+
+      // 2. Fetch ranked overview
+      const sr2 = await API('/api/admin/ranked-overview')
+      const ranked = await sr2.json()
+      cachedRanked = ranked
+
+      document.getElementById('stats-loading').style.display = 'none'
+      document.getElementById('stats-content').style.display = 'block'
+
+      // Populating KPIs Row 1
+      const totalAll = stats.gamePlays?.totals?.all ?? stats.totals.plays
+      document.getElementById('kpi-all-plays').textContent = totalAll
+      
+      const dailyTotal = stats.gamePlays?.totals?.daily ?? stats.totals.plays
+      document.getElementById('kpi-daily-plays').textContent = dailyTotal
+      document.getElementById('kpi-daily-sub').innerHTML = `<span style="color:var(--green)">${stats.totals.correct}</span> / <span style="color:var(--red)">${stats.totals.giveup}</span> (W/L)`
+
+      document.getElementById('kpi-endless-plays').textContent = stats.gamePlays?.totals?.endless ?? 0
+      document.getElementById('kpi-endless-sub').textContent = 'uruchomienia endless'
+
+      document.getElementById('kpi-ranked-plays').textContent = stats.gamePlays?.totals?.ranked ?? 0
+      document.getElementById('kpi-ranked-sub').textContent = `zgłoszenia: ${ranked.total || 0}`
+
+      // Populating KPIs Row 2
+      document.getElementById('kpi-streak-cur').textContent = stats.streak?.current ?? '—'
+      document.getElementById('kpi-streak-best').innerHTML = `najlepsza seria: ${stats.streak?.best ?? '—'}`
+
+      const peakGameCount = stats.peakDay ? stats.peakDay.plays : 0
+      document.getElementById('kpi-peak').textContent = peakGameCount
+      document.getElementById('kpi-peak-date').textContent = stats.peakDay ? stats.peakDay.date : '—'
+
+      const rate = stats.totals.plays ? Math.round(stats.totals.correct / stats.totals.plays * 100) : 0
+      document.getElementById('kpi-success-pct').textContent = rate + '%'
+
+      document.getElementById('kpi-words-avg').textContent = stats.avgWords?.correct ?? '—'
+      document.getElementById('kpi-words-sub').innerHTML = `poddane: <span style="color:var(--red)">${stats.avgWords?.giveup ?? '—'}</span>`
+
+      // Populating Trends and Growth Analysis report
+      const t = stats.trends || {}
+      
+      // Weekly Trend details
+      const weekPct = t.week !== null ? t.week : 0
+      const weekDiff = (t.thisWeekPlays || 0) - (t.lastWeekPlays || 0)
+      const weekColor = weekPct >= 0 ? 'var(--green)' : 'var(--red)'
+      const weekArrow = weekPct >= 0 ? '▲' : '▼'
+      document.getElementById('trend-week-val').textContent = (weekDiff >= 0 ? '+' : '') + weekDiff + ' gier'
+      document.getElementById('trend-week-pct').textContent = `${weekArrow} ${Math.abs(weekPct)}% WoW`
+      document.getElementById('trend-week-pct').style.color = weekColor
+      document.getElementById('trend-week-desc').innerHTML = `Ten tydzień: <strong style="color:var(--text);">${t.thisWeekPlays || 0}</strong> vs ubiegły tydzień: <strong style="color:var(--sub);">${t.lastWeekPlays || 0}</strong>`
+
+      // Monthly Trend details
+      const monthPct = t.month !== null ? t.month : 0
+      const monthDiff = (t.thisMonthPlays || 0) - (t.lastMonthPlays || 0)
+      const monthColor = monthPct >= 0 ? 'var(--green)' : 'var(--red)'
+      const monthArrow = monthPct >= 0 ? '▲' : '▼'
+      document.getElementById('trend-month-val').textContent = (monthDiff >= 0 ? '+' : '') + monthDiff + ' gier'
+      document.getElementById('trend-month-pct').textContent = `${monthArrow} ${Math.abs(monthPct)}% MoM`
+      document.getElementById('trend-month-pct').style.color = monthColor
+      document.getElementById('trend-month-desc').innerHTML = `Ten miesiąc: <strong style="color:var(--text);">${t.thisMonthPlays || 0}</strong> vs ubiegły miesiąc: <strong style="color:var(--sub);">${t.lastMonthPlays || 0}</strong>`
+
+      // General Ranked trends
+      document.getElementById('trend-ranked-avg').textContent = ranked.avgScore || '0'
+      document.getElementById('trend-ranked-desc').innerHTML = `Najwyższy wynik: <strong style="color:var(--yellow);">${ranked.topScore || 0}</strong> (unikalne wpisy: <strong>${ranked.total || 0}</strong>)`
+
+      // DRAW CHARTS
+      renderCharts()
+
+      // RENDER LEADERBOARD (already unique on its best score server-side!)
+      const lbTbody = document.getElementById('leaderboard-tbody')
+      if (ranked.topScores?.length) {
+        lbTbody.innerHTML = ranked.topScores.map((e, i) => `<tr>
+          <td class="rank-lbl">#${i + 1}</td>
+          <td>${esc(e.name)}</td>
+          <td class="score-lbl text-right">${e.score}</td>
+          <td class="text-right" style="color:var(--sub)">${e.date}</td>
+        </tr>`).join('')
+      } else {
+        lbTbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--sub2)">brak danych rankingowych</td></tr>`
+      }
+
+      // RENDER DAILY TABLE
+      const dailyTbody = document.getElementById('daily-tbody')
+      if (stats.perDay?.length) {
+        const recentDaily = stats.perDay.slice().reverse().slice(0, 15) // last 15 days
+        dailyTbody.innerHTML = recentDaily.map(d => `<tr>
+          <td style="font-weight:bold">${d.date}</td>
+          <td class="text-center">${d.plays}</td>
+          <td class="text-center" style="color:var(--green)">${d.correct}</td>
+          <td class="text-center" style="color:var(--red)">${d.giveup}</td>
+          <td class="text-right" style="color:var(--blue)">${d.avgWords}w</td>
+        </tr>`).join('')
+      } else {
+        dailyTbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--sub2)">brak danych historycznych</td></tr>`
+      }
+
+      // Add responsiveness window resizing event listener
+      window.addEventListener('resize', debounce(() => {
+        // Redraw charts on resize without refetching from DB
+        renderCharts()
+      }, 250))
+      
+    } catch (err) {
+      console.error(err)
+      toast('Nie udało się załadować danych statystycznych', 'err')
+    }
+  }
+
+  // Helper clear esc
+  function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+  }
+
+  // Debouncing for resize performance
+  function debounce(func, wait) {
+    let timeout
+    return functionExecuted = (...args) => {
+      const later = () => {
+        clearTimeout(timeout)
+        func(...args)
+      }
+      clearTimeout(timeout)
+      timeout = setTimeout(later, wait)
+    }
+  }
+</script>
+</body>
+</html>

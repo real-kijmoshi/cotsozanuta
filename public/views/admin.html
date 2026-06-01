@@ -159,7 +159,11 @@
 
 <!-- ADMIN -->
 <div id="admin-view">
-  <h1>cotsozanuta / admin <button class="btn" id="logout-btn" style="font-size:.55rem">wyloguj</button></h1>
+  <h1>
+    cotsozanuta / admin
+    <a class="btn primary" href="/admin/stats" style="font-size:.55rem; margin-left: 10px; margin-right: 10px; text-decoration: none;">Statystyki i analizy 📊</a>
+    <button class="btn" id="logout-btn" style="font-size:.55rem">wyloguj</button>
+  </h1>
 
   <!-- ADD / EDIT ENTRY -->
   <div class="panel">
@@ -197,7 +201,10 @@
 
   <!-- STATS -->
   <div class="panel" id="stats-panel">
-    <h2>statystyki</h2>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+      <h2 style="margin-bottom:0">statystyki</h2>
+      <a class="btn primary" href="/admin/stats" style="font-size:.58rem; text-decoration: none;">Dedykowana strona statystyk i analiz 📊</a>
+    </div>
     <div id="stats-loading" style="color:var(--sub2);font-size:.6rem;letter-spacing:.1em"><span class="spinner-sm"></span>ładowanie…</div>
     <div id="stats-content" style="display:none">
 
