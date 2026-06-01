@@ -172,6 +172,30 @@
       </div>
     </div>
 
+    <!-- USER IDENTITY KPI ROW -->
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="kpi-val yellow" id="kpi-unique-users">—</div>
+        <div class="kpi-label">unikalnych graczy</div>
+        <div class="kpi-sub">łącznie (UUID)</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-val green" id="kpi-new-week">—</div>
+        <div class="kpi-label">nowi w tym tygodniu</div>
+        <div class="kpi-sub" id="kpi-new-month-sub">nowi w tym miesiącu: —</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-val blue" id="kpi-dau-today">—</div>
+        <div class="kpi-label">aktywni dziś</div>
+        <div class="kpi-sub" id="kpi-dau-avg-sub">śr. dzienny (7 dni): —</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-val" id="kpi-tracking-note" style="font-size:.55rem; letter-spacing:.06em; color:var(--sub2); line-height:1.5">śledzenie od<br>wprowadzenia UUID</div>
+        <div class="kpi-label">zakres danych</div>
+        <div class="kpi-sub">starsze gry: brak UUID</div>
+      </div>
+    </div>
+
     <!-- GROWTH & TRENDS SUMMARY PANEL -->
     <div class="panel" style="margin-bottom: 24px; background: var(--surface); border: 1px solid var(--border);">
       <h2 style="font-size: .65rem; color: var(--sub); letter-spacing: .15em; margin-bottom: 20px;">DYNAMIKA POPULARNOŚCI I RAPORT WZROSTÓW 📈</h2>
@@ -265,6 +289,22 @@
         <div class="chart-title">Zgłoszenia do tabeli wyników</div>
         <div class="chart-wrap">
           <canvas class="chart" id="chart-ranked-submissions"></canvas>
+        </div>
+      </div>
+
+      <!-- user growth by month -->
+      <div class="chart-panel">
+        <div class="chart-title">Nowi unikalni gracze miesięcznie (UUID)</div>
+        <div class="chart-wrap">
+          <canvas class="chart" id="chart-new-users-month"></canvas>
+        </div>
+      </div>
+
+      <!-- DAU last 30 days -->
+      <div class="chart-panel">
+        <div class="chart-title">Dzienni aktywni gracze (ostatnie 30 dni)</div>
+        <div class="chart-wrap">
+          <canvas class="chart" id="chart-dau"></canvas>
         </div>
       </div>
 
@@ -525,6 +565,7 @@
   // ── INIT AND DATA PETITION ──────────────────────────────────
   let cachedStats = null;
   let cachedRanked = null;
+  let cachedUsers = null;
 
   function renderCharts() {
     if (!cachedStats || !cachedRanked) return;
@@ -573,6 +614,21 @@
       drawSimpleBarChart('chart-ranked-submissions', rMonths, rSubmissions, 'rgba(234,179,8,0.65)')
       drawLineChart('chart-ranked-avg', rMonths, rAvgScores, 'rgba(34,197,94,0.85)')
     }
+
+    // DRAW USER GROWTH CHARTS
+    if (cachedUsers) {
+      if (cachedUsers.newByMonth?.length) {
+        const mLabels = cachedUsers.newByMonth.map(x => x.month)
+        const mValues = cachedUsers.newByMonth.map(x => x.new_users)
+        drawSimpleBarChart('chart-new-users-month', mLabels, mValues, 'rgba(168,85,247,0.7)')
+      }
+      if (cachedUsers.dauByDate?.length) {
+        const last30dau = cachedUsers.dauByDate.slice(-30)
+        const dauLabels = last30dau.map(x => x.date.slice(5))
+        const dauValues = last30dau.map(x => x.dau)
+        drawLineChart('chart-dau', dauLabels, dauValues, 'rgba(59,130,246,0.85)')
+      }
+    }
   }
 
   async function init() {
@@ -586,6 +642,11 @@
       const sr2 = await API('/api/admin/ranked-overview')
       const ranked = await sr2.json()
       cachedRanked = ranked
+
+      // 3. Fetch user growth overview
+      const sr3 = await API('/api/admin/users-overview')
+      const users = sr3.ok ? await sr3.json() : null
+      cachedUsers = users
 
       document.getElementById('stats-loading').style.display = 'none'
       document.getElementById('stats-content').style.display = 'block'
@@ -617,6 +678,15 @@
 
       document.getElementById('kpi-words-avg').textContent = stats.avgWords?.correct ?? '—'
       document.getElementById('kpi-words-sub').innerHTML = `poddane: <span style="color:var(--red)">${stats.avgWords?.giveup ?? '—'}</span>`
+
+      // Populating User Identity KPIs
+      if (users) {
+        document.getElementById('kpi-unique-users').textContent = users.totalUnique ?? '—'
+        document.getElementById('kpi-new-week').textContent = users.newUsersThisWeek ?? '—'
+        document.getElementById('kpi-new-month-sub').textContent = `nowi w tym miesiącu: ${users.newUsersThisMonth ?? '—'}`
+        document.getElementById('kpi-dau-today').textContent = users.dauToday ?? '—'
+        document.getElementById('kpi-dau-avg-sub').textContent = `śr. dzienny (7 dni): ${users.avgDauWeek ?? '—'}`
+      }
 
       // Populating Trends and Growth Analysis report
       const t = stats.trends || {}

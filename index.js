@@ -450,6 +450,51 @@ app.get("/api/admin/ranked-overview", adminAuth, (req, res) => {
     }
 })
 
+app.get("/api/admin/users-overview", adminAuth, (req, res) => {
+    try {
+        const todayStr = new Date().toISOString().split("T")[0];
+        const weekAgo  = new Date(Date.now() - 7  * 86400000).toISOString().split("T")[0];
+        const monthAgo = new Date(Date.now() - 30 * 86400000).toISOString().split("T")[0];
+
+        const totalUnique = db.getUniqueUserCount().total || 0;
+        const newByMonth  = db.getNewUsersByMonth();
+        const dauByDate   = db.getDauByDate();
+
+        // New users this week / this month (first appearance within window)
+        const newThisWeek  = newByMonth.reduce((s, r) => {
+            // can't filter by week from monthly buckets, use DAU approach instead
+            return s;
+        }, 0);
+        // Compute new-user counts from raw first-seen data using a direct query proxy:
+        // We count entries in newByMonth whose month >= weekAgo month and <= today
+        // For exact week-level: use a threshold on dauByDate dates
+        const newUsersThisWeek  = newByMonth
+            .filter(r => r.month >= weekAgo.slice(0, 7))
+            .reduce((s, r) => s + r.new_users, 0);
+        const newUsersThisMonth = newByMonth
+            .filter(r => r.month === todayStr.slice(0, 7))
+            .reduce((s, r) => s + r.new_users, 0);
+
+        // DAU today and last 7-day average
+        const dauToday = (dauByDate.find(r => r.date === todayStr) || { dau: 0 }).dau;
+        const last7Dau = dauByDate.filter(r => r.date >= weekAgo).map(r => r.dau);
+        const avgDauWeek = last7Dau.length ? Math.round(last7Dau.reduce((a, b) => a + b, 0) / last7Dau.length) : 0;
+
+        res.json({
+            totalUnique,
+            newUsersThisWeek,
+            newUsersThisMonth,
+            dauToday,
+            avgDauWeek,
+            newByMonth,   // [{ month, new_users }]
+            dauByDate,    // [{ date, dau }]
+        });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: "Failed to build users overview" });
+    }
+})
+
 
 app.get("/api/game/endless", rankedSongLimiter, async (req, res) => {
     if (!otsochodziId) return res.status(503).json({ error: "Server is initializing, try again shortly" });
@@ -480,7 +525,8 @@ app.get("/api/game/endless", rankedSongLimiter, async (req, res) => {
         if (!rankedSession) {
             response.hints = { album: moreSongInfo.album?.name, releaseDate: moreSongInfo.releaseDate };
             // Log endless game play
-            db.logGamePlay("endless");
+            const endlessUid = req.headers['x-user-id'] ? String(req.headers['x-user-id']).trim().slice(0, 128) : null;
+            db.logGamePlay("endless", endlessUid);
         } else {
             rankedSession.pendingId = song.id;
         }
@@ -699,7 +745,9 @@ app.post("/api/ranked/start", rankedStartLimiter, (req, res) => {
         submitted: false,
     });
     // Log ranked game play
-    db.logGamePlay("ranked");
+    const rankedUid = req.body?.userId ? String(req.body.userId).trim().slice(0, 128)
+        : (req.headers['x-user-id'] ? String(req.headers['x-user-id']).trim().slice(0, 128) : null);
+    db.logGamePlay("ranked", rankedUid);
     res.json({ sessionId });
 });
 

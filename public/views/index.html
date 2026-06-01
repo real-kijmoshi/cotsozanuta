@@ -2320,7 +2320,7 @@
         rankedScore++;rankedScoreVal.textContent=rankedScore
         setTimeout(async()=>{
           if(!rankedActive)return
-          const r=await fetch('/api/game/endless?sessionId='+encodeURIComponent(rankedSessionId)),d=await r.json()
+          const r=await fetch('/api/game/endless?sessionId='+encodeURIComponent(rankedSessionId),{headers:{'X-User-Id':userId||''}}),d=await r.json()
           if(d.error||!rankedActive)return
           await startGame(d)
         },600)
@@ -2337,7 +2337,7 @@
     }else if(type==='skip'){
       setTimeout(async()=>{
         if(!rankedActive)return
-        const r=await fetch('/api/game/endless?sessionId='+encodeURIComponent(rankedSessionId)),d=await r.json()
+        const r=await fetch('/api/game/endless?sessionId='+encodeURIComponent(rankedSessionId),{headers:{'X-User-Id':userId||''}}),d=await r.json()
         if(d.error||!rankedActive)return
         await startGame(d)
       },0)
@@ -2414,12 +2414,12 @@
     // Start server-side session first, then fetch first song
     let sid=null
     try{
-      const sr=await fetch('/api/ranked/start',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})
+      const sr=await fetch('/api/ranked/start',{method:'POST',headers:{'Content-Type':'application/json','X-User-Id':userId||''},body:'{}'})
       const sd=await sr.json()
       if(sd.sessionId)sid=sd.sessionId
     }catch(e){setFeedback('błąd serwera','info');showState('splash');return}
     if(!sid){setFeedback('błąd serwera','info');showState('splash');return}
-    const r=await fetch('/api/game/endless?sessionId='+encodeURIComponent(sid)),d=await r.json()
+    const r=await fetch('/api/game/endless?sessionId='+encodeURIComponent(sid),{headers:{'X-User-Id':userId||''}}),d=await r.json()
     if(d.error){setFeedback(d.error,'info');showState('splash');return}
     rankedSessionId=sid
     await startGame(d)

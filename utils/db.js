@@ -45,8 +45,9 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_game_plays_mode_date ON game_plays(mode, date);
 `);
 
-// ── Migrate: add user_id column to existing leaderboard table ──────────
+// ── Migrate: add user_id column to existing leaderboard and game_plays tables ──
 (function migrateUserIdColumn() {
+  // leaderboard
   const cols = db.prepare("PRAGMA table_info(leaderboard)").all();
   if (!cols.some(c => c.name === "user_id")) {
     try {
@@ -56,11 +57,26 @@ db.exec(`
       console.error("[DB] Failed to add user_id column:", err.message);
     }
   }
-  // Index must be created after the column exists
   try {
     db.exec("CREATE INDEX IF NOT EXISTS idx_lb_user_id ON leaderboard(user_id);");
   } catch (err) {
     console.error("[DB] Failed to create idx_lb_user_id:", err.message);
+  }
+
+  // game_plays
+  const gpCols = db.prepare("PRAGMA table_info(game_plays)").all();
+  if (!gpCols.some(c => c.name === "user_id")) {
+    try {
+      db.exec("ALTER TABLE game_plays ADD COLUMN user_id TEXT;");
+      console.log("[DB] Added user_id column to game_plays.");
+    } catch (err) {
+      console.error("[DB] Failed to add user_id to game_plays:", err.message);
+    }
+  }
+  try {
+    db.exec("CREATE INDEX IF NOT EXISTS idx_game_plays_user_id ON game_plays(user_id);");
+  } catch (err) {
+    console.error("[DB] Failed to create idx_game_plays_user_id:", err.message);
   }
 })();
 
@@ -160,8 +176,11 @@ const stmts = {
   getAllStats:      db.prepare("SELECT date, outcome, words FROM daily_stats ORDER BY date"),
 
   // Game Play logs
-  logGamePlay:     db.prepare("INSERT INTO game_plays (mode, date, timestamp) VALUES (?, ?, ?)"),
-  getGamePlays:    db.prepare("SELECT mode, date, COUNT(*) AS count FROM game_plays GROUP BY mode, date ORDER BY date"),
+  logGamePlay:        db.prepare("INSERT INTO game_plays (mode, date, timestamp, user_id) VALUES (?, ?, ?, ?)"),
+  getGamePlays:       db.prepare("SELECT mode, date, COUNT(*) AS count FROM game_plays GROUP BY mode, date ORDER BY date"),
+  getUniqueUserCount: db.prepare(`SELECT COUNT(*) AS total FROM (SELECT user_id FROM game_plays WHERE user_id IS NOT NULL UNION SELECT user_id FROM leaderboard WHERE user_id IS NOT NULL)`),
+  getNewUsersByMonth: db.prepare(`SELECT substr(first_date,1,7) AS month, COUNT(*) AS new_users FROM (SELECT user_id, MIN(date) AS first_date FROM (SELECT user_id, date FROM game_plays WHERE user_id IS NOT NULL UNION ALL SELECT user_id, date FROM leaderboard WHERE user_id IS NOT NULL) GROUP BY user_id) GROUP BY month ORDER BY month`),
+  getDauByDate:       db.prepare(`SELECT date, COUNT(DISTINCT user_id) AS dau FROM game_plays WHERE user_id IS NOT NULL GROUP BY date ORDER BY date`),
   getExistingLb:   db.prepare("SELECT id, score, name, date, user_id FROM leaderboard WHERE LOWER(name) = ?"),
   getExistingLbByUid: db.prepare("SELECT id, score, name, date, user_id FROM leaderboard WHERE user_id = ?"),
   updateLb:        db.prepare("UPDATE leaderboard SET score = ?, date = ?, name = ?, user_id = ? WHERE id = ?"),
@@ -275,11 +294,17 @@ module.exports = {
   },
 
   // ── Game Play logging ────────────────────────────────────────
-  logGamePlay(mode, date) {
+  logGamePlay(mode, userId, date) {
     const d = date || new Date().toISOString().split("T")[0];
-    stmts.logGamePlay.run(mode, d, Date.now());
+    const uid = userId ? String(userId).trim().slice(0, 128) : null;
+    stmts.logGamePlay.run(mode, d, Date.now(), uid);
   },
   getGamePlays() {
     return stmts.getGamePlays.all();
   },
+
+  // ── User analytics ──────────────────────────────────────────────────────
+  getUniqueUserCount() { return stmts.getUniqueUserCount.get(); },
+  getNewUsersByMonth() { return stmts.getNewUsersByMonth.all(); },
+  getDauByDate()       { return stmts.getDauByDate.all(); },
 };

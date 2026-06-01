@@ -83,5 +83,17 @@ db.exec(`
 `);
 console.log("[migrate] ✓ Base indices ensured.");
 
+// ── 5. Add user_id column to game_plays if missing ───────────────────────────
+const gpCols = db.prepare("PRAGMA table_info(game_plays)").all();
+if (!gpCols.some(c => c.name === "user_id")) {
+  db.exec("ALTER TABLE game_plays ADD COLUMN user_id TEXT;");
+  console.log("[migrate] ✓ Added user_id column to game_plays.");
+  changes++;
+} else {
+  console.log("[migrate] — user_id column already present in game_plays.");
+}
+db.exec("CREATE INDEX IF NOT EXISTS idx_game_plays_user_id ON game_plays(user_id);");
+console.log("[migrate] ✓ Index idx_game_plays_user_id ensured.");
+
 db.close();
 console.log(`\n[migrate] Done. ${changes} change(s) applied.`);
