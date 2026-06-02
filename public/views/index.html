@@ -2908,7 +2908,7 @@
     for(let i=0;i<Math.max(1,wordsRevealed-1);i++)squares.push('⬛')
     squares.push(won?'🟩':'🟥')
     const streakLine=streak>1?'\n🔥 Seria: '+streak+' dni':''
-    return 'COTSOZANUTA 🎵\n📅 '+dateStr+' | Tryb: '+modeLabel+'\n'+resultLine+streakLine+'\n'+squares.join('')+'\ncotsozahit.pl'
+    return 'COTSOZANUTA 🎵\n📅 '+dateStr+' | Tryb: '+modeLabel+'\n'+resultLine+streakLine+'\n'+squares.join('')+'\ncotsozanuta.pl'
   }
 
   async function generateShareImage(mode,date,wordsRevealed,won,cover,streak){
@@ -3006,7 +3006,7 @@
     ctx.font="500 28px 'Share Tech Mono', monospace"
     ctx.fillStyle='rgba(227,28,18,0.7)'
     ctx.letterSpacing='1px'
-    ctx.fillText('cotsozahit.pl',SIZE/2,SIZE-50)
+    ctx.fillText('cotsozanuta.pl',SIZE/2,SIZE-50)
 
     return new Promise(res=>canvas.toBlob(res,'image/png'))
   }
