@@ -49,26 +49,38 @@
     .btn.primary:hover { background: var(--red); color: #fff; }
     .btn:disabled { opacity: .35; cursor: default; }
 
+    /* ── SECTION LABELS ── */
+    .section-label { font-size: .58rem; letter-spacing: .22em; text-transform: uppercase; color: var(--sub2); margin-bottom: 10px; padding-left: 10px; border-left: 2px solid rgba(255,255,255,0.12); }
+    .section-label.accent-green  { border-color: var(--green); color: var(--green); }
+    .section-label.accent-blue   { border-color: var(--blue);  color: var(--blue); }
+    .section-label.accent-yellow { border-color: var(--yellow);color: var(--yellow); }
+    .section-label.accent-red    { border-color: var(--red);   color: var(--red); }
+
     /* ── STATS CARDS ── */
-    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
-    .kpi { background: var(--surface); border: 1px solid var(--border); padding: 16px 20px; }
-    .kpi-val { font-size: 1.8rem; letter-spacing: .04em; color: var(--text); line-height: 1.1; margin-bottom: 6px; font-weight: bold; }
-    .kpi-val.green { color: var(--green); }
-    .kpi-val.red   { color: var(--red); }
-    .kpi-val.blue  { color: var(--blue); }
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 8px; }
+    .kpi { background: var(--surface); border: 1px solid var(--border); border-left-width: 3px; padding: 16px 20px; }
+    .kpi.accent-green  { border-left-color: rgba(34,197,94,0.5); }
+    .kpi.accent-blue   { border-left-color: rgba(59,130,246,0.5); }
+    .kpi.accent-yellow { border-left-color: rgba(234,179,8,0.5); }
+    .kpi.accent-red    { border-left-color: rgba(227,28,18,0.5); }
+    .kpi-val { font-size: 1.9rem; letter-spacing: .04em; color: var(--text); line-height: 1.1; margin-bottom: 6px; font-weight: bold; }
+    .kpi-val.green  { color: var(--green); }
+    .kpi-val.red    { color: var(--red); }
+    .kpi-val.blue   { color: var(--blue); }
     .kpi-val.yellow { color: var(--yellow); }
-    .kpi-label { font-size: .52rem; letter-spacing: .18em; text-transform: uppercase; color: var(--sub); }
-    .kpi-sub { font-size: .48rem; color: var(--sub2); letter-spacing: .1em; margin-top: 4px; }
+    .kpi-label { font-size: .62rem; letter-spacing: .14em; text-transform: uppercase; color: var(--sub); margin-bottom: 2px; }
+    .kpi-sub   { font-size: .56rem; color: var(--sub2); letter-spacing: .08em; margin-top: 5px; line-height: 1.5; }
 
     /* ── CHARTS ── */
-    .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
-    @media (max-width: 768px) { .charts-grid { grid-template-columns: 1fr; gap: 20px; } }
+    .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+    @media (max-width: 768px) { .charts-grid { grid-template-columns: 1fr; gap: 16px; } }
     .chart-panel { background: var(--surface); border: 1px solid var(--border); padding: 20px; }
     .chart-panel.full-width { grid-column: 1 / -1; }
     @media (max-width: 768px) { .chart-panel.full-width { grid-column: auto; } }
     .chart-wrap { position: relative; width: 100%; }
-    .chart-title { font-size: .58rem; letter-spacing: .15em; text-transform: uppercase; color: var(--sub); margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; }
-    canvas.chart { width: 100% !important; height: 180px !important; display: block; }
+    .chart-title { font-size: .62rem; letter-spacing: .12em; text-transform: uppercase; color: var(--text); margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; }
+    .chart-title-sub { font-size: .52rem; color: var(--sub); letter-spacing: .08em; text-transform: none; margin-top: 2px; }
+    canvas.chart { width: 100% !important; height: 190px !important; display: block; cursor: crosshair; }
 
     /* ── LEGEND ── */
     .chart-legend { display: flex; gap: 12px; font-size: .5rem; text-transform: uppercase; letter-spacing: .1em; }
@@ -78,10 +90,10 @@
     /* ── TABLES ── */
     .table-panel { background: var(--surface); border: 1px solid var(--border); padding: 24px; margin-bottom: 24px; }
     .table-container { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: .68rem; }
-    th { text-align: left; padding: 10px 14px; color: var(--sub); letter-spacing: .12em; text-transform: uppercase; border-bottom: 2px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: .72rem; }
+    th { text-align: left; padding: 10px 14px; color: var(--sub); font-size: .58rem; letter-spacing: .14em; text-transform: uppercase; border-bottom: 2px solid rgba(255,255,255,0.1); }
     td { padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: middle; }
-    tr:hover td { background: rgba(255,255,255,0.01); }
+    tr:hover td { background: rgba(255,255,255,0.025); }
     .text-center { text-align: center; }
     .text-right { text-align: right; }
     .rank-lbl { color: var(--sub2); font-weight: bold; }
@@ -123,33 +135,35 @@
   </div>
 
   <div id="stats-content" style="display:none">
-    
-    <!-- HIGHLIGHT CARDS -->
-    <div class="kpi-grid">
-      <div class="kpi">
+
+    <!-- ── AKTYWNOŚĆ ── -->
+    <div class="section-label accent-yellow" style="margin-bottom:12px">Aktywność · uruchomienia gier</div>
+    <div class="kpi-grid" style="margin-bottom:24px">
+      <div class="kpi accent-yellow">
         <div class="kpi-val yellow" id="kpi-all-plays">—</div>
         <div class="kpi-label">wszystkie gry</div>
         <div class="kpi-sub">łączne uruchomienia</div>
       </div>
-      <div class="kpi">
+      <div class="kpi accent-green">
         <div class="kpi-val green" id="kpi-daily-plays">—</div>
         <div class="kpi-label">tryb dzienny</div>
         <div class="kpi-sub" id="kpi-daily-sub">—</div>
       </div>
-      <div class="kpi">
+      <div class="kpi accent-blue">
         <div class="kpi-val blue" id="kpi-endless-plays">—</div>
         <div class="kpi-label">tryb endless</div>
         <div class="kpi-sub" id="kpi-endless-sub">—</div>
       </div>
-      <div class="kpi">
+      <div class="kpi accent-red">
         <div class="kpi-val red" id="kpi-ranked-plays">—</div>
         <div class="kpi-label">tryb rankingowy</div>
         <div class="kpi-sub" id="kpi-ranked-sub">—</div>
       </div>
     </div>
 
-    <!-- DOUBLE KPI ROW FOR ADDDITIONAL INSIGHTS -->
-    <div class="kpi-grid">
+    <!-- ── WYNIKI DZIENNE ── -->
+    <div class="section-label accent-green" style="margin-bottom:12px">Wyniki dzienne · skuteczność</div>
+    <div class="kpi-grid" style="margin-bottom:24px">
       <div class="kpi">
         <div class="kpi-val" id="kpi-streak-cur">—</div>
         <div class="kpi-label">bieżąca seria dni</div>
@@ -160,74 +174,101 @@
         <div class="kpi-label">rekord dobowy</div>
         <div class="kpi-sub" id="kpi-peak-date">—</div>
       </div>
-      <div class="kpi">
+      <div class="kpi accent-green">
         <div class="kpi-val green" id="kpi-success-pct">—</div>
         <div class="kpi-label">skuteczność (daily)</div>
         <div class="kpi-sub">procent wygranych gier</div>
       </div>
-      <div class="kpi">
-        <div class="kpi-val" id="kpi-words-avg">—</div>
-        <div class="kpi-label">średnio słów</div>
+      <div class="kpi accent-blue">
+        <div class="kpi-val blue" id="kpi-words-avg">—</div>
+        <div class="kpi-label">średnio słów (wygrane)</div>
         <div class="kpi-sub" id="kpi-words-sub">—</div>
       </div>
     </div>
 
-    <!-- USER IDENTITY KPI ROW -->
-    <div class="kpi-grid">
-      <div class="kpi">
+    <!-- ── GRACZE ── -->
+    <div class="section-label accent-yellow" style="margin-bottom:12px">Gracze · zasięg i retencja</div>
+    <div class="kpi-grid" style="margin-bottom:24px">
+      <div class="kpi accent-yellow">
         <div class="kpi-val yellow" id="kpi-unique-users">—</div>
         <div class="kpi-label">unikalnych graczy</div>
         <div class="kpi-sub">łącznie (UUID)</div>
       </div>
-      <div class="kpi">
+      <div class="kpi accent-green">
         <div class="kpi-val green" id="kpi-new-week">—</div>
         <div class="kpi-label">nowi w tym tygodniu</div>
         <div class="kpi-sub" id="kpi-new-month-sub">nowi w tym miesiącu: —</div>
       </div>
-      <div class="kpi">
+      <div class="kpi accent-blue">
         <div class="kpi-val blue" id="kpi-dau-today">—</div>
-        <div class="kpi-label">aktywni dziś</div>
+        <div class="kpi-label">aktywni dziś (DAU)</div>
         <div class="kpi-sub" id="kpi-dau-avg-sub">śr. dzienny (7 dni): —</div>
       </div>
+      <div class="kpi accent-blue">
+        <div class="kpi-val blue" id="kpi-avg-games-user">—</div>
+        <div class="kpi-label">śr. gier / gracz</div>
+        <div class="kpi-sub" id="kpi-median-games-user-sub">mediana: —</div>
+      </div>
+    </div>
+
+    <!-- ── TRUDNOŚĆ ── -->
+    <div class="section-label accent-red" style="margin-bottom:12px">Trudność · rozkład słów</div>
+    <div class="kpi-grid" style="margin-bottom:24px">
+      <div class="kpi accent-green">
+        <div class="kpi-val green" id="kpi-median-correct">—</div>
+        <div class="kpi-label">mediana słów · wygrane</div>
+        <div class="kpi-sub" id="kpi-avg-correct-sub">śr: —</div>
+      </div>
+      <div class="kpi accent-red">
+        <div class="kpi-val red" id="kpi-median-giveup">—</div>
+        <div class="kpi-label">mediana słów · poddane</div>
+        <div class="kpi-sub" id="kpi-avg-giveup-sub">śr: —</div>
+      </div>
+      <div class="kpi accent-yellow">
+        <div class="kpi-val yellow" id="kpi-peak-bucket">—</div>
+        <div class="kpi-label">najczęstszy zakres</div>
+        <div class="kpi-sub" id="kpi-peak-bucket-sub">z rozkładu gier</div>
+      </div>
       <div class="kpi">
-        <div class="kpi-val" id="kpi-tracking-note" style="font-size:.55rem; letter-spacing:.06em; color:var(--sub2); line-height:1.5">śledzenie od<br>wprowadzenia UUID</div>
-        <div class="kpi-label">zakres danych</div>
-        <div class="kpi-sub">starsze gry: brak UUID</div>
+        <div class="kpi-val green" id="kpi-success-pct2">—</div>
+        <div class="kpi-label">skuteczność łącznie</div>
+        <div class="kpi-sub">wygrane / wszystkie daily</div>
       </div>
     </div>
 
     <!-- GROWTH & TRENDS SUMMARY PANEL -->
-    <div class="panel" style="margin-bottom: 24px; background: var(--surface); border: 1px solid var(--border);">
-      <h2 style="font-size: .65rem; color: var(--sub); letter-spacing: .15em; margin-bottom: 20px;">DYNAMIKA POPULARNOŚCI I RAPORT WZROSTÓW 📈</h2>
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
-        <div style="border-right: 1px solid rgba(255,255,255,0.04); padding-right: 12px;">
-          <h3 style="font-size: .52rem; color: var(--sub); letter-spacing: .12em; margin-bottom: 8px; text-transform: uppercase;">Porównanie tygodniowe (WoW)</h3>
-          <div style="display: flex; align-items: baseline; gap: 10px;">
-            <span id="trend-week-val" style="font-size: 1.5rem; font-weight: bold; color: var(--text);">—</span>
-            <span id="trend-week-pct" style="font-size: .75rem; font-weight: bold;">—</span>
+    <div class="section-label" style="margin-bottom:12px">Trendy wzrostu</div>
+    <div class="panel" style="margin-bottom: 28px;">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0;">
+        <div style="padding: 4px 20px 4px 0; border-right: 1px solid rgba(255,255,255,0.06);">
+          <div style="font-size:.56rem; color:var(--sub); letter-spacing:.14em; text-transform:uppercase; margin-bottom:10px;">Tydzień do tygodnia (WoW)</div>
+          <div style="display:flex; align-items:baseline; gap:10px; margin-bottom:6px;">
+            <span id="trend-week-val" style="font-size:1.6rem; font-weight:bold; color:var(--text);">—</span>
+            <span id="trend-week-pct" style="font-size:.8rem; font-weight:bold;">—</span>
           </div>
-          <div id="trend-week-desc" style="font-size: .52rem; color: var(--sub2); margin-top: 4px; letter-spacing: .05em;">Ten tydzień: — vs ubiegły tydzień: —</div>
+          <div id="trend-week-desc" style="font-size:.56rem; color:var(--sub2); letter-spacing:.04em;">Ten tydzień: — vs ubiegły: —</div>
         </div>
-        <div style="border-right: 1px solid rgba(255,255,255,0.04); padding-right: 12px;">
-          <h3 style="font-size: .52rem; color: var(--sub); letter-spacing: .12em; margin-bottom: 8px; text-transform: uppercase;">Porównanie miesięczne (MoM)</h3>
-          <div style="display: flex; align-items: baseline; gap: 10px;">
-            <span id="trend-month-val" style="font-size: 1.5rem; font-weight: bold; color: var(--text);">—</span>
-            <span id="trend-month-pct" style="font-size: .75rem; font-weight: bold;">—</span>
+        <div style="padding: 4px 20px; border-right: 1px solid rgba(255,255,255,0.06);">
+          <div style="font-size:.56rem; color:var(--sub); letter-spacing:.14em; text-transform:uppercase; margin-bottom:10px;">Miesiąc do miesiąca (MoM)</div>
+          <div style="display:flex; align-items:baseline; gap:10px; margin-bottom:6px;">
+            <span id="trend-month-val" style="font-size:1.6rem; font-weight:bold; color:var(--text);">—</span>
+            <span id="trend-month-pct" style="font-size:.8rem; font-weight:bold;">—</span>
           </div>
-          <div id="trend-month-desc" style="font-size: .52rem; color: var(--sub2); margin-top: 4px; letter-spacing: .05em;">Ten miesiąc: — vs ubiegły miesiąc: —</div>
+          <div id="trend-month-desc" style="font-size:.56rem; color:var(--sub2); letter-spacing:.04em;">Ten miesiąc: — vs ubiegły: —</div>
         </div>
-        <div>
-          <h3 style="font-size: .52rem; color: var(--sub); letter-spacing: .12em; margin-bottom: 8px; text-transform: uppercase;">Podsumowanie gier rankingowych</h3>
-          <div style="display: flex; align-items: baseline; gap: 10px;">
-            <span id="trend-ranked-avg" style="font-size: 1.5rem; font-weight: bold; color: var(--green);">—</span>
-            <span style="font-size: .52rem; text-transform: uppercase; color: var(--sub); letter-spacing: .1em;">Średni Wynik</span>
+        <div style="padding: 4px 0 4px 20px;">
+          <div style="font-size:.56rem; color:var(--sub); letter-spacing:.14em; text-transform:uppercase; margin-bottom:10px;">Ranking · podsumowanie</div>
+          <div style="display:flex; align-items:baseline; gap:10px; margin-bottom:6px;">
+            <span id="trend-ranked-avg" style="font-size:1.6rem; font-weight:bold; color:var(--green);">—</span>
+            <span style="font-size:.56rem; text-transform:uppercase; color:var(--sub); letter-spacing:.1em;">śr. wynik</span>
           </div>
-          <div id="trend-ranked-desc" style="font-size: .52rem; color: var(--sub2); margin-top: 4px; letter-spacing: .05em;">Najwyższy wynik: — (łączne zgłoszenia: —)</div>
+          <div id="trend-ranked-desc" style="font-size:.56rem; color:var(--sub2); letter-spacing:.04em;">Najwyższy: — · zgłoszenia: —</div>
         </div>
       </div>
     </div>
 
     <!-- CHARTS CANVAS SECTION -->
+    <div class="section-label" style="margin-bottom:16px">Wykresy</div>
     <div class="charts-grid">
       
       <!-- stacked timeline chart -->
@@ -308,9 +349,24 @@
         </div>
       </div>
 
+      <!-- word count distribution -->
+      <div class="chart-panel full-width">
+        <div class="chart-title">
+          <span>Rozkład liczby słów do odgadnięcia</span>
+          <div class="chart-legend">
+            <div class="legend-item"><div class="legend-color" style="background:rgba(34,197,94,0.75)"></div>wygrane</div>
+            <div class="legend-item"><div class="legend-color" style="background:rgba(239,68,68,0.55)"></div>poddane</div>
+          </div>
+        </div>
+        <div class="chart-wrap">
+          <canvas class="chart" id="chart-word-dist"></canvas>
+        </div>
+      </div>
+
     </div>
 
     <!-- LEADERBOARD & DETAILED LIST -->
+    <div class="section-label" style="margin-bottom:16px">Tabele</div>
     <div class="charts-grid">
       
       <!-- Top players -->
@@ -423,37 +479,62 @@
     return { ctx, w, h: 180 }
   }
 
+  // ── shared canvas setup ──────────────────────────────────
+  function getCanvas(id, heightPx) {
+    const el = document.getElementById(id)
+    if (!el) return null
+    const dpr = window.devicePixelRatio || 1
+    const w = el.parentElement.clientWidth || 400
+    const hh = heightPx || 190
+    el.width  = w * dpr; el.height = hh * dpr
+    el.style.width  = w + 'px'; el.style.height = hh + 'px'
+    const ctx = el.getContext('2d'); ctx.scale(dpr, dpr)
+    return { ctx, w, h: hh }
+  }
+
+  function drawYAxis(ctx, pad, ch, maxVal, steps) {
+    ctx.fillStyle = 'rgba(138,127,122,0.55)'; ctx.font = '9px Courier New'; ctx.textAlign = 'right'
+    for (let g = 0; g <= steps; g++) {
+      const frac = g / steps
+      const y = pad.t + ch - frac * ch
+      const val = Math.round(maxVal * frac)
+      ctx.fillText(val, pad.l - 4, y + 3)
+    }
+  }
+
+  function drawGrid(ctx, pad, cw, ch, steps) {
+    ctx.strokeStyle = 'rgba(255,255,255,0.07)'; ctx.lineWidth = 1
+    for (let g = 1; g <= steps; g++) {
+      const y = pad.t + ch - (g / steps) * ch
+      ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + cw, y); ctx.stroke()
+    }
+  }
+
   function drawStackedBarChart(id, labels, series) {
     const canvasData = getCanvas(id)
     if (!canvasData) return
     const { ctx, w, h } = canvasData
-    const pad = { t: 8, r: 8, b: 28, l: 32 }
+    const pad = { t: 18, r: 8, b: 30, l: 38 }
     const cw = w - pad.l - pad.r, ch = h - pad.t - pad.b
     const n = labels.length
     if (!n) return
 
+    const totals = []
     let maxVal = 1
     for (let i = 0; i < n; i++) {
-      let sum = 0
-      for (const sr of series) {
-        sum += (sr.values[i] || 0)
-      }
+      let sum = series.reduce((a, sr) => a + (sr.values[i] || 0), 0)
+      totals.push(sum)
       if (sum > maxVal) maxVal = sum
     }
 
     ctx.clearRect(0, 0, w, h)
-    ctx.fillStyle = 'rgba(255,255,255,0.02)'
+    ctx.fillStyle = 'rgba(255,255,255,0.015)'
     ctx.fillRect(pad.l, pad.t, cw, ch)
+    drawGrid(ctx, pad, cw, ch, 4)
 
-    // grid lines
-    ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1
-    for (let g = 1; g <= 4; g++) {
-      const y = pad.t + ch - (g / 4) * ch
-      ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + cw, y); ctx.stroke()
-    }
-
-    const barW = Math.max(2, cw / n - 2)
+    const barW = Math.max(2, cw / n - 3)
     const gap  = cw / n
+    const showLabels = n <= 20
 
     for (let i = 0; i < n; i++) {
       let base = 0
@@ -467,40 +548,40 @@
         ctx.fillRect(x, y, barW, bh)
         base += bh
       }
+      // value label on top of bar
+      if (showLabels && totals[i] > 0) {
+        const topY = pad.t + ch - (totals[i] / maxVal) * ch - 3
+        ctx.fillStyle = 'rgba(240,236,232,0.55)'; ctx.font = 'bold 8px Courier New'; ctx.textAlign = 'center'
+        ctx.fillText(totals[i], pad.l + i * gap + gap / 2, topY)
+      }
     }
 
-    ctx.fillStyle = 'rgba(138,127,122,0.8)'; ctx.font = '9px Courier New'; ctx.textAlign = 'center'
-    const step = Math.max(1, Math.floor(n / 6))
+    ctx.fillStyle = 'rgba(138,127,122,0.7)'; ctx.font = '9px Courier New'; ctx.textAlign = 'center'
+    const step = Math.max(1, Math.floor(n / 8))
     for (let i = 0; i < n; i += step) {
       ctx.fillText(labels[i], pad.l + i * gap + gap / 2, h - 8)
     }
-
-    ctx.textAlign = 'right'; ctx.fillText(maxVal, pad.l - 3, pad.t + 8)
+    drawYAxis(ctx, pad, ch, maxVal, 4)
   }
 
   function drawSimpleBarChart(id, labels, values, color) {
     const canvasData = getCanvas(id)
     if (!canvasData) return
     const { ctx, w, h } = canvasData
-    const pad = { t: 8, r: 8, b: 28, l: 32 }
+    const pad = { t: 18, r: 8, b: 30, l: 38 }
     const cw = w - pad.l - pad.r, ch = h - pad.t - pad.b
     const n = labels.length
     if (!n) return
 
     const maxVal = Math.max(...values, 1)
-
     ctx.clearRect(0, 0, w, h)
-    ctx.fillStyle = 'rgba(255,255,255,0.02)'
+    ctx.fillStyle = 'rgba(255,255,255,0.015)'
     ctx.fillRect(pad.l, pad.t, cw, ch)
+    drawGrid(ctx, pad, cw, ch, 4)
 
-    ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1
-    for (let g = 1; g <= 4; g++) {
-      const y = pad.t + ch - (g / 4) * ch
-      ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + cw, y); ctx.stroke()
-    }
-
-    const barW = Math.max(2, cw / n - 2)
+    const barW = Math.max(2, cw / n - 3)
     const gap  = cw / n
+    const showLabels = n <= 20
 
     for (let i = 0; i < n; i++) {
       const val = values[i] || 0
@@ -509,57 +590,67 @@
       const y   = pad.t + ch - bh
       ctx.fillStyle = color
       ctx.fillRect(x, y, barW, bh)
+      if (showLabels && val > 0) {
+        ctx.fillStyle = 'rgba(240,236,232,0.55)'; ctx.font = 'bold 8px Courier New'; ctx.textAlign = 'center'
+        ctx.fillText(val, x + barW / 2, y - 3)
+      }
     }
 
-    ctx.fillStyle = 'rgba(138,127,122,0.8)'; ctx.font = '9px Courier New'; ctx.textAlign = 'center'
-    const step = Math.max(1, Math.floor(n / 6))
+    ctx.fillStyle = 'rgba(138,127,122,0.7)'; ctx.font = '9px Courier New'; ctx.textAlign = 'center'
+    const step = Math.max(1, Math.floor(n / 8))
     for (let i = 0; i < n; i += step) {
       ctx.fillText(labels[i], pad.l + i * gap + gap / 2, h - 8)
     }
-
-    ctx.textAlign = 'right'; ctx.fillText(maxVal, pad.l - 3, pad.t + 8)
+    drawYAxis(ctx, pad, ch, maxVal, 4)
   }
 
-  function drawLineChart(id, labels, values, color, yMax) {
+  function drawLineChart(id, labels, values, color, yMax, refLine) {
     const canvasData = getCanvas(id)
     if (!canvasData) return
     const { ctx, w, h } = canvasData
-    const pad = { t: 8, r: 8, b: 28, l: 32 }
+    const pad = { t: 18, r: 8, b: 30, l: 38 }
     const cw = w - pad.l - pad.r, ch = h - pad.t - pad.b
     const n = labels.length
     if (!n) return
 
     const maxVal = yMax || Math.max(...values, 1)
     ctx.clearRect(0, 0, w, h)
-    ctx.fillStyle = 'rgba(255,255,255,0.02)'; ctx.fillRect(pad.l, pad.t, cw, ch)
+    ctx.fillStyle = 'rgba(255,255,255,0.015)'; ctx.fillRect(pad.l, pad.t, cw, ch)
+    drawGrid(ctx, pad, cw, ch, 4)
 
-    ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1
-    for (let g = 1; g <= 4; g++) {
-      const y = pad.t + ch - (g / 4) * ch
-      ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + cw, y); ctx.stroke()
+    // optional reference line (avg/median)
+    if (refLine != null) {
+      const ry = pad.t + ch - (refLine / maxVal) * ch
+      ctx.save()
+      ctx.setLineDash([4, 4]); ctx.strokeStyle = 'rgba(234,179,8,0.5)'; ctx.lineWidth = 1
+      ctx.beginPath(); ctx.moveTo(pad.l, ry); ctx.lineTo(pad.l + cw, ry); ctx.stroke()
+      ctx.setLineDash([])
+      ctx.fillStyle = 'rgba(234,179,8,0.7)'; ctx.font = '8px Courier New'; ctx.textAlign = 'left'
+      ctx.fillText('⌀ ' + refLine, pad.l + 3, ry - 3)
+      ctx.restore()
     }
 
     const pts = values.map((v, i) => ({ x: pad.l + i * (cw / (n - 1 || 1)), y: pad.t + ch - (v / maxVal) * ch }))
 
     const grad = ctx.createLinearGradient(0, pad.t, 0, pad.t + ch)
-    grad.addColorStop(0, color.replace(/[\d.]+\)$/, '0.2)'))
+    grad.addColorStop(0, color.replace(/[\d.]+\)$/, '0.18)'))
     grad.addColorStop(1, 'transparent')
     ctx.beginPath(); ctx.moveTo(pts[0].x, pad.t + ch)
     pts.forEach(p => ctx.lineTo(p.x, p.y))
     ctx.lineTo(pts[pts.length - 1].x, pad.t + ch)
     ctx.closePath(); ctx.fillStyle = grad; ctx.fill()
 
-    ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = 1.8; ctx.lineJoin = 'round'
+    ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.lineJoin = 'round'
     pts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y))
     ctx.stroke()
 
     ctx.fillStyle = color
     pts.forEach(p => { ctx.beginPath(); ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2); ctx.fill() })
 
-    ctx.fillStyle = 'rgba(138,127,122,0.8)'; ctx.font = '9px Courier New'; ctx.textAlign = 'center'
-    const step = Math.max(1, Math.floor(n / 6))
+    ctx.fillStyle = 'rgba(138,127,122,0.7)'; ctx.font = '9px Courier New'; ctx.textAlign = 'center'
+    const step = Math.max(1, Math.floor(n / 8))
     for (let i = 0; i < n; i += step) ctx.fillText(labels[i], pts[i].x, h - 8)
-    ctx.textAlign = 'right'; ctx.fillText(maxVal, pad.l - 3, pad.t + 8)
+    drawYAxis(ctx, pad, ch, maxVal, 4)
   }
 
   // ── INIT AND DATA PETITION ──────────────────────────────────
@@ -598,11 +689,13 @@
       const last30 = cachedStats.perDay.slice(-30)
       const dateLabels = last30.map(x => x.date.slice(5))
       const successRates = last30.map(x => x.plays ? Math.round(x.correct / x.plays * 100) : 0)
-      drawLineChart('chart-daily-success', dateLabels, successRates, 'rgba(34,197,94,0.85)', 100)
+      const avgSuccess = successRates.length ? Math.round(successRates.reduce((a, b) => a + b, 0) / successRates.length) : null
+      drawLineChart('chart-daily-success', dateLabels, successRates, 'rgba(34,197,94,0.85)', 100, avgSuccess)
 
-      // WORDS COUNTER CHART
+      // WORDS COUNTER CHART — with avg reference line
       const avgWords = last30.map(x => x.avgWords)
-      drawLineChart('chart-daily-words', dateLabels, avgWords, 'rgba(59,130,246,0.8)')
+      const globalAvg = cachedStats.avgWords?.correct ?? null
+      drawLineChart('chart-daily-words', dateLabels, avgWords, 'rgba(59,130,246,0.8)', null, globalAvg)
     }
 
     // DRAW RANKED CHARTS
@@ -628,6 +721,15 @@
         const dauValues = last30dau.map(x => x.dau)
         drawLineChart('chart-dau', dauLabels, dauValues, 'rgba(59,130,246,0.85)')
       }
+    }
+
+    // DRAW WORD DISTRIBUTION CHART
+    if (cachedStats?.wordDistribution?.length) {
+      const dist = cachedStats.wordDistribution
+      drawStackedBarChart('chart-word-dist', dist.map(b => b.label), [
+        { name: 'Wygrane',  values: dist.map(b => b.correct), color: 'rgba(34,197,94,0.75)' },
+        { name: 'Poddane',  values: dist.map(b => b.giveup),  color: 'rgba(239,68,68,0.55)' },
+      ])
     }
   }
 
@@ -675,9 +777,23 @@
 
       const rate = stats.totals.plays ? Math.round(stats.totals.correct / stats.totals.plays * 100) : 0
       document.getElementById('kpi-success-pct').textContent = rate + '%'
+      const el2 = document.getElementById('kpi-success-pct2')
+      if (el2) el2.textContent = rate + '%'
 
       document.getElementById('kpi-words-avg').textContent = stats.avgWords?.correct ?? '—'
       document.getElementById('kpi-words-sub').innerHTML = `poddane: <span style="color:var(--red)">${stats.avgWords?.giveup ?? '—'}</span>`
+
+      // Populating Engagement KPIs
+      document.getElementById('kpi-avg-games-user').textContent = stats.avgGamesPerUser ?? '—'
+      document.getElementById('kpi-median-games-user-sub').textContent = `mediana: ${stats.medianGamesPerUser ?? '—'}`
+      document.getElementById('kpi-median-correct').textContent = stats.medianWords?.correct ?? '—'
+      document.getElementById('kpi-avg-correct-sub').textContent = `śr: ${stats.avgWords?.correct ?? '—'}`
+      document.getElementById('kpi-median-giveup').textContent = stats.medianWords?.giveup ?? '—'
+      document.getElementById('kpi-avg-giveup-sub').textContent = `śr: ${stats.avgWords?.giveup ?? '—'}`
+      if (stats.peakBucket) {
+        document.getElementById('kpi-peak-bucket').textContent = stats.peakBucket.label + ' słów'
+        document.getElementById('kpi-peak-bucket-sub').textContent = `${stats.peakBucket.correct + stats.peakBucket.giveup} gier w tym zakresie`
+      }
 
       // Populating User Identity KPIs
       if (users) {

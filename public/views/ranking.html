@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ranking – Cotsozanuta</title>
+  <meta name="description" content="Top lista najlepszych wyników w trybie rankingowym Cotsozanuta. Kto zgaduje piosenki Otsochodzi najszybciej?">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#060404">
+  <link rel="icon" type="image/png" href="/images/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Share+Tech+Mono&family=Barlow+Condensed:ital,wght@0,400;0,700;0,900&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#060404;--text:#f2e9e4;--sub:rgba(242,233,228,0.38);--sub2:rgba(242,233,228,0.16);
+      --red:#e31c12;--red-dim:rgba(227,28,18,0.22);--red-glow:rgba(227,28,18,0.4);
+      --ok:#4fc85a;--mono:'Share Tech Mono',monospace;
+      --display:'Anton',sans-serif;--cond:'Barlow Condensed',sans-serif;
+      --gold:rgba(255,200,40,0.9);--silver:rgba(210,210,210,0.8);--bronze:rgba(210,130,50,0.85);
+    }
+    ::-webkit-scrollbar{width:8px}
+    ::-webkit-scrollbar-track{background:rgba(6,4,4,0.4)}
+    ::-webkit-scrollbar-thumb{background:rgba(227,28,18,0.25);border-radius:4px}
+    ::-webkit-scrollbar-thumb:hover{background:rgba(227,28,18,0.45)}
+    ::selection{background:rgba(227,28,18,0.22);color:var(--text)}
+    html{font-size:16px}
+    body{
+      font-family:var(--cond);background:var(--bg);color:var(--text);
+      min-height:100dvh;display:flex;flex-direction:column;
+      -webkit-font-smoothing:antialiased;overflow-x:hidden;
+    }
+    #bg-noise{
+      position:fixed;inset:0;z-index:-1;opacity:.1;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='500' height='500'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='500' height='500' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+      background-size:250px;mix-blend-mode:screen;pointer-events:none;
+    }
+    #bg-scan{
+      position:fixed;inset:0;z-index:9990;pointer-events:none;
+      background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.06) 3px,rgba(0,0,0,0.06) 4px);
+    }
+
+    /* ─── NAV ─────────────────────────────────────────── */
+    nav{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:0 20px;height:54px;
+      border-bottom:1px solid rgba(227,28,18,0.2);flex-shrink:0;
+      position:relative;z-index:100;
+      background:linear-gradient(to bottom,rgba(6,4,4,0.96) 0%,rgba(6,4,4,0.8) 100%);
+      backdrop-filter:blur(6px);
+    }
+    nav::after{
+      content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
+      background:linear-gradient(90deg,transparent 0%,rgba(227,28,18,0.6) 30%,rgba(227,28,18,0.6) 70%,transparent 100%);
+    }
+    .wordmark{
+      font-family:var(--display);font-size:1.25rem;letter-spacing:.1em;
+      text-transform:uppercase;color:var(--text);text-decoration:none;
+    }
+    .wordmark .wm-hl{color:var(--red)}
+    .wordmark .wm-sub{color:var(--sub);font-size:.7em}
+    .nav-links{display:flex;align-items:center;gap:6px}
+    .nav-link{
+      font-family:var(--mono);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;
+      color:var(--sub);text-decoration:none;padding:6px 12px;
+      border:1px solid transparent;transition:color .14s,border-color .14s;
+    }
+    .nav-link:hover{color:var(--text);border-color:rgba(255,255,255,0.1)}
+    .nav-link.active{color:var(--red)}
+
+    /* ─── PAGE HEADER ─────────────────────────────────── */
+    .page-header{
+      padding:40px 20px 28px;max-width:900px;margin:0 auto;width:100%;
+      border-bottom:1px solid rgba(255,255,255,0.07);
+    }
+    .page-header-pill{
+      display:inline-block;font-family:var(--display);font-size:.7rem;
+      letter-spacing:.22em;color:#fff;background:var(--red);
+      padding:3px 14px 2px;margin-bottom:14px;
+    }
+    .page-title{
+      font-family:var(--display);font-size:clamp(2.2rem,6vw,4.2rem);
+      letter-spacing:.06em;text-transform:uppercase;color:var(--text);line-height:.9;
+    }
+    .page-title em{color:var(--red);font-style:normal}
+    .page-subtitle{
+      font-family:var(--mono);font-size:.62rem;letter-spacing:.14em;
+      text-transform:uppercase;color:var(--sub);margin-top:10px;
+    }
+
+    /* ─── MAIN ─────────────────────────────────────────── */
+    main{flex:1;max-width:900px;margin:0 auto;width:100%;padding:40px 20px 60px}
+
+    /* ─── LOADING ────────────────────────────────────────── */
+    #rank-loading{
+      display:flex;flex-direction:column;align-items:center;gap:12px;padding:80px 0;
+    }
+    .spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,0.08);border-top-color:var(--red);border-radius:50%;animation:spin .7s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .load-msg{font-family:var(--mono);font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;color:var(--sub)}
+
+    /* ─── PODIUM ─────────────────────────────────────────── */
+    #podium-section{
+      display:none;margin-bottom:48px;
+    }
+    .podium-label{
+      font-family:var(--mono);font-size:.58rem;letter-spacing:.2em;text-transform:uppercase;
+      color:var(--sub);margin-bottom:20px;
+    }
+    .podium-label::before{content:'■ ';color:var(--red);opacity:.6}
+    .podium-row{
+      display:flex;align-items:flex-end;justify-content:center;gap:6px;height:200px;
+    }
+    .podium-slot{
+      display:flex;flex-direction:column;align-items:center;gap:0;
+      flex:1;max-width:200px;
+    }
+    .podium-name{
+      font-family:var(--mono);font-size:.72rem;letter-spacing:.04em;
+      color:var(--text);text-align:center;margin-bottom:6px;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+      max-width:100%;padding:0 4px;
+    }
+    .podium-score{
+      font-family:var(--display);font-size:2.4rem;letter-spacing:.04em;
+      color:var(--text);line-height:1;text-align:center;margin-bottom:4px;
+    }
+    .podium-score span{
+      font-family:var(--mono);font-size:.5rem;letter-spacing:.12em;
+      text-transform:uppercase;color:var(--sub);margin-left:3px;
+    }
+    .podium-date{
+      font-family:var(--mono);font-size:.52rem;letter-spacing:.06em;
+      color:var(--sub2);text-align:center;margin-bottom:8px;
+    }
+    .podium-block{
+      width:100%;display:flex;align-items:center;justify-content:center;
+      font-family:var(--display);font-size:2rem;
+    }
+    /* heights: 2nd=120, 1st=160, 3rd=90 */
+    .podium-slot.p1{order:2}
+    .podium-slot.p2{order:1}
+    .podium-slot.p3{order:3}
+    .podium-slot.p1 .podium-block{height:160px;background:linear-gradient(to bottom,rgba(255,200,40,0.15),rgba(255,200,40,0.06));border:1px solid rgba(255,200,40,0.35);border-bottom:3px solid rgba(255,200,40,0.7)}
+    .podium-slot.p2 .podium-block{height:120px;background:linear-gradient(to bottom,rgba(210,210,210,0.1),rgba(210,210,210,0.04));border:1px solid rgba(210,210,210,0.25);border-bottom:3px solid rgba(210,210,210,0.5)}
+    .podium-slot.p3 .podium-block{height:90px;background:linear-gradient(to bottom,rgba(210,130,50,0.1),rgba(210,130,50,0.04));border:1px solid rgba(210,130,50,0.25);border-bottom:3px solid rgba(210,130,50,0.5)}
+    .podium-slot.p1 .podium-score{color:var(--gold)}
+    .podium-slot.p2 .podium-score{color:var(--silver)}
+    .podium-slot.p3 .podium-score{color:var(--bronze)}
+
+    @keyframes podiumIn{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+    .podium-slot.p2{animation:podiumIn .45s cubic-bezier(0.15,0,0,1) .05s both}
+    .podium-slot.p1{animation:podiumIn .45s cubic-bezier(0.15,0,0,1) .18s both}
+    .podium-slot.p3{animation:podiumIn .45s cubic-bezier(0.15,0,0,1) .30s both}
+
+    /* ─── FULL TABLE ─────────────────────────────────────── */
+    #table-section{margin-bottom:48px}
+    .section-label{
+      font-family:var(--mono);font-size:.58rem;letter-spacing:.2em;text-transform:uppercase;
+      color:var(--sub);margin-bottom:14px;
+    }
+    .section-label::before{content:'■ ';color:var(--red);opacity:.6}
+    .section-divider{
+      height:1px;
+      background:linear-gradient(90deg,transparent 0%,rgba(227,28,18,0.18) 30%,rgba(227,28,18,0.18) 70%,transparent 100%);
+      margin-bottom:12px;
+    }
+    .rank-table{width:100%;border-collapse:collapse}
+    .rank-table thead tr{border-bottom:1px solid rgba(255,255,255,0.06)}
+    .rank-table th{
+      font-family:var(--mono);font-size:.54rem;letter-spacing:.14em;text-transform:uppercase;
+      color:var(--sub2);padding:6px 10px;text-align:left;font-weight:normal;
+    }
+    .rank-table th.right{text-align:right}
+    .rank-table tbody tr{
+      border-bottom:1px solid rgba(255,255,255,0.03);
+      transition:background .08s;
+    }
+    .rank-table tbody tr:hover{background:rgba(255,255,255,0.025)}
+    .rank-table tbody tr.me{background:rgba(227,28,18,0.06)}
+    .rank-table td{padding:10px 10px;vertical-align:middle}
+    .td-rank{
+      font-family:var(--mono);font-size:.64rem;letter-spacing:.04em;
+      color:var(--sub2);text-align:center;width:36px;
+    }
+    .td-rank.gold{color:var(--gold)}
+    .td-rank.silver{color:var(--silver)}
+    .td-rank.bronze{color:var(--bronze)}
+    .td-name{
+      font-family:var(--mono);font-size:.82rem;letter-spacing:.03em;color:var(--text);
+    }
+    .td-score{
+      font-family:var(--display);font-size:1.3rem;letter-spacing:.04em;
+      color:var(--text);text-align:right;
+    }
+    .td-score-unit{
+      font-family:var(--mono);font-size:.42rem;letter-spacing:.1em;
+      text-transform:uppercase;color:var(--sub2);margin-left:2px;
+    }
+    .td-date{
+      font-family:var(--mono);font-size:.6rem;letter-spacing:.04em;
+      color:var(--sub2);text-align:right;width:90px;
+    }
+
+    /* ─── MONTHLY CHAMPIONS ─────────────────────────────── */
+    #monthly-section{margin-bottom:48px}
+    .monthly-grid{display:flex;flex-direction:column;gap:3px}
+    .monthly-row{
+      display:grid;grid-template-columns:80px 1fr auto auto;
+      align-items:center;gap:12px;
+      padding:10px 14px;
+      background:rgba(255,255,255,0.015);
+      border-left:2px solid rgba(255,255,255,0.07);
+      transition:background .08s,border-left-color .15s;
+    }
+    .monthly-row:hover{background:rgba(255,255,255,0.03);border-left-color:rgba(227,28,18,0.35)}
+    .monthly-month-lbl{
+      font-family:var(--mono);font-size:.64rem;letter-spacing:.08em;text-transform:uppercase;
+      color:var(--text);
+    }
+    .monthly-submissions{
+      font-family:var(--mono);font-size:.58rem;letter-spacing:.08em;
+      color:var(--sub);
+    }
+    .monthly-top-score{
+      font-family:var(--display);font-size:1.2rem;letter-spacing:.04em;color:var(--text);
+    }
+    .monthly-top-score span{
+      font-family:var(--mono);font-size:.4rem;letter-spacing:.1em;
+      text-transform:uppercase;color:var(--sub2);margin-left:2px;
+    }
+
+    /* ─── PLAY BTN ────────────────────────────────────────── */
+    .play-btn{
+      display:inline-block;
+      font-family:var(--display);font-size:.9rem;letter-spacing:.12em;text-transform:uppercase;
+      background:var(--red);border:none;padding:11px 32px 10px;color:#fff;
+      text-decoration:none;cursor:pointer;transition:opacity .12s;
+      margin-top:8px;
+    }
+    .play-btn:hover{opacity:.85}
+
+    /* ─── EMPTY ──────────────────────────────────────────── */
+    .empty-msg{
+      font-family:var(--mono);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;
+      color:var(--sub2);text-align:center;padding:40px 0;
+    }
+
+    /* ─── FOOTER ─────────────────────────────────────────── */
+    footer{
+      border-top:1px solid rgba(227,28,18,0.15);height:38px;
+      display:flex;align-items:center;justify-content:space-between;
+      padding:0 20px;flex-shrink:0;
+      background:rgba(6,4,4,0.88);backdrop-filter:blur(6px);
+    }
+    .ft-left{font-family:var(--mono);font-size:.64rem;letter-spacing:.12em;text-transform:uppercase;color:var(--sub)}
+    .ft-link{font-family:var(--mono);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--sub);text-decoration:none;transition:color .14s}
+    .ft-link:hover{color:rgba(227,28,18,0.8)}
+    .ft-right{display:flex;align-items:center;gap:16px}
+
+    @media(max-width:600px){
+      .podium-row{gap:4px;height:160px}
+      .podium-slot.p1 .podium-block{height:120px}
+      .podium-slot.p2 .podium-block{height:90px}
+      .podium-slot.p3 .podium-block{height:70px}
+      .podium-score{font-size:1.8rem}
+      .podium-name{font-size:.65rem}
+      .td-date{display:none}
+      main{padding:28px 12px 48px}
+    }
+  </style>
+</head>
+<body>
+<div id="bg-noise"></div>
+<div id="bg-scan"></div>
+
+<nav>
+  <a class="wordmark" href="/">C<span class="wm-hl">otso</span>zanuta<span class="wm-sub">.pl</span></a>
+  <div class="nav-links">
+    <a class="nav-link" href="/discografia">Dyskografia</a>
+    <a class="nav-link active" href="/ranking">Ranking</a>
+    <a class="nav-link" href="/">Graj</a>
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="page-header-pill">tryb rankingowy</div>
+  <h1 class="page-title">Hall of <em>Fame</em></h1>
+  <div class="page-subtitle" id="rank-subtitle">ładowanie&#8230;</div>
+</div>
+
+<main>
+  <div id="rank-loading">
+    <div class="spinner"></div>
+    <div class="load-msg">ładowanie rankingu&#8230;</div>
+  </div>
+
+  <div id="rank-content" style="display:none">
+    <!-- Podium -->
+    <div id="podium-section">
+      <div class="podium-label">&#9632;&nbsp; podium &mdash; top 3</div>
+      <div class="podium-row" id="podium-row"></div>
+    </div>
+
+    <!-- Full table -->
+    <div id="table-section">
+      <div class="section-label">&#9632;&nbsp; pełna lista wyników</div>
+      <div class="section-divider"></div>
+      <div id="table-wrap"></div>
+    </div>
+
+    <!-- Monthly champions -->
+    <div id="monthly-section">
+      <div class="section-label">&#9632;&nbsp; najlepsze wyniki miesięczne</div>
+      <div class="section-divider"></div>
+      <div class="monthly-grid" id="monthly-grid"></div>
+    </div>
+
+    <a class="play-btn" href="/">zagraj teraz &#8594;</a>
+  </div>
+</main>
+
+<footer>
+  <span class="ft-left">cotsozanuta &middot; ranking</span>
+  <span class="ft-right">
+    <a class="ft-link" href="/">graj</a>
+    <a class="ft-link" href="/discografia">dyskografia</a>
+    <a class="ft-link" href="/regulamin">regulamin</a>
+  </span>
+</footer>
+
+<script>
+  function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+  function fmtDate(d){
+    if(!d)return '';
+    const [y,m,day]=d.split('-');
+    return day+'.'+m+'.'+y;
+  }
+  function fmtMonth(m){
+    const months=['Styczeń','Luty','Marzec','Kwiecień','Maj','Czerwiec','Lipiec','Sierpień','Wrzesień','Październik','Listopad','Grudzień'];
+    const parts=m.split('-');
+    return months[parseInt(parts[1])-1]+' '+parts[0];
+  }
+
+  async function load() {
+    try {
+      const [lbRes, monthlyRes] = await Promise.all([
+        fetch('/api/leaderboard?limit=100'),
+        fetch('/api/leaderboard/monthly'),
+      ]);
+      const board   = await lbRes.json();
+      const monthly = await monthlyRes.json();
+
+      document.getElementById('rank-loading').style.display = 'none';
+      document.getElementById('rank-content').style.display = 'block';
+
+      const total = Array.isArray(board) ? board.length : 0;
+      document.getElementById('rank-subtitle').textContent =
+        total + ' ' + (total===1?'wynik':total<5?'wyniki':'wyników') + ' · tryb rankingowy · 60 sekund';
+
+      renderPodium(board);
+      renderTable(board);
+      renderMonthly(monthly);
+    } catch(e) {
+      document.getElementById('rank-loading').innerHTML =
+        '<div style="font-family:var(--mono);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:rgba(227,28,18,0.7);text-align:center;padding:60px 0">Błąd ładowania rankingu</div>';
+    }
+  }
+
+  function renderPodium(board) {
+    if (!board || board.length < 1) return;
+    const section = document.getElementById('podium-section');
+    section.style.display = 'block';
+    const medals = ['🥇','🥈','🥉'];
+    const slots  = [
+      { cls: 'p1', idx: 0 },
+      { cls: 'p2', idx: 1 },
+      { cls: 'p3', idx: 2 },
+    ];
+    const html = slots.map(({cls, idx}) => {
+      const e = board[idx];
+      if (!e) return '<div class="podium-slot ' + cls + '"><div class="podium-block"></div></div>';
+      return '<div class="podium-slot ' + cls + '">' +
+        '<div class="podium-name">' + esc(e.name) + '</div>' +
+        '<div class="podium-score">' + e.score + '<span>pkt</span></div>' +
+        '<div class="podium-date">' + fmtDate(e.date) + '</div>' +
+        '<div class="podium-block">' + medals[idx] + '</div>' +
+      '</div>';
+    }).join('');
+    document.getElementById('podium-row').innerHTML = html;
+  }
+
+  function renderTable(board) {
+    const wrap = document.getElementById('table-wrap');
+    if (!board || !board.length) {
+      wrap.innerHTML = '<div class="empty-msg">Brak wyników &mdash; bądź pierwszy!</div>';
+      return;
+    }
+    const medalClass = ['gold','silver','bronze'];
+    const medals     = ['🥇','🥈','🥉'];
+    const rows = board.map((e, i) => {
+      const rankCls = i < 3 ? ' ' + medalClass[i] : '';
+      const rankLabel = i < 3 ? medals[i] : '#' + (i+1);
+      return '<tr>' +
+        '<td class="td-rank' + rankCls + '">' + rankLabel + '</td>' +
+        '<td class="td-name">' + esc(e.name) + '</td>' +
+        '<td class="td-score">' + e.score + '<span class="td-score-unit">pkt</span></td>' +
+        '<td class="td-date">' + fmtDate(e.date) + '</td>' +
+      '</tr>';
+    }).join('');
+    wrap.innerHTML =
+      '<table class="rank-table">' +
+        '<thead><tr>' +
+          '<th>#</th><th>Gracz</th>' +
+          '<th class="right">Wynik</th><th class="right">Data</th>' +
+        '</tr></thead>' +
+        '<tbody>' + rows + '</tbody>' +
+      '</table>';
+  }
+
+  function renderMonthly(monthly) {
+    const grid = document.getElementById('monthly-grid');
+    if (!monthly || !monthly.length) {
+      document.getElementById('monthly-section').style.display = 'none';
+      return;
+    }
+    const sorted = monthly.slice().sort((a,b) => b.month.localeCompare(a.month));
+    grid.innerHTML = sorted.map(r => {
+      return '<div class="monthly-row">' +
+        '<div class="monthly-month-lbl">' + esc(fmtMonth(r.month)) + '</div>' +
+        '<div class="monthly-submissions">' + r.submissions + ' ' + (r.submissions===1?'wynik':r.submissions<5?'wyniki':'wyników') + '</div>' +
+        '<div class="monthly-top-score">' + r.topScore + '<span>pkt&nbsp;max</span></div>' +
+      '</div>';
+    }).join('');
+  }
+
+  load();
+</script>
+</body>
+</html>

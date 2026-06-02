@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dyskografia Otsochodzi – Cotsozanuta</title>
+  <meta name="description" content="Przeglądaj całą dyskografię Otsochodzi. Sprawdź, które piosenki pojawiały się w trybie dziennym Cotsozanuta.">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#060404">
+  <link rel="icon" type="image/png" href="/images/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Share+Tech+Mono&family=Barlow+Condensed:ital,wght@0,400;0,700;0,900&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#060404;--panel:rgba(6,4,4,0.82);--line:rgba(255,255,255,0.07);
+      --text:#f2e9e4;--sub:rgba(242,233,228,0.38);--sub2:rgba(242,233,228,0.16);
+      --red:#e31c12;--red-dim:rgba(227,28,18,0.22);--red-glow:rgba(227,28,18,0.4);
+      --ok:#4fc85a;--mono:'Share Tech Mono',monospace;
+      --display:'Anton',sans-serif;--cond:'Barlow Condensed',sans-serif;
+    }
+    ::-webkit-scrollbar{width:8px;height:8px}
+    ::-webkit-scrollbar-track{background:rgba(6,4,4,0.4)}
+    ::-webkit-scrollbar-thumb{background:rgba(227,28,18,0.25);border-radius:4px}
+    ::-webkit-scrollbar-thumb:hover{background:rgba(227,28,18,0.45)}
+    ::selection{background:rgba(227,28,18,0.22);color:var(--text)}
+    html{font-size:16px}
+    body{
+      font-family:var(--cond);background:var(--bg);color:var(--text);
+      min-height:100dvh;display:flex;flex-direction:column;
+      -webkit-font-smoothing:antialiased;overflow-x:hidden;
+    }
+    #bg-noise{
+      position:fixed;inset:0;z-index:-1;opacity:.1;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='500' height='500'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='500' height='500' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+      background-size:250px;mix-blend-mode:screen;pointer-events:none;
+    }
+    #bg-scan{
+      position:fixed;inset:0;z-index:9990;pointer-events:none;
+      background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.06) 3px,rgba(0,0,0,0.06) 4px);
+    }
+
+    /* ─── NAV ─────────────────────────────────────────── */
+    nav{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:0 20px;height:54px;
+      border-bottom:1px solid rgba(227,28,18,0.2);flex-shrink:0;
+      position:relative;z-index:100;
+      background:linear-gradient(to bottom,rgba(6,4,4,0.96) 0%,rgba(6,4,4,0.8) 100%);
+      backdrop-filter:blur(6px);
+    }
+    nav::after{
+      content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
+      background:linear-gradient(90deg,transparent 0%,rgba(227,28,18,0.6) 30%,rgba(227,28,18,0.6) 70%,transparent 100%);
+    }
+    .wordmark{
+      font-family:var(--display);font-size:1.25rem;letter-spacing:.1em;
+      text-transform:uppercase;color:var(--text);text-decoration:none;
+    }
+    .wordmark .wm-hl{color:var(--red)}
+    .wordmark .wm-sub{color:var(--sub);font-size:.7em}
+    .nav-links{display:flex;align-items:center;gap:6px}
+    .nav-link{
+      font-family:var(--mono);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;
+      color:var(--sub);text-decoration:none;padding:6px 12px;
+      border:1px solid transparent;transition:color .14s,border-color .14s;
+    }
+    .nav-link:hover{color:var(--text);border-color:rgba(255,255,255,0.1)}
+    .nav-link.active{color:var(--red)}
+
+    /* ─── PAGE HEADER ─────────────────────────────────── */
+    .page-header{
+      padding:40px 20px 28px;max-width:1200px;margin:0 auto;width:100%;
+      border-bottom:1px solid var(--line);
+    }
+    .page-header-pill{
+      display:inline-block;font-family:var(--display);font-size:.7rem;
+      letter-spacing:.22em;color:#fff;background:var(--red);
+      padding:3px 14px 2px;margin-bottom:14px;
+    }
+    .page-title{
+      font-family:var(--display);font-size:clamp(2.2rem,6vw,4.2rem);
+      letter-spacing:.06em;text-transform:uppercase;color:var(--text);
+      line-height:.9;
+    }
+    .page-title em{color:var(--red);font-style:normal}
+    .page-subtitle{
+      font-family:var(--mono);font-size:.65rem;letter-spacing:.14em;
+      text-transform:uppercase;color:var(--sub);margin-top:10px;
+    }
+
+    /* ─── MAIN ─────────────────────────────────────────── */
+    main{flex:1;max-width:1200px;margin:0 auto;width:100%;padding:28px 20px 60px}
+
+    /* ─── SEARCH ────────────────────────────────────────── */
+    .search-row{
+      display:flex;align-items:center;gap:10px;margin-bottom:28px;flex-wrap:wrap;
+    }
+    #disc-search{
+      flex:1;min-width:200px;max-width:360px;
+      background:rgba(6,4,4,0.88);border:1px solid rgba(255,255,255,0.1);
+      border-left:3px solid var(--red);padding:11px 16px;
+      font-family:var(--mono);font-size:.8rem;letter-spacing:.04em;
+      color:var(--text);outline:none;
+    }
+    #disc-search::placeholder{color:var(--sub);font-size:.65rem;letter-spacing:.14em;text-transform:uppercase}
+    #disc-search:focus{border-top-color:rgba(255,255,255,0.22);border-bottom-color:rgba(255,255,255,0.22)}
+    .sort-label{font-family:var(--mono);font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--sub);flex-shrink:0}
+    .seg-ctrl{display:flex;border:1px solid rgba(255,255,255,0.1);overflow:hidden}
+    .seg-ctrl button{
+      font-family:var(--mono);font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;
+      background:transparent;border:none;border-right:1px solid rgba(255,255,255,0.07);
+      color:var(--sub);padding:9px 16px;cursor:pointer;transition:background .1s,color .1s;
+    }
+    .seg-ctrl button:last-child{border-right:none}
+    .seg-ctrl button.active{background:var(--red);color:#fff}
+    .disc-summary{
+      font-family:var(--mono);font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;
+      color:var(--sub2);margin-left:auto;
+    }
+
+    /* ─── LOADING / EMPTY ───────────────────────────────── */
+    #disc-loading{
+      display:flex;flex-direction:column;align-items:center;gap:12px;padding:80px 0;
+    }
+    .spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,0.08);border-top-color:var(--red);border-radius:50%;animation:spin .7s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .load-msg{font-family:var(--mono);font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;color:var(--sub)}
+    .empty-msg{
+      font-family:var(--mono);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;
+      color:var(--sub2);text-align:center;padding:60px 0;
+    }
+
+    /* ─── ALBUM GRID ─────────────────────────────────────── */
+    #albums-grid{display:flex;flex-direction:column;gap:12px}
+
+    .album-block{
+      background:rgba(8,5,5,0.75);border:1px solid rgba(255,255,255,0.06);
+      border-left:3px solid var(--red-dim);overflow:hidden;
+      transition:border-left-color .2s;
+    }
+    .album-block:hover{border-left-color:rgba(227,28,18,0.55)}
+    .album-block.expanded{border-left-color:var(--red)}
+
+    .album-header{
+      display:grid;grid-template-columns:64px 1fr auto;align-items:center;gap:14px;
+      padding:14px 18px 14px 14px;cursor:pointer;
+      transition:background .1s;user-select:none;
+    }
+    .album-header:hover{background:rgba(255,255,255,0.02)}
+    .album-cover{
+      width:64px;height:64px;object-fit:cover;flex-shrink:0;
+      background:rgba(227,28,18,0.08);display:block;
+    }
+    .album-cover-ph{
+      width:64px;height:64px;flex-shrink:0;
+      background:rgba(227,28,18,0.06);
+      display:flex;align-items:center;justify-content:center;
+      font-family:var(--display);font-size:1.4rem;color:rgba(227,28,18,0.25);
+    }
+    .album-meta{min-width:0}
+    .album-name{
+      font-family:var(--display);font-size:1.2rem;letter-spacing:.06em;
+      text-transform:uppercase;color:var(--text);
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
+    .album-sub{
+      font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;
+      color:var(--sub);margin-top:4px;
+    }
+    .album-daily-badge{
+      font-family:var(--mono);font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;
+      color:var(--red);background:rgba(227,28,18,0.1);border:1px solid rgba(227,28,18,0.2);
+      padding:3px 8px;margin-top:5px;display:inline-block;
+    }
+    .album-toggle{
+      font-family:var(--mono);font-size:.7rem;color:var(--sub);
+      transition:transform .2s,color .2s;flex-shrink:0;
+    }
+    .album-block.expanded .album-toggle{transform:rotate(90deg);color:var(--red)}
+
+    .album-songs{display:none;border-top:1px solid rgba(255,255,255,0.05)}
+    .album-block.expanded .album-songs{display:block}
+
+    .song-row{
+      display:grid;grid-template-columns:44px 1fr auto;align-items:center;gap:12px;
+      padding:10px 18px 10px 14px;
+      border-bottom:1px solid rgba(255,255,255,0.03);
+      transition:background .07s;
+    }
+    .song-row:last-child{border-bottom:none}
+    .song-row:hover{background:rgba(255,255,255,0.025)}
+    .song-mini-cover{
+      width:44px;height:44px;object-fit:cover;
+      background:rgba(255,255,255,0.04);flex-shrink:0;
+    }
+    .song-mini-cover-ph{
+      width:44px;height:44px;flex-shrink:0;
+      background:rgba(255,255,255,0.03);
+      display:flex;align-items:center;justify-content:center;
+      font-family:var(--display);color:rgba(255,255,255,0.1);font-size:.9rem;
+    }
+    .song-info{min-width:0}
+    .song-title{
+      font-family:var(--mono);font-size:.8rem;letter-spacing:.03em;
+      color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
+    .song-artists{
+      font-family:var(--mono);font-size:.58rem;letter-spacing:.06em;text-transform:uppercase;
+      color:var(--sub);margin-top:2px;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
+    .song-daily-count{
+      font-family:var(--display);font-size:.95rem;letter-spacing:.04em;
+      color:var(--red);flex-shrink:0;text-align:right;min-width:40px;
+    }
+    .song-daily-count span{
+      font-family:var(--mono);font-size:.44rem;letter-spacing:.1em;
+      text-transform:uppercase;color:var(--sub2);display:block;
+    }
+
+    /* ─── SKELETON ──────────────────────────────────────── */
+    @keyframes shimmer{0%{opacity:.4}50%{opacity:.7}100%{opacity:.4}}
+    .skel{background:rgba(255,255,255,0.05);animation:shimmer 1.4s ease infinite}
+    .skel-album{height:92px;margin-bottom:12px;animation:shimmer 1.4s ease infinite}
+
+    /* ─── FOOTER ─────────────────────────────────────────── */
+    footer{
+      border-top:1px solid rgba(227,28,18,0.15);height:38px;
+      display:flex;align-items:center;justify-content:space-between;
+      padding:0 20px;flex-shrink:0;
+      background:rgba(6,4,4,0.88);backdrop-filter:blur(6px);
+    }
+    .ft-left{font-family:var(--mono);font-size:.64rem;letter-spacing:.12em;text-transform:uppercase;color:var(--sub)}
+    .ft-link{font-family:var(--mono);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--sub);text-decoration:none;transition:color .14s}
+    .ft-link:hover{color:rgba(227,28,18,0.8)}
+    .ft-right{display:flex;align-items:center;gap:16px}
+
+    @media(max-width:600px){
+      .album-header{grid-template-columns:52px 1fr auto;gap:10px;padding:12px 14px 12px 10px}
+      .album-cover,.album-cover-ph{width:52px;height:52px}
+      .album-name{font-size:1rem}
+      .song-row{grid-template-columns:38px 1fr auto;gap:8px;padding:8px 12px}
+      .song-mini-cover,.song-mini-cover-ph{width:38px;height:38px}
+      main{padding:20px 12px 48px}
+    }
+  </style>
+</head>
+<body>
+<div id="bg-noise"></div>
+<div id="bg-scan"></div>
+
+<nav>
+  <a class="wordmark" href="/">C<span class="wm-hl">otso</span>zanuta<span class="wm-sub">.pl</span></a>
+  <div class="nav-links">
+    <a class="nav-link active" href="/discografia">Dyskografia</a>
+    <a class="nav-link" href="/ranking">Ranking</a>
+    <a class="nav-link" href="/">Graj</a>
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="page-header-pill">otsochodzi</div>
+  <h1 class="page-title">Dysko<em>grafia</em></h1>
+  <div class="page-subtitle" id="disc-subtitle">ładowanie&#8230;</div>
+</div>
+
+<main>
+  <div class="search-row">
+    <input id="disc-search" type="text" placeholder="szukaj piosenki lub albumu&#8230;" autocomplete="off" spellcheck="false">
+    <span class="sort-label">Sortuj:</span>
+    <div class="seg-ctrl" id="sort-ctrl">
+      <button data-sort="alpha" class="active">A–Z</button>
+      <button data-sort="daily">Najczęstsze</button>
+    </div>
+    <span class="disc-summary" id="disc-summary"></span>
+  </div>
+
+  <div id="disc-loading">
+    <div class="skel-album"></div>
+    <div class="skel-album"></div>
+    <div class="skel-album"></div>
+    <div class="skel-album" style="opacity:.5"></div>
+  </div>
+  <div id="albums-grid" style="display:none"></div>
+</main>
+
+<footer>
+  <span class="ft-left">cotsozanuta &middot; dyskografia</span>
+  <span class="ft-right">
+    <a class="ft-link" href="/">graj</a>
+    <a class="ft-link" href="/ranking">ranking</a>
+    <a class="ft-link" href="/regulamin">regulamin</a>
+  </span>
+</footer>
+
+<script>
+  function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+  let allAlbums = [];
+  let sortMode  = 'alpha';
+  let searchQ   = '';
+
+  async function loadDiscography() {
+    try {
+      const r = await fetch('/api/discography');
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      allAlbums = await r.json();
+
+      const totalSongs  = allAlbums.reduce((s, a) => s + a.songs.length, 0);
+      const totalDailyAppearances = allAlbums.reduce((s, a) => s + a.songs.reduce((x, sg) => x + sg.dailyCount, 0), 0);
+      document.getElementById('disc-subtitle').textContent =
+        allAlbums.length + ' albumów · ' + totalSongs + ' piosenek · ' + totalDailyAppearances + ' łącznych wystąpień dziennych';
+
+      document.getElementById('disc-loading').style.display = 'none';
+      document.getElementById('albums-grid').style.display  = 'flex';
+      render();
+    } catch (e) {
+      document.getElementById('disc-loading').innerHTML =
+        '<div class="empty-msg">Błąd ładowania dyskografii. Spróbuj odświeżyć stronę.</div>';
+    }
+  }
+
+  function getFilteredAlbums() {
+    let albums = allAlbums.slice();
+    const q = searchQ.trim().toLowerCase();
+
+    if (q) {
+      albums = albums.map(album => {
+        const nameMatch = album.albumName.toLowerCase().includes(q);
+        const filteredSongs = album.songs.filter(s =>
+          s.title.toLowerCase().includes(q) ||
+          (s.artists || []).some(a => a.name.toLowerCase().includes(q))
+        );
+        if (!nameMatch && !filteredSongs.length) return null;
+        return { ...album, songs: nameMatch ? album.songs : filteredSongs, _hasMatch: true };
+      }).filter(Boolean);
+    }
+
+    if (sortMode === 'daily') {
+      albums.sort((a, b) => {
+        const aMax = a.songs.reduce((m, s) => Math.max(m, s.dailyCount), 0);
+        const bMax = b.songs.reduce((m, s) => Math.max(m, s.dailyCount), 0);
+        const aTotal = a.songs.reduce((t, s) => t + s.dailyCount, 0);
+        const bTotal = b.songs.reduce((t, s) => t + s.dailyCount, 0);
+        return bTotal !== aTotal ? bTotal - aTotal : bMax !== aMax ? bMax - aMax : 0;
+      });
+    }
+
+    return albums;
+  }
+
+  function render() {
+    const albums = getFilteredAlbums();
+    const grid = document.getElementById('albums-grid');
+
+    const totalSongs = albums.reduce((s, a) => s + a.songs.length, 0);
+    document.getElementById('disc-summary').textContent =
+      albums.length + ' albumów, ' + totalSongs + ' piosenek';
+
+    if (!albums.length) {
+      grid.innerHTML = '<div class="empty-msg">Brak wyników dla &ldquo;' + esc(searchQ) + '&rdquo;</div>';
+      return;
+    }
+
+    grid.innerHTML = albums.map((album, ai) => {
+      const coverHtml = album.albumCover
+        ? '<img class="album-cover" src="' + esc(album.albumCover) + '" alt="" loading="lazy" onerror="this.style.display=\'none\'">'
+        : '<div class="album-cover-ph">&#9836;</div>';
+
+      const totalDailyInAlbum = album.songs.reduce((s, sg) => s + sg.dailyCount, 0);
+      const dailyBadge = totalDailyInAlbum > 0
+        ? '<span class="album-daily-badge">&#128197; ' + totalDailyInAlbum + ' raz' + (totalDailyInAlbum === 1 ? '' : 'y') + ' w trybie dziennym</span>'
+        : '';
+
+      const sortedSongs = sortMode === 'daily'
+        ? album.songs.slice().sort((a, b) => b.dailyCount - a.dailyCount)
+        : album.songs;
+
+      const songsHtml = sortedSongs.map(sg => {
+        const miniCover = sg.cover
+          ? '<img class="song-mini-cover" src="' + esc(sg.cover) + '" alt="" loading="lazy" onerror="this.style.display=\'none\'">'
+          : '<div class="song-mini-cover-ph">&#9836;</div>';
+        const artistStr = (sg.artists || []).map(a => esc(a.name)).join(', ');
+        const dailyHtml = sg.dailyCount > 0
+          ? '<div class="song-daily-count">' + sg.dailyCount + '<span>dziennych</span></div>'
+          : '<div class="song-daily-count" style="color:var(--sub2)">—<span>dziennych</span></div>';
+        return '<div class="song-row">' + miniCover +
+          '<div class="song-info"><div class="song-title">' + esc(sg.title) + '</div>' +
+          (artistStr ? '<div class="song-artists">' + artistStr + '</div>' : '') +
+          '</div>' + dailyHtml + '</div>';
+      }).join('');
+
+      return '<div class="album-block" data-idx="' + ai + '">' +
+        '<div class="album-header">' +
+          coverHtml +
+          '<div class="album-meta">' +
+            '<div class="album-name">' + esc(album.albumName) + '</div>' +
+            '<div class="album-sub">' + album.songs.length + ' ' + (album.songs.length === 1 ? 'piosenka' : 'piosenek') + '</div>' +
+            dailyBadge +
+          '</div>' +
+          '<span class="album-toggle">&#9658;</span>' +
+        '</div>' +
+        '<div class="album-songs">' + songsHtml + '</div>' +
+      '</div>';
+    }).join('');
+
+    // Attach toggle listeners
+    grid.querySelectorAll('.album-header').forEach(header => {
+      header.addEventListener('click', () => {
+        header.closest('.album-block').classList.toggle('expanded');
+      });
+    });
+
+    // Auto-expand if searching
+    if (searchQ.trim()) {
+      grid.querySelectorAll('.album-block').forEach(b => b.classList.add('expanded'));
+    }
+  }
+
+  // Search
+  let searchTimer = null;
+  document.getElementById('disc-search').addEventListener('input', function() {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => { searchQ = this.value; render(); }, 180);
+  });
+
+  // Sort
+  document.querySelectorAll('#sort-ctrl button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#sort-ctrl button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      sortMode = btn.dataset.sort;
+      render();
+    });
+  });
+
+  loadDiscography();
+</script>
+</body>
+</html>

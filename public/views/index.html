@@ -12,10 +12,10 @@
 
   <!-- Open Graph -->
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://cotsozahit.pl/">
+  <meta property="og:url" content="https://Cotsozanuta.pl/">
   <meta property="og:title" content="Cotsozanuta – Zgadnij piosenkę Otsochodzi | Quiz muzyczny">
   <meta property="og:description" content="Zgadnij piosenkę Otsochodzi po jednym słowie z tekstu! Codzienne wyzwanie, tryb bez końca i ranking. Sprawdź, czy znasz dyskografię Otsochodzi.">
-  <meta property="og:image" content="https://cotsozahit.pl/images/og-image.png">
+  <meta property="og:image" content="https://Cotsozanuta.pl/images/og-image.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="Cotsozanuta – quiz z piosenek Otsochodzi">
@@ -27,10 +27,10 @@
   <meta name="twitter:site" content="@cotsozanuta">
   <meta name="twitter:title" content="Cotsozanuta – Zgadnij piosenkę Otsochodzi">
   <meta name="twitter:description" content="Zgadnij piosenkę Otsochodzi po jednym słowie z tekstu! Codzienne wyzwanie, tryb bez końca i ranking.">
-  <meta name="twitter:image" content="https://cotsozahit.pl/images/og-image.png">
+  <meta name="twitter:image" content="https://Cotsozanuta.pl/images/og-image.png">
   <meta name="twitter:image:alt" content="Cotsozanuta – quiz z piosenek Otsochodzi">
 
-  <link rel="canonical" href="https://cotsozahit.pl/">
+  <link rel="canonical" href="https://Cotsozanuta.pl/">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="icon" type="image/png" href="/images/favicon.png">
@@ -41,7 +41,7 @@
     "@context": "https://schema.org",
     "@type": "WebApplication",
     "name": "Cotsozanuta",
-    "url": "https://cotsozahit.pl/",
+    "url": "https://Cotsozanuta.pl/",
     "description": "Zgadnij piosenkę Otsochodzi po jednym słowie z tekstu. Tryb dzienny, bez końca i rankingowy.",
     "applicationCategory": "GameApplication",
     "operatingSystem": "Web",
@@ -1085,6 +1085,10 @@
     }
     .ft-link{font-family:var(--mono);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--sub);text-decoration:none;transition:color .14s}
     .ft-link:hover{color:rgba(227,28,18,0.8)}
+    .ft-social{display:flex;align-items:center;gap:12px}
+    .ft-social-link{display:flex;align-items:center;color:var(--sub);transition:color .14s;text-decoration:none}
+    .ft-social-link:hover{color:rgba(227,28,18,0.8)}
+    .ft-social-link svg{width:15px;height:15px;fill:currentColor}
 
     /* ─── DAILY UNAVAILABLE ──────────────────────────────── */
     #daily-unavailable{
@@ -1459,6 +1463,101 @@
       .cal-day-num{font-size:.6rem}
       .cal-day.today .cal-day-num{font-size:.68rem}
     }
+
+    /* ─── CAL TABS ────────────────────────────────────── */
+    .cal-tabs{
+      display:flex;border-bottom:1px solid rgba(255,255,255,0.07);
+      flex-shrink:0;
+    }
+    .cal-tab-btn{
+      flex:1;padding:10px 6px;
+      font-family:var(--mono);font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;
+      background:none;border:none;color:var(--sub);cursor:pointer;
+      border-bottom:2px solid transparent;margin-bottom:-1px;
+      transition:color .15s,border-color .15s;
+    }
+    .cal-tab-btn.active{color:var(--text);border-bottom-color:var(--red)}
+    .cal-tab-btn:hover:not(.active){color:rgba(242,233,228,0.7)}
+
+    /* ─── HISTORY TAB ─────────────────────────────────── */
+    #cal-tab-history{
+      padding:0 16px 16px;
+      display:flex;flex-direction:column;gap:8px;
+    }
+    .hist-filters{
+      display:flex;gap:4px;padding:10px 0 6px;flex-wrap:wrap;
+    }
+    .hist-filter-btn{
+      font-family:var(--mono);font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;
+      background:none;border:1px solid rgba(255,255,255,0.1);
+      color:var(--sub);padding:5px 12px;cursor:pointer;transition:background .1s,color .1s,border-color .1s;
+    }
+    .hist-filter-btn.active{background:var(--red);color:#fff;border-color:var(--red)}
+    .hist-filter-btn:hover:not(.active){color:var(--text);border-color:rgba(255,255,255,0.22)}
+    #hist-list{
+      display:flex;flex-direction:column;gap:2px;
+      max-height:260px;overflow-y:auto;
+    }
+    #hist-list::-webkit-scrollbar{width:4px}
+    #hist-list::-webkit-scrollbar-thumb{background:rgba(227,28,18,0.2);border-radius:2px}
+    .hist-item{
+      display:grid;grid-template-columns:80px 1fr auto auto;
+      align-items:center;gap:8px;
+      padding:8px 10px;
+      background:rgba(255,255,255,0.015);
+      transition:background .07s;
+    }
+    .hist-item:hover{background:rgba(255,255,255,0.03)}
+    .hist-date{font-family:var(--mono);font-size:.6rem;letter-spacing:.04em;color:var(--sub2)}
+    .hist-song{font-family:var(--mono);font-size:.72rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .hist-words{font-family:var(--mono);font-size:.56rem;letter-spacing:.08em;color:var(--sub2);text-align:right;white-space:nowrap}
+    .hist-outcome{font-size:.8rem;text-align:right;flex-shrink:0}
+    .hist-empty{
+      font-family:var(--mono);font-size:.56rem;letter-spacing:.12em;text-transform:uppercase;
+      color:var(--sub2);text-align:center;padding:24px 0;
+    }
+    .hist-export-btn{
+      align-self:flex-start;
+      font-family:var(--mono);font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;
+      background:none;border:1px solid rgba(255,255,255,0.1);
+      color:var(--sub);padding:7px 14px;cursor:pointer;
+      transition:color .12s,border-color .12s;margin-top:4px;
+    }
+    .hist-export-btn:hover{color:var(--text);border-color:rgba(255,255,255,0.25)}
+
+    /* ─── SHARE SECTION ───────────────────────────────── */
+    #share-section{
+      margin-top:14px;display:flex;flex-direction:column;align-items:center;gap:10px;
+      width:100%;
+    }
+    .share-streak-badge{
+      font-family:var(--display);font-size:1.4rem;letter-spacing:.06em;
+      color:var(--text);text-align:center;
+    }
+    .share-streak-badge span{color:var(--ok);text-shadow:0 0 18px rgba(79,200,90,0.4)}
+    .share-countdown{
+      font-family:var(--mono);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;
+      color:var(--sub);text-align:center;
+    }
+    .share-countdown b{color:var(--text)}
+    .share-btn-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+    .share-btn{
+      display:flex;align-items:center;gap:6px;
+      font-family:var(--mono);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;
+      background:rgba(227,28,18,0.12);border:1px solid rgba(227,28,18,0.3);
+      color:var(--text);padding:9px 18px;cursor:pointer;
+      transition:background .12s,border-color .12s,transform .1s;
+    }
+    .share-btn:hover{background:rgba(227,28,18,0.22);border-color:rgba(227,28,18,0.55);transform:translateY(-1px)}
+    .share-btn:active{transform:translateY(1px)}
+    .share-btn svg{flex-shrink:0;opacity:.7}
+    .share-btn-img{background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.12)}
+    .share-btn-img:hover{background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.25)}
+    #share-copied{
+      font-family:var(--mono);font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;
+      color:var(--ok);min-height:18px;text-align:center;
+      transition:opacity .3s;
+    }
   </style>
 </head>
 <body>
@@ -1593,6 +1692,10 @@
     </div>
     <button id="cal-close" aria-label="Zamknij">&#10005;</button>
   </div>
+  <div class="cal-tabs">
+    <button class="cal-tab-btn active" data-tab="calendar">Kalendarz</button>
+    <button class="cal-tab-btn" data-tab="history">Historia</button>
+  </div>
   <div class="cal-body">
     <div class="cal-dow">
       <span>Pn</span><span>Wt</span><span>&#346;r</span><span>Cz</span><span>Pt</span><span>So</span><span>Nd</span>
@@ -1614,6 +1717,15 @@
         <div class="cal-streak-val" id="cal-streak-best">0</div>
       </div>
     </div>
+  </div>
+  <div id="cal-tab-history" style="display:none">
+    <div class="hist-filters">
+      <button class="hist-filter-btn active" data-filter="all">Wszystkie</button>
+      <button class="hist-filter-btn" data-filter="correct">Odgadnięte</button>
+      <button class="hist-filter-btn" data-filter="giveup">Przegrane</button>
+    </div>
+    <div id="hist-list"></div>
+    <button id="hist-export-btn" class="hist-export-btn">&#8659; Pobierz historię (JSON)</button>
   </div>
 </div>
 
@@ -1755,13 +1867,38 @@
       </div>
       <div id="answer-reveal"></div>
       <div id="daily-stats"></div>
+      <div id="share-section" style="display:none">
+        <div id="share-streak-badge" class="share-streak-badge"></div>
+        <div id="share-countdown" class="share-countdown"></div>
+        <div class="share-btn-row">
+          <button id="share-text-btn" class="share-btn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+            Kopiuj wynik
+          </button>
+          <button id="share-img-btn" class="share-btn share-btn-img">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+            Zapisz obrazek
+          </button>
+        </div>
+        <div id="share-copied"></div>
+      </div>
     </div>
   </div>
 </main>
 
 <footer>
   <span class="ft-left">otsochodzi &nbsp;&#183;&nbsp; zgadnij piosenkę z tekstu</span>
+  <span class="ft-social">
+    <a class="ft-social-link" href="https://www.tiktok.com/@cotsozanuta.pl" target="_blank" rel="noopener noreferrer" aria-label="TikTok">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg>
+    </a>
+    <a class="ft-social-link" href="https://www.instagram.com/cotsozanuta.pl" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+    </a>
+  </span>
   <span class="ft-right" style="display:flex;align-items:center;gap:16px">
+    <a class="ft-link" href="/discografia">Dyskografia</a>
+    <a class="ft-link" href="/ranking">Ranking</a>
     <a class="ft-link" href="/regulamin">Regulamin</a>
     <a class="ft-link" href="/polityka-prywatnosci">Prywatność</a>
     made by <a href="https://www.kijmoshi.xyz" target="_blank" rel="noopener" style="color:inherit; text-decoration:underline">kijmoshi.xyz</a> 
@@ -2013,6 +2150,8 @@
     giveupBtn.textContent=activeMode==='ranked'?'pomiń':'poddaj się'
     answerReveal.classList.remove('show');answerReveal.innerHTML=''
     const _ds=document.getElementById('daily-stats');if(_ds){_ds.classList.remove('show');_ds.innerHTML=''}
+    const _ss=document.getElementById('share-section');if(_ss)_ss.style.display='none'
+    stopDailyCountdown()
     setFeedback('')
     hintsUnlocked=false
     document.getElementById('hint-album').textContent=data.hints&&data.hints.album?data.hints.album:''
@@ -2124,6 +2263,7 @@
       answerReveal.innerHTML=buildRevealCard('zgadłeś ✓')
       answerReveal.classList.add('show')
       showDailyStats()
+      showShareSection()
     }else if(saved.outcome==='giveup'){
       input.disabled=true;revealBtn.disabled=true
       giveupBtn.classList.remove('show')
@@ -2131,6 +2271,7 @@
       answerReveal.innerHTML=buildRevealCard('to była')
       answerReveal.classList.add('show')
       showDailyStats()
+      showShareSection()
     }else{
       giveupBtn.classList.add('show');giveupBtn.textContent='poddaj się'
       input.focus()
@@ -2334,6 +2475,7 @@
       answerReveal.innerHTML=buildRevealCard('zgadłeś ✓')
       answerReveal.classList.add('show')
       if(activeMode==='endless')document.getElementById('next-btn').classList.add('show')
+      showShareSection()
     }else if(type==='skip'){
       setTimeout(async()=>{
         if(!rankedActive)return
@@ -2352,6 +2494,7 @@
       }
       recordGameResult('giveup',revealCount)
       if(activeMode==='endless')document.getElementById('next-btn').classList.add('show')
+      showShareSection()
     }
     input.blur()
   }
@@ -2656,6 +2799,282 @@
     }
   })
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('cal-panel').classList.contains('open'))closeCal()})
+
+  /* ══════════════════════════════════════════════════════════
+   *  CAL TABS — Kalendarz / Historia
+   * ══════════════════════════════════════════════════════════ */
+  let _calActiveTab='calendar'
+  function switchCalTab(tab){
+    _calActiveTab=tab
+    document.querySelectorAll('.cal-tab-btn').forEach(b=>{
+      b.classList.toggle('active',b.dataset.tab===tab)
+    })
+    const calBody=document.querySelector('.cal-body')
+    const histPanel=document.getElementById('cal-tab-history')
+    if(tab==='calendar'){
+      calBody.style.display='';histPanel.style.display='none'
+    }else{
+      calBody.style.display='none';histPanel.style.display='flex'
+      renderHistory(_histFilter)
+    }
+  }
+  document.querySelectorAll('.cal-tab-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>switchCalTab(btn.dataset.tab))
+  })
+
+  /* ══════════════════════════════════════════════════════════
+   *  HISTORY TAB
+   * ══════════════════════════════════════════════════════════ */
+  let _histFilter='all'
+  function getAllDailyHistory(){
+    const entries=[]
+    try{
+      for(let i=0;i<localStorage.length;i++){
+        const k=localStorage.key(i)
+        if(!k||!k.startsWith('daily_'))continue
+        const date=k.slice(6)
+        try{
+          const d=JSON.parse(localStorage.getItem(k))
+          if(d)entries.push({date,outcome:d.outcome||'in-progress',songTitle:d.songTitle||null,revealCount:d.revealCount||0})
+        }catch(e){}
+      }
+    }catch(e){}
+    return entries.sort((a,b)=>b.date.localeCompare(a.date))
+  }
+  function renderHistory(filter){
+    const all=getAllDailyHistory()
+    const items=filter==='all'?all:all.filter(e=>e.outcome===filter)
+    const list=document.getElementById('hist-list')
+    if(!items.length){
+      list.innerHTML='<div class="hist-empty">'+(filter==='all'?'Brak historii rozgrywek':'Brak pasujących wyników')+'</div>'
+      return
+    }
+    list.innerHTML=items.map(e=>{
+      const [y,m,d]=e.date.split('-')
+      const dateStr=d+'.'+m+'.'+y
+      const icon=e.outcome==='correct'?'✅':e.outcome==='giveup'?'❌':'⏳'
+      const wordsStr=e.revealCount>0?e.revealCount+' sł.':''
+      return '<div class="hist-item">'+
+        '<span class="hist-date">'+dateStr+'</span>'+
+        '<span class="hist-song">'+(e.songTitle||'—')+'</span>'+
+        '<span class="hist-words">'+wordsStr+'</span>'+
+        '<span class="hist-outcome">'+icon+'</span>'+
+      '</div>'
+    }).join('')
+  }
+  document.querySelectorAll('.hist-filter-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      _histFilter=btn.dataset.filter
+      document.querySelectorAll('.hist-filter-btn').forEach(b=>b.classList.toggle('active',b===btn))
+      renderHistory(_histFilter)
+    })
+  })
+  document.getElementById('hist-export-btn').addEventListener('click',()=>{
+    const all=getAllDailyHistory()
+    const blob=new Blob([JSON.stringify(all,null,2)],{type:'application/json'})
+    const url=URL.createObjectURL(blob)
+    const a=document.createElement('a')
+    a.href=url;a.download='cotsozanuta-historia.json';a.click()
+    setTimeout(()=>URL.revokeObjectURL(url),3000)
+  })
+
+  /* ══════════════════════════════════════════════════════════
+   *  SHARE SECTION — countdown, streak badge, text/image
+   * ══════════════════════════════════════════════════════════ */
+  let _countdownTimer=null
+  function startDailyCountdown(){
+    const el=document.getElementById('share-countdown')
+    if(!el)return
+    clearInterval(_countdownTimer)
+    function tick(){
+      const now=new Date()
+      const midnight=new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),now.getUTCDate()+1))
+      const diff=Math.max(0,Math.floor((midnight-now)/1000))
+      const hh=String(Math.floor(diff/3600)).padStart(2,'0')
+      const mm=String(Math.floor((diff%3600)/60)).padStart(2,'0')
+      const ss=String(diff%60).padStart(2,'0')
+      el.innerHTML='następna piosenka za <b>'+hh+':'+mm+':'+ss+'</b>'
+    }
+    tick()
+    _countdownTimer=setInterval(tick,1000)
+  }
+  function stopDailyCountdown(){clearInterval(_countdownTimer);_countdownTimer=null}
+
+  function generateShareText(mode,date,wordsRevealed,won,streak){
+    const dateStr=(()=>{try{const[y,m,d]=date.split('-');return d+'.'+m+'.'+y}catch(e){return date}})()
+    const modeLabel=mode==='daily'?'Dzienny':mode==='endless'?'Niekończący':'Rankingowy'
+    const resultLine=won?'✅ Odgadnięto w '+wordsRevealed+' słowach':'❌ Poddano po '+wordsRevealed+' słowach'
+    const squares=[]
+    for(let i=0;i<Math.max(1,wordsRevealed-1);i++)squares.push('⬛')
+    squares.push(won?'🟩':'🟥')
+    const streakLine=streak>1?'\n🔥 Seria: '+streak+' dni':''
+    return 'COTSOZANUTA 🎵\n📅 '+dateStr+' | Tryb: '+modeLabel+'\n'+resultLine+streakLine+'\n'+squares.join('')+'\ncotsozahit.pl'
+  }
+
+  async function generateShareImage(mode,date,wordsRevealed,won,cover,streak){
+    const SIZE=1080
+    const canvas=document.createElement('canvas')
+    canvas.width=SIZE;canvas.height=SIZE
+    const ctx=canvas.getContext('2d')
+
+    // Background
+    ctx.fillStyle='#060404'
+    ctx.fillRect(0,0,SIZE,SIZE)
+
+    // Blurred cover art
+    if(cover){
+      try{
+        await new Promise((res,rej)=>{
+          const img=new Image();img.crossOrigin='anonymous'
+          img.onload=()=>{
+            ctx.save()
+            ctx.globalAlpha=0.18
+            ctx.filter='blur(40px)'
+            ctx.drawImage(img,-80,-80,SIZE+160,SIZE+160)
+            ctx.filter='none'
+            ctx.globalAlpha=1
+            ctx.restore()
+            res()
+          }
+          img.onerror=res
+          img.src=cover
+        })
+      }catch(e){}
+    }
+
+    // Dark overlay
+    ctx.fillStyle='rgba(6,4,4,0.7)'
+    ctx.fillRect(0,0,SIZE,SIZE)
+
+    // Red accent bar
+    ctx.fillStyle='#e31c12'
+    ctx.fillRect(0,SIZE-8,SIZE,8)
+    ctx.fillRect(0,0,SIZE,6)
+
+    // Load fonts
+    try{await document.fonts.load("bold 72px 'Anton'")}catch(e){}
+
+    // Title
+    ctx.font="bold 72px 'Anton', sans-serif"
+    ctx.fillStyle='#f2e9e4'
+    ctx.letterSpacing='8px'
+    ctx.textAlign='center'
+    ctx.textBaseline='alphabetic'
+    ctx.fillText('COTSOZANUTA',SIZE/2,160)
+
+    // Divider
+    ctx.fillStyle='rgba(227,28,18,0.4)'
+    ctx.fillRect(SIZE/2-200,185,400,2)
+
+    // Mode + Date
+    ctx.font="500 32px 'Barlow Condensed', sans-serif"
+    ctx.fillStyle='rgba(242,233,228,0.5)'
+    ctx.letterSpacing='4px'
+    const modeLabel=mode==='daily'?'DZIENNY':mode==='endless'?'NIEKOŃCZĄCY':'RANKINGOWY'
+    const dateStr=(()=>{try{const[y,m,d]=date.split('-');return d+'.'+m+'.'+y}catch(e){return date}})()
+    ctx.fillText(modeLabel+' · '+dateStr,SIZE/2,240)
+
+    // Result
+    ctx.font="bold 96px 'Anton', sans-serif"
+    ctx.fillStyle=won?'#4fc85a':'#e31c12'
+    ctx.letterSpacing='2px'
+    ctx.fillText(won?'ZGADNIĘTO':'PODDANO',SIZE/2,390)
+
+    ctx.font="500 40px 'Barlow Condensed', sans-serif"
+    ctx.fillStyle='rgba(242,233,228,0.75)'
+    ctx.letterSpacing='2px'
+    ctx.fillText('po '+wordsRevealed+' słowach',SIZE/2,450)
+
+    // Emoji squares
+    const squares=[]
+    for(let i=0;i<Math.max(1,wordsRevealed-1);i++)squares.push('⬛')
+    squares.push(won?'🟩':'🟥')
+    ctx.font='52px serif'
+    ctx.letterSpacing='4px'
+    ctx.fillStyle='#f2e9e4'
+    ctx.fillText(squares.join(''),SIZE/2,570)
+
+    // Streak
+    if(streak>1){
+      ctx.font="500 36px 'Barlow Condensed', sans-serif"
+      ctx.fillStyle='rgba(242,233,228,0.55)'
+      ctx.letterSpacing='2px'
+      ctx.fillText('🔥 SERIA: '+streak+' DNI',SIZE/2,645)
+    }
+
+    // URL
+    ctx.font="500 28px 'Share Tech Mono', monospace"
+    ctx.fillStyle='rgba(227,28,18,0.7)'
+    ctx.letterSpacing='1px'
+    ctx.fillText('cotsozahit.pl',SIZE/2,SIZE-50)
+
+    return new Promise(res=>canvas.toBlob(res,'image/png'))
+  }
+
+  function showShareSection(){
+    if(activeMode==='ranked')return
+    const section=document.getElementById('share-section')
+    if(!section)return
+    section.style.display='flex'
+
+    // Streak badge
+    const h=getDailyHistory()
+    const{cur}=calcDailyStreaks(h)
+    const badge=document.getElementById('share-streak-badge')
+    if(cur>1){
+      badge.innerHTML='Seria: <span>'+cur+' dni 🔥</span>'
+      badge.style.display=''
+    }else{badge.style.display='none'}
+
+    // Countdown (only daily mode)
+    if(activeMode==='daily')startDailyCountdown()
+    else{const cd=document.getElementById('share-countdown');if(cd)cd.textContent=''}
+
+    // Copied feedback clear
+    const copied=document.getElementById('share-copied')
+    if(copied)copied.textContent=''
+  }
+
+  document.getElementById('share-text-btn').addEventListener('click',async()=>{
+    const h=getDailyHistory()
+    const{cur}=calcDailyStreaks(h)
+    const date=activeMode==='daily'?fmtISO(dailyDate):fmtISO(new Date())
+    const text=generateShareText(activeMode,date,revealCount,solved,cur)
+    const copied=document.getElementById('share-copied')
+    try{
+      if(navigator.share&&/Mobi|Android/i.test(navigator.userAgent)){
+        await navigator.share({text})
+      }else{
+        await navigator.clipboard.writeText(text)
+        if(copied){copied.textContent='✓ skopiowano!';setTimeout(()=>{copied.textContent=''},2200)}
+      }
+    }catch(e){
+      try{
+        await navigator.clipboard.writeText(text)
+        if(copied){copied.textContent='✓ skopiowano!';setTimeout(()=>{copied.textContent=''},2200)}
+      }catch(e2){
+        if(copied){copied.textContent='Nie można skopiować';setTimeout(()=>{copied.textContent=''},2200)}
+      }
+    }
+  })
+
+  document.getElementById('share-img-btn').addEventListener('click',async()=>{
+    const h=getDailyHistory()
+    const{cur}=calcDailyStreaks(h)
+    const date=activeMode==='daily'?fmtISO(dailyDate):fmtISO(new Date())
+    const copied=document.getElementById('share-copied')
+    try{
+      if(copied)copied.textContent='generowanie...'
+      const blob=await generateShareImage(activeMode,date,revealCount,solved,songCover,cur)
+      const url=URL.createObjectURL(blob)
+      const a=document.createElement('a')
+      a.href=url;a.download='cotsozanuta-'+date+'.png';a.click()
+      setTimeout(()=>URL.revokeObjectURL(url),4000)
+      if(copied){copied.textContent='✓ obrazek zapisany!';setTimeout(()=>{copied.textContent=''},2200)}
+    }catch(e){
+      if(copied){copied.textContent='Błąd generowania obrazka';setTimeout(()=>{copied.textContent=''},2200)}
+    }
+  })
 </script>
 </body>
 </html>

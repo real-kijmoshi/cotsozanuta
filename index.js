@@ -200,7 +200,13 @@ app.get("/regulamin", (req, res) => {
 app.get("/polityka-prywatnosci", (req, res) => {
     res.sendFile(path.join(__dirname, "public/views/polityka-prywatnosci.html"));
 })
+app.get("/discografia", (req, res) => {
+    res.sendFile(path.join(__dirname, "public/views/discografia.html"))
+})
 
+app.get("/ranking", (req, res) => {
+    res.sendFile(path.join(__dirname, "public/views/ranking.html"))
+})
 // ── Admin auth middleware ────────────────────────────────────
 function timingSafeEqual(a, b) {
     const ba = Buffer.from(a);
@@ -284,6 +290,13 @@ app.delete("/api/admin/daily/:date", adminAuth, (req, res) => {
     }
 })
 
+function calcMedian(arr) {
+    if (!arr.length) return null;
+    const sorted = [...arr].sort((a, b) => a - b);
+    const mid = Math.floor(sorted.length / 2);
+    return sorted.length % 2 ? sorted[mid] : Math.round((sorted[mid - 1] + sorted[mid]) / 2 * 10) / 10;
+}
+
 app.get("/api/admin/stats-overview", adminAuth, (req, res) => {
     try {
         const raw = db.getAllStats();  // { "YYYY-MM-DD": { correct: [], giveup: [] } }
@@ -348,6 +361,27 @@ app.get("/api/admin/stats-overview", adminAuth, (req, res) => {
         const avgWordsCorrect = allCorrectWords.length ? Math.round(allCorrectWords.reduce((a, b) => a + b, 0) / allCorrectWords.length * 10) / 10 : null;
         const avgWordsGiveup  = allGiveupWords.length  ? Math.round(allGiveupWords.reduce((a, b) => a + b, 0) / allGiveupWords.length  * 10) / 10 : null;
 
+        // ── Median words per outcome ──────────────────────────────
+        const medianWordsCorrect = calcMedian(allCorrectWords);
+        const medianWordsGiveup  = calcMedian(allGiveupWords);
+
+        // ── Word count distribution (buckets of 3 words) ─────────
+        const allWords = [...allCorrectWords, ...allGiveupWords];
+        const distMax  = allWords.length ? Math.max(...allWords) : 0;
+        const BUCKET   = 3;
+        const wordDistribution = [];
+        for (let i = 1; i <= Math.min(distMax + BUCKET, 33); i += BUCKET) {
+            const lo = i, hi = i + BUCKET - 1;
+            wordDistribution.push({
+                label:   `${lo}–${hi}`,
+                correct: allCorrectWords.filter(w => w >= lo && w <= hi).length,
+                giveup:  allGiveupWords.filter(w => w >= lo && w <= hi).length,
+            });
+        }
+        const peakBucket = wordDistribution.length
+            ? wordDistribution.reduce((best, b) => (b.correct + b.giveup) > (best.correct + best.giveup) ? b : best)
+            : null;
+
         // ── Game Plays detailed breakdown (Daily, Endless, Ranked) ──
         const gamePlaysRaw = db.getGamePlays(); // [{ mode, date, count }]
         const playsByDate = {}; // { "YYYY-MM-DD": { endless: 0, ranked: 0, daily: 0 } }
@@ -391,6 +425,13 @@ app.get("/api/admin/stats-overview", adminAuth, (req, res) => {
         const totalDaily = gamePlaysBreakdown.reduce((s, g) => s + g.daily, 0);
         const totalPlaysAll = totalEndless + totalRanked + totalDaily;
 
+        // ── Avg & median games per unique user ────────────────────
+        const uniqueUsers = db.getUniqueUserCount().total || 0;
+        const avgGamesPerUser = uniqueUsers ? Math.round(totalPlaysAll / uniqueUsers * 10) / 10 : null;
+        const gamesPerUserRows = db.getGamesPerUser(); // already sorted ASC by games
+        const gamesPerUserCounts = gamesPerUserRows.map(r => r.games);
+        const medianGamesPerUser = calcMedian(gamesPerUserCounts);
+
         const monthlyGamePlays = {}; // { "YYYY-MM": { daily: 0, endless: 0, ranked: 0 } }
         for (const g of gamePlaysBreakdown) {
             const m = g.date.slice(0, 7);
@@ -411,6 +452,9 @@ app.get("/api/admin/stats-overview", adminAuth, (req, res) => {
             peakDay,
             trends:   { week: weekTrend, month: monthTrend, thisWeekPlays, lastWeekPlays, thisMonthPlays, lastMonthPlays },
             avgWords: { correct: avgWordsCorrect, giveup: avgWordsGiveup },
+            medianWords: { correct: medianWordsCorrect, giveup: medianWordsGiveup },
+            wordDistribution, peakBucket,
+            avgGamesPerUser, medianGamesPerUser,
             gamePlays: {
                 breakdown: gamePlaysBreakdown,
                 totals: {
@@ -621,6 +665,48 @@ app.get("/api/autocomplete/songs", async (req, res) => {
     }
 });
 
+app.get("/api/discography", async (req, res) => {
+    if (!otsochodziId) return res.status(503).json({ error: "Server is initializing" });
+    try {
+        const allSongs = await genius.getAllSongs(otsochodziId);
+        const dailyCounts = db.getSongDailyCounts();
+        const albumMap = new Map();
+        const singles = [];
+
+        for (const s of allSongs) {
+            const cached = genius.getSongCacheEntry(s.id);
+            const album  = cached?.album !== undefined ? cached.album : s.album;
+            const cover  = cached?.cover  || s.cover  || null;
+            const artists = cached?.artists || s.artists || [];
+            const songEntry = { id: s.id, title: s.title, cover, artists, dailyCount: dailyCounts[s.id] || 0 };
+
+            if (album?.name) {
+                const key = String(album.id ?? album.name);
+                if (!albumMap.has(key)) {
+                    albumMap.set(key, { albumId: key, albumName: album.name, albumCover: null, songs: [] });
+                }
+                const entry = albumMap.get(key);
+                if (!entry.albumCover && cover) entry.albumCover = cover;
+                entry.songs.push(songEntry);
+            } else {
+                singles.push(songEntry);
+            }
+        }
+
+        const albums = Array.from(albumMap.values())
+            .sort((a, b) => a.albumName.localeCompare(b.albumName, 'pl'));
+        if (singles.length) {
+            albums.push({ albumId: '__singles__', albumName: 'Single / Inne', albumCover: null, songs: singles });
+        }
+
+        res.setHeader("Cache-Control", "public, max-age=300");
+        res.json(albums);
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: "Failed to build discography" });
+    }
+});
+
 app.get("/api/albums", async (req, res) => {
     if (!otsochodziId) return res.status(503).json({ error: "Server is initializing" });
     if (cachedAlbums) return res.json(cachedAlbums);
@@ -788,10 +874,27 @@ app.post("/api/ranked/correct", rankedCorrectLimiter, (req, res) => {
     res.json({ score: session.score });
 });
 
+app.get("/api/leaderboard/monthly", (req, res) => {
+    try {
+        res.setHeader("Cache-Control", "public, max-age=300");
+        const data = db.getRankedByMonth();
+        res.json(data.map(r => ({
+            month: r.month,
+            submissions: r.submissions,
+            avgScore: Math.round((r.avgScore || 0) * 10) / 10,
+            topScore: r.topScore || 0,
+        })));
+    } catch (e) {
+        res.status(500).json({ error: "Failed to fetch monthly leaderboard" });
+    }
+});
+
 app.get("/api/leaderboard", (req, res) => {
     try {
+        const limitParam = parseInt(req.query.limit, 10);
+        const limit = Number.isInteger(limitParam) && limitParam > 0 ? Math.min(limitParam, 200) : 20;
         res.setHeader("Cache-Control", "public, max-age=30");
-        res.json(db.getLeaderboard(20));
+        res.json(db.getLeaderboard(limit));
     } catch (e) {
         res.status(500).json({ error: "Failed to read leaderboard" });
     }

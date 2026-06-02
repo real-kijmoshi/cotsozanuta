@@ -181,6 +181,8 @@ const stmts = {
   getUniqueUserCount: db.prepare(`SELECT COUNT(*) AS total FROM (SELECT user_id FROM game_plays WHERE user_id IS NOT NULL UNION SELECT user_id FROM leaderboard WHERE user_id IS NOT NULL)`),
   getNewUsersByMonth: db.prepare(`SELECT substr(first_date,1,7) AS month, COUNT(*) AS new_users FROM (SELECT user_id, MIN(date) AS first_date FROM (SELECT user_id, date FROM game_plays WHERE user_id IS NOT NULL UNION ALL SELECT user_id, date FROM leaderboard WHERE user_id IS NOT NULL) GROUP BY user_id) GROUP BY month ORDER BY month`),
   getDauByDate:       db.prepare(`SELECT date, COUNT(DISTINCT user_id) AS dau FROM game_plays WHERE user_id IS NOT NULL GROUP BY date ORDER BY date`),
+  getGamesPerUser:    db.prepare(`SELECT user_id, COUNT(*) AS games FROM game_plays WHERE user_id IS NOT NULL GROUP BY user_id ORDER BY games`),
+  getSongDailyCounts: db.prepare("SELECT song_id AS songID, COUNT(*) AS count FROM daily GROUP BY song_id"),
   getExistingLb:   db.prepare("SELECT id, score, name, date, user_id FROM leaderboard WHERE LOWER(name) = ?"),
   getExistingLbByUid: db.prepare("SELECT id, score, name, date, user_id FROM leaderboard WHERE user_id = ?"),
   updateLb:        db.prepare("UPDATE leaderboard SET score = ?, date = ?, name = ?, user_id = ? WHERE id = ?"),
@@ -307,4 +309,11 @@ module.exports = {
   getUniqueUserCount() { return stmts.getUniqueUserCount.get(); },
   getNewUsersByMonth() { return stmts.getNewUsersByMonth.all(); },
   getDauByDate()       { return stmts.getDauByDate.all(); },
+  getGamesPerUser()    { return stmts.getGamesPerUser.all(); },
+  getSongDailyCounts() {
+    const rows = stmts.getSongDailyCounts.all();
+    const map = {};
+    for (const r of rows) map[r.songID] = r.count;
+    return map;
+  },
 };
