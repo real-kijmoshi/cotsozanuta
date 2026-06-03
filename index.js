@@ -2,6 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const path = require("path");
 const crypto = require("crypto");
+const jwt = require('jsonwebtoken');
 const helmet = require("helmet");
 const compression = require("compression");
 const { rateLimit } = require("express-rate-limit");
@@ -56,7 +57,7 @@ setInterval(() => {
     }
 }, 5 * 60_000).unref();
 
-const SKIP_PATTERNS = /\b(skit|interlude|acapella|remix|freestyle|cypher|intro|outro|bonus|relacja|remaster)\b/i;
+const SKIP_PATTERNS = /\b(skit|interlude|acapella|remix|intro|outro|bonus|relacja|remaster)\b/i;
 
 // otsochodziId stays null until warm-up completes; all game endpoints return 503 until then.
 let otsochodziId = null;
@@ -130,9 +131,9 @@ async function pickSong(artistId, { albumsParam = '', usedSongs = null } = {}) {
 
     const isPrimary = (s) => s.artists.some(a => String(a.id) === String(artistId));
     const albumTracks = [], features = [], singles = [];
-    for (const s of filtered) {
+        for (const s of filtered) {
         const cached = genius.getSongCacheEntry(s.id);
-        const album  = cached?.album !== undefined ? cached.album : s.album;
+        const album  = cached?.album ? cached.album : s.album;
         if (!isPrimary(s)) features.push(s);
         else if (album)    albumTracks.push(s);
         else               singles.push(s);
@@ -143,7 +144,7 @@ async function pickSong(artistId, { albumsParam = '', usedSongs = null } = {}) {
         const albumIds = new Set(albumsParam.split(',').slice(0, 50).map(a => a.trim()).filter(Boolean));
         const albumFiltered = filtered.filter(s => {
             const cached = genius.getSongCacheEntry(s.id);
-            const album  = cached?.album !== undefined ? cached.album : s.album;
+            const album  = cached?.album ? cached.album : s.album;
             return album && albumIds.has(String(album.id ?? album.name));
         });
         if (albumFiltered.length > 0) customPool = albumFiltered;
@@ -222,6 +223,19 @@ function timingSafeEqual(a, b) {
 function adminAuth(req, res, next) {
     const pwd = process.env.ADMIN_PASSWORD;
     if (!pwd) return res.status(500).json({ error: "ADMIN_PASSWORD not set" });
+    // First try JWT Authorization header
+    const authHeader = String(req.headers['authorization'] || '')
+    if (authHeader.toLowerCase().startsWith('bearer ')) {
+        const token = authHeader.slice(7).trim()
+        const secret = process.env.ADMIN_JWT_SECRET || pwd
+        try {
+            const payload = jwt.verify(token, secret)
+            if (payload && payload.admin) return next()
+        } catch (e) {
+            // fallthrough to legacy check
+        }
+    }
+    // Legacy: x-admin-password header (timing-safe)
     const auth = req.headers["x-admin-password"] || "";
     if (!timingSafeEqual(auth, pwd)) return res.status(401).json({ error: "Unauthorized" });
     next();
@@ -230,8 +244,10 @@ function adminAuth(req, res, next) {
 app.post("/api/admin/login", loginLimiter, (req, res) => {
     const pwd = process.env.ADMIN_PASSWORD;
     if (!pwd) return res.status(500).json({ error: "ADMIN_PASSWORD not set" });
-    if (timingSafeEqual(String(req.body.password || ""), pwd)) res.json({ ok: true });
-    else res.status(401).json({ error: "Wrong password" });
+    if (!timingSafeEqual(String(req.body.password || ""), pwd)) return res.status(401).json({ error: "Wrong password" });
+    const secret = process.env.ADMIN_JWT_SECRET || pwd
+    const token = jwt.sign({ admin: true }, secret, { expiresIn: process.env.ADMIN_JWT_EXPIRES || '12h' })
+    res.json({ ok: true, token })
 })
 
 app.get("/api/admin/songs", adminAuth, async (req, res) => {
@@ -673,9 +689,10 @@ app.get("/api/discography", async (req, res) => {
         const albumMap = new Map();
         const singles = [];
 
+        // Build album map from allSongs
         for (const s of allSongs) {
             const cached = genius.getSongCacheEntry(s.id);
-            const album  = cached?.album !== undefined ? cached.album : s.album;
+            const album  = cached?.album ? cached.album : s.album;
             const cover  = cached?.cover  || s.cover  || null;
             const artists = cached?.artists || s.artists || [];
             const songEntry = { id: s.id, title: s.title, cover, artists, dailyCount: dailyCounts[s.id] || 0 };
@@ -683,18 +700,82 @@ app.get("/api/discography", async (req, res) => {
             if (album?.name) {
                 const key = String(album.id ?? album.name);
                 if (!albumMap.has(key)) {
-                    albumMap.set(key, { albumId: key, albumName: album.name, albumCover: null, songs: [] });
+                    albumMap.set(key, { albumId: key, albumName: album.name, albumCover: null, albumCoverPrimary: false, songs: [] });
                 }
                 const entry = albumMap.get(key);
-                if (!entry.albumCover && cover) entry.albumCover = cover;
+                const isPrimaryOnTrack = artists.some(a => String(a.id) === String(otsochodziId));
+                if (cover) {
+                    if (isPrimaryOnTrack) {
+                        // prefer covers from tracks where otsochodzi is present
+                        entry.albumCover = cover;
+                        entry.albumCoverPrimary = true;
+                    } else if (!entry.albumCover) {
+                        entry.albumCover = cover;
+                    }
+                }
                 entry.songs.push(songEntry);
             } else {
                 singles.push(songEntry);
             }
         }
 
-        const albums = Array.from(albumMap.values())
-            .sort((a, b) => a.albumName.localeCompare(b.albumName, 'pl'));
+        // Fallback: include cached songs where otsochodzi appears but weren't returned in getAllSongs
+        try {
+            const cachedSongs = genius.getAllCachedSongs ? genius.getAllCachedSongs() : [];
+            const seenSongIds = new Set(allSongs.map(s => String(s.id)));
+            for (const cs of cachedSongs) {
+                if (!cs || !cs.id) continue;
+                if (seenSongIds.has(String(cs.id))) continue;
+                const artists = cs.artists || [];
+                if (!artists.some(a => String(a.id) === String(otsochodziId))) continue;
+                const album = cs.album || null;
+                const cover = cs.cover || null;
+                const songEntry = { id: cs.id, title: cs.title, cover, artists, dailyCount: dailyCounts[cs.id] || 0 };
+                if (album && album.name) {
+                    const key = String(album.id ?? album.name);
+                    if (!albumMap.has(key)) {
+                        albumMap.set(key, { albumId: key, albumName: album.name, albumCover: null, albumCoverPrimary: false, songs: [] });
+                    }
+                    const entry = albumMap.get(key);
+                    if (cover) {
+                        // prefer primary track covers (cachedSongs are from various sources — treat as primary here)
+                        entry.albumCover = cover;
+                    }
+                    entry.songs.push(songEntry);
+                } else {
+                    singles.push(songEntry);
+                }
+            }
+        } catch (e) {
+            // ignore fallback errors
+        }
+
+        // Classify albums: main albums first, EPs next, appearance-only last.
+        const albums = Array.from(albumMap.values()).map(a => {
+            const total = a.songs.length || 0;
+            const primaryCount = a.songs.reduce((c, s) => c + (s.artists && s.artists.some(ar => String(ar.id) === String(otsochodziId)) ? 1 : 0), 0);
+            const isAppearanceOnly = primaryCount === 0;
+            const isEP = /\bEP\b/i.test(a.albumName) || total > 0 && total <= 4;
+            return Object.assign({}, a, { _total: total, _primaryCount: primaryCount, _rank: isAppearanceOnly ? 3 : (isEP ? 2 : 1) });
+        }).sort((a, b) => {
+            if (a._rank !== b._rank) return a._rank - b._rank;
+            // For main albums prefer those with more primary tracks (likely core releases)
+            if (a._rank === 1 && b._rank === 1 && a._primaryCount !== b._primaryCount) return b._primaryCount - a._primaryCount;
+            return a.albumName.localeCompare(b.albumName, 'pl');
+        });
+        // Ensure album cover is used for all songs in the album (prefer explicit albumCover, fallback to first song cover)
+        for (const alb of albums) {
+            if (!alb.albumCover) {
+                const found = (alb.songs || []).find(s => s.cover);
+                if (found) alb.albumCover = found.cover;
+            }
+            if (alb.albumCover) {
+                for (const s of alb.songs) {
+                    if (!s.cover) s.cover = alb.albumCover;
+                    else s.cover = alb.albumCover; // force album cover for consistency
+                }
+            }
+        }
         if (singles.length) {
             albums.push({ albumId: '__singles__', albumName: 'Single / Inne', albumCover: null, songs: singles });
         }
@@ -715,13 +796,26 @@ app.get("/api/albums", async (req, res) => {
         const albumMap = new Map();
         for (const s of allSongs) {
             const cached = genius.getSongCacheEntry(s.id);
-            const album = cached?.album !== undefined ? cached.album : s.album;
+            const album = cached?.album ? cached.album : s.album;
             if (album?.name) {
                 const key = String(album.id ?? album.name);
-                if (!albumMap.has(key)) albumMap.set(key, { id: key, name: album.name });
+                if (!albumMap.has(key)) albumMap.set(key, { id: key, name: album.name, _total: 0, _primaryCount: 0 });
+                const entry = albumMap.get(key);
+                entry._total = (entry._total || 0) + 1;
+                const artists = cached?.artists || s.artists || [];
+                if (artists.some(a => String(a.id) === String(otsochodziId))) entry._primaryCount = (entry._primaryCount || 0) + 1;
             }
         }
-        cachedAlbums = Array.from(albumMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+        // Sort by same rules as /api/discography: main, EPs, appearances
+        cachedAlbums = Array.from(albumMap.values()).map(a => {
+            const isAppearanceOnly = (a._primaryCount || 0) === 0;
+            const isEP = /\bEP\b/i.test(a.name) || (a._total || 0) > 0 && (a._total || 0) <= 4;
+            return Object.assign({}, a, { _rank: isAppearanceOnly ? 3 : (isEP ? 2 : 1) });
+        }).sort((a, b) => {
+            if (a._rank !== b._rank) return a._rank - b._rank;
+            if (a._rank === 1 && b._rank === 1 && (b._primaryCount || 0) !== (a._primaryCount || 0)) return (b._primaryCount || 0) - (a._primaryCount || 0);
+            return a.name.localeCompare(b.name, 'pl');
+        }).map(a => ({ id: a.id, name: a.name }));
         res.json(cachedAlbums);
     } catch (e) {
         res.status(500).json({ error: "Failed to fetch albums" });

@@ -355,6 +355,7 @@ module.exports = {
   searchSongsByName,
   getSongById,
   getSongCacheEntry,
+  getAllCachedSongs: () => Array.from(songCache.values()).filter(v => v && v.id),
   getWordArray,
   isArtistSong,
   searchCachedSongsByName,

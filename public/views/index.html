@@ -3030,6 +3030,12 @@
     if(activeMode==='daily')startDailyCountdown()
     else{const cd=document.getElementById('share-countdown');if(cd)cd.textContent=''}
 
+    // Only allow sharing (text + image) in daily mode
+    const imgBtn = document.getElementById('share-img-btn')
+    if (imgBtn) imgBtn.style.display = activeMode === 'daily' ? '' : 'none'
+    const txtBtn = document.getElementById('share-text-btn')
+    if (txtBtn) txtBtn.style.display = activeMode === 'daily' ? '' : 'none'
+
     // Copied feedback clear
     const copied=document.getElementById('share-copied')
     if(copied)copied.textContent=''
@@ -3059,6 +3065,7 @@
   })
 
   document.getElementById('share-img-btn').addEventListener('click',async()=>{
+    if (activeMode !== 'daily') return
     const h=getDailyHistory()
     const{cur}=calcDailyStreaks(h)
     const date=activeMode==='daily'?fmtISO(dailyDate):fmtISO(new Date())

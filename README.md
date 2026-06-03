@@ -85,11 +85,11 @@ The server starts on `http://localhost:3000`.
 
 ### Admin
 
-All admin routes require an `x-admin-password` header.
+Admin routes require a JWT bearer token in the `Authorization: Bearer <token>` header. For convenience the legacy `x-admin-password` header is still accepted.
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `POST` | `/api/admin/login` | Verify admin password `{ password }`. |
+| `POST` | `/api/admin/login` | Verify admin password `{ password }` and return `{ token }`. |
 | `GET` | `/api/admin/songs` | List all cached songs. |
 | `GET` | `/api/admin/lyrics/:songId` | Fetch lyrics for a song. |
 | `GET` | `/api/admin/daily` | List all daily challenge entries. |

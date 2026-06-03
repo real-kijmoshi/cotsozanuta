@@ -126,6 +126,7 @@
     <h1>analizy i wglądy</h1>
     <div class="nav-links">
       <a class="btn" href="/admin">← panel główny</a>
+      <button class="btn" id="refresh-btn">odśwież</button>
       <button class="btn" id="logout-btn">wyloguj</button>
     </div>
   </header>
@@ -422,7 +423,7 @@
 <div id="toast"></div>
 
 <script>
-  const API = (path, opts) => fetch(path, { headers: { 'x-admin-password': sessionStorage.getItem('admpwd') || '', 'Content-Type': 'application/json', ...(opts?.headers || {}) }, ...opts })
+  const API = (path, opts) => fetch(path, { headers: { 'Authorization': (localStorage.getItem('admToken') ? 'Bearer ' + localStorage.getItem('admToken') : ''), 'Content-Type': 'application/json', ...(opts?.headers || {}) }, ...opts })
 
   // ── TOAST ─────────────────────────────────────────────────
   let toastTimer
@@ -445,12 +446,13 @@
     try {
       const r = await fetch('/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pwd }) })
       if (r.ok) {
-        sessionStorage.setItem('admpwd', pwd)
+        const d = await r.json()
+        if (d.token) localStorage.setItem('admToken', d.token)
         loginView.style.display = 'none'; adminView.classList.add('show')
         await init()
       } else {
         loginErr.textContent = 'złe hasło'
-        sessionStorage.removeItem('admpwd')
+        localStorage.removeItem('admToken')
       }
     } catch(e) {
       loginErr.textContent = 'błąd połączenia'
@@ -460,11 +462,11 @@
 
   loginBtn.addEventListener('click', () => tryLogin(pwdInput.value))
   pwdInput.addEventListener('keydown', e => e.key === 'Enter' && tryLogin(pwdInput.value))
-  document.getElementById('logout-btn').addEventListener('click', () => { sessionStorage.removeItem('admpwd'); location.reload() })
+  document.getElementById('logout-btn').addEventListener('click', () => { localStorage.removeItem('admToken'); location.reload() })
 
   // Auto-login fallback
-  if (sessionStorage.getItem('admpwd')) {
-    tryLogin(sessionStorage.getItem('admpwd'))
+  if (localStorage.getItem('admToken')) {
+    loginView.style.display = 'none'; adminView.classList.add('show'); init()
   }
 
   // ── CHARTS HELPERS ───────────────────────────────────────
@@ -657,6 +659,128 @@
   let cachedStats = null;
   let cachedRanked = null;
   let cachedUsers = null;
+  let resizeListenerAdded = false;
+
+  // Populate DOM from cached objects (used on initial load and refresh)
+  function populateFromCaches() {
+    const stats = cachedStats; const ranked = cachedRanked; const users = cachedUsers
+
+    document.getElementById('stats-loading').style.display = 'none'
+    document.getElementById('stats-content').style.display = 'block'
+
+    // Populating KPIs Row 1
+    const totalAll = stats.gamePlays?.totals?.all ?? stats.totals.plays
+    document.getElementById('kpi-all-plays').textContent = totalAll
+    
+    const dailyTotal = stats.gamePlays?.totals?.daily ?? stats.totals.plays
+    document.getElementById('kpi-daily-plays').textContent = dailyTotal
+    document.getElementById('kpi-daily-sub').innerHTML = `<span style="color:var(--green)">${stats.totals.correct}</span> / <span style="color:var(--red)">${stats.totals.giveup}</span> (W/L)`
+
+    document.getElementById('kpi-endless-plays').textContent = stats.gamePlays?.totals?.endless ?? 0
+    document.getElementById('kpi-endless-sub').textContent = 'uruchomienia endless'
+
+    document.getElementById('kpi-ranked-plays').textContent = stats.gamePlays?.totals?.ranked ?? 0
+    document.getElementById('kpi-ranked-sub').textContent = `zgłoszenia: ${ranked.total || 0}`
+
+    // Populating KPIs Row 2
+    document.getElementById('kpi-streak-cur').textContent = stats.streak?.current ?? '—'
+    document.getElementById('kpi-streak-best').innerHTML = `najlepsza seria: ${stats.streak?.best ?? '—'}`
+
+    const peakGameCount = stats.peakDay ? stats.peakDay.plays : 0
+    document.getElementById('kpi-peak').textContent = peakGameCount
+    document.getElementById('kpi-peak-date').textContent = stats.peakDay ? stats.peakDay.date : '—'
+
+    const rate = stats.totals.plays ? Math.round(stats.totals.correct / stats.totals.plays * 100) : 0
+    document.getElementById('kpi-success-pct').textContent = rate + '%'
+    const el2 = document.getElementById('kpi-success-pct2')
+    if (el2) el2.textContent = rate + '%'
+
+    document.getElementById('kpi-words-avg').textContent = stats.avgWords?.correct ?? '—'
+    document.getElementById('kpi-words-sub').innerHTML = `poddane: <span style="color:var(--red)">${stats.avgWords?.giveup ?? '—'}</span>`
+
+    // Populating Engagement KPIs
+    document.getElementById('kpi-avg-games-user').textContent = stats.avgGamesPerUser ?? '—'
+    document.getElementById('kpi-median-games-user-sub').textContent = `mediana: ${stats.medianGamesPerUser ?? '—'}`
+    document.getElementById('kpi-median-correct').textContent = stats.medianWords?.correct ?? '—'
+    document.getElementById('kpi-avg-correct-sub').textContent = `śr: ${stats.avgWords?.correct ?? '—'}`
+    document.getElementById('kpi-median-giveup').textContent = stats.medianWords?.giveup ?? '—'
+    document.getElementById('kpi-avg-giveup-sub').textContent = `śr: ${stats.avgWords?.giveup ?? '—'}`
+    if (stats.peakBucket) {
+      document.getElementById('kpi-peak-bucket').textContent = stats.peakBucket.label + ' słów'
+      document.getElementById('kpi-peak-bucket-sub').textContent = `${stats.peakBucket.correct + stats.peakBucket.giveup} gier w tym zakresie`
+    }
+
+    // Populating User Identity KPIs
+    if (users) {
+      document.getElementById('kpi-unique-users').textContent = users.totalUnique ?? '—'
+      document.getElementById('kpi-new-week').textContent = users.newUsersThisWeek ?? '—'
+      document.getElementById('kpi-new-month-sub').textContent = `nowi w tym miesiącu: ${users.newUsersThisMonth ?? '—'}`
+      document.getElementById('kpi-dau-today').textContent = users.dauToday ?? '—'
+      document.getElementById('kpi-dau-avg-sub').textContent = `śr. dzienny (7 dni): ${users.avgDauWeek ?? '—'}`
+    }
+
+    // Populating Trends and Growth Analysis report
+    const t = stats.trends || {}
+    const weekPct = t.week !== null ? t.week : 0
+    const weekDiff = (t.thisWeekPlays || 0) - (t.lastWeekPlays || 0)
+    const weekColor = weekPct >= 0 ? 'var(--green)' : 'var(--red)'
+    const weekArrow = weekPct >= 0 ? '▲' : '▼'
+    document.getElementById('trend-week-val').textContent = (weekDiff >= 0 ? '+' : '') + weekDiff + ' gier'
+    document.getElementById('trend-week-pct').textContent = `${weekArrow} ${Math.abs(weekPct)}% WoW`
+    document.getElementById('trend-week-pct').style.color = weekColor
+    document.getElementById('trend-week-desc').innerHTML = `Ten tydzień: <strong style="color:var(--text);">${t.thisWeekPlays || 0}</strong> vs ubiegły tydzień: <strong style="color:var(--sub);">${t.lastWeekPlays || 0}</strong>`
+
+    // Monthly Trend details
+    const monthPct = t.month !== null ? t.month : 0
+    const monthDiff = (t.thisMonthPlays || 0) - (t.lastMonthPlays || 0)
+    const monthColor = monthPct >= 0 ? 'var(--green)' : 'var(--red)'
+    const monthArrow = monthPct >= 0 ? '▲' : '▼'
+    document.getElementById('trend-month-val').textContent = (monthDiff >= 0 ? '+' : '') + monthDiff + ' gier'
+    document.getElementById('trend-month-pct').textContent = `${monthArrow} ${Math.abs(monthPct)}% MoM`
+    document.getElementById('trend-month-pct').style.color = monthColor
+    document.getElementById('trend-month-desc').innerHTML = `Ten miesiąc: <strong style="color:var(--text);">${t.thisMonthPlays || 0}</strong> vs ubiegły miesiąc: <strong style="color:var(--sub);">${t.lastMonthPlays || 0}</strong>`
+
+    // General Ranked trends
+    document.getElementById('trend-ranked-avg').textContent = ranked.avgScore || '0'
+    document.getElementById('trend-ranked-desc').innerHTML = `Najwyższy wynik: <strong style="color:var(--yellow);">${ranked.topScore || 0}</strong> (unikalne wpisy: <strong>${ranked.total || 0}</strong>)`
+
+    // DRAW CHARTS
+    renderCharts()
+
+    // RENDER LEADERBOARD (already unique on its best score server-side!)
+    const lbTbody = document.getElementById('leaderboard-tbody')
+    if (ranked.topScores?.length) {
+      lbTbody.innerHTML = ranked.topScores.map((e, i) => `<tr>
+        <td class="rank-lbl">#${i + 1}</td>
+        <td>${esc(e.name)}</td>
+        <td class="score-lbl text-right">${e.score}</td>
+        <td class="text-right" style="color:var(--sub)">${e.date}</td>
+      </tr>`).join('')
+    } else {
+      lbTbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--sub2)">brak danych rankingowych</td></tr>`
+    }
+
+    // RENDER DAILY TABLE
+    const dailyTbody = document.getElementById('daily-tbody')
+    if (stats.perDay?.length) {
+      const recentDaily = stats.perDay.slice().reverse().slice(0, 15) // last 15 days
+      dailyTbody.innerHTML = recentDaily.map(d => `<tr>
+        <td style="font-weight:bold">${d.date}</td>
+        <td class="text-center">${d.plays}</td>
+        <td class="text-center" style="color:var(--green)">${d.correct}</td>
+        <td class="text-center" style="color:var(--red)">${d.giveup}</td>
+        <td class="text-right" style="color:var(--blue)">${d.avgWords}w</td>
+      </tr>`).join('')
+    } else {
+      dailyTbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--sub2)">brak danych historycznych</td></tr>`
+    }
+
+    // Ensure resize listener only added once
+    if (!resizeListenerAdded) {
+      window.addEventListener('resize', debounce(() => { renderCharts() }, 250))
+      resizeListenerAdded = true
+    }
+  }
 
   function renderCharts() {
     if (!cachedStats || !cachedRanked) return;
@@ -749,128 +873,36 @@
       const sr3 = await API('/api/admin/users-overview')
       const users = sr3.ok ? await sr3.json() : null
       cachedUsers = users
+      populateFromCaches()
 
-      document.getElementById('stats-loading').style.display = 'none'
-      document.getElementById('stats-content').style.display = 'block'
-
-      // Populating KPIs Row 1
-      const totalAll = stats.gamePlays?.totals?.all ?? stats.totals.plays
-      document.getElementById('kpi-all-plays').textContent = totalAll
-      
-      const dailyTotal = stats.gamePlays?.totals?.daily ?? stats.totals.plays
-      document.getElementById('kpi-daily-plays').textContent = dailyTotal
-      document.getElementById('kpi-daily-sub').innerHTML = `<span style="color:var(--green)">${stats.totals.correct}</span> / <span style="color:var(--red)">${stats.totals.giveup}</span> (W/L)`
-
-      document.getElementById('kpi-endless-plays').textContent = stats.gamePlays?.totals?.endless ?? 0
-      document.getElementById('kpi-endless-sub').textContent = 'uruchomienia endless'
-
-      document.getElementById('kpi-ranked-plays').textContent = stats.gamePlays?.totals?.ranked ?? 0
-      document.getElementById('kpi-ranked-sub').textContent = `zgłoszenia: ${ranked.total || 0}`
-
-      // Populating KPIs Row 2
-      document.getElementById('kpi-streak-cur').textContent = stats.streak?.current ?? '—'
-      document.getElementById('kpi-streak-best').innerHTML = `najlepsza seria: ${stats.streak?.best ?? '—'}`
-
-      const peakGameCount = stats.peakDay ? stats.peakDay.plays : 0
-      document.getElementById('kpi-peak').textContent = peakGameCount
-      document.getElementById('kpi-peak-date').textContent = stats.peakDay ? stats.peakDay.date : '—'
-
-      const rate = stats.totals.plays ? Math.round(stats.totals.correct / stats.totals.plays * 100) : 0
-      document.getElementById('kpi-success-pct').textContent = rate + '%'
-      const el2 = document.getElementById('kpi-success-pct2')
-      if (el2) el2.textContent = rate + '%'
-
-      document.getElementById('kpi-words-avg').textContent = stats.avgWords?.correct ?? '—'
-      document.getElementById('kpi-words-sub').innerHTML = `poddane: <span style="color:var(--red)">${stats.avgWords?.giveup ?? '—'}</span>`
-
-      // Populating Engagement KPIs
-      document.getElementById('kpi-avg-games-user').textContent = stats.avgGamesPerUser ?? '—'
-      document.getElementById('kpi-median-games-user-sub').textContent = `mediana: ${stats.medianGamesPerUser ?? '—'}`
-      document.getElementById('kpi-median-correct').textContent = stats.medianWords?.correct ?? '—'
-      document.getElementById('kpi-avg-correct-sub').textContent = `śr: ${stats.avgWords?.correct ?? '—'}`
-      document.getElementById('kpi-median-giveup').textContent = stats.medianWords?.giveup ?? '—'
-      document.getElementById('kpi-avg-giveup-sub').textContent = `śr: ${stats.avgWords?.giveup ?? '—'}`
-      if (stats.peakBucket) {
-        document.getElementById('kpi-peak-bucket').textContent = stats.peakBucket.label + ' słów'
-        document.getElementById('kpi-peak-bucket-sub').textContent = `${stats.peakBucket.correct + stats.peakBucket.giveup} gier w tym zakresie`
-      }
-
-      // Populating User Identity KPIs
-      if (users) {
-        document.getElementById('kpi-unique-users').textContent = users.totalUnique ?? '—'
-        document.getElementById('kpi-new-week').textContent = users.newUsersThisWeek ?? '—'
-        document.getElementById('kpi-new-month-sub').textContent = `nowi w tym miesiącu: ${users.newUsersThisMonth ?? '—'}`
-        document.getElementById('kpi-dau-today').textContent = users.dauToday ?? '—'
-        document.getElementById('kpi-dau-avg-sub').textContent = `śr. dzienny (7 dni): ${users.avgDauWeek ?? '—'}`
-      }
-
-      // Populating Trends and Growth Analysis report
-      const t = stats.trends || {}
-      
-      // Weekly Trend details
-      const weekPct = t.week !== null ? t.week : 0
-      const weekDiff = (t.thisWeekPlays || 0) - (t.lastWeekPlays || 0)
-      const weekColor = weekPct >= 0 ? 'var(--green)' : 'var(--red)'
-      const weekArrow = weekPct >= 0 ? '▲' : '▼'
-      document.getElementById('trend-week-val').textContent = (weekDiff >= 0 ? '+' : '') + weekDiff + ' gier'
-      document.getElementById('trend-week-pct').textContent = `${weekArrow} ${Math.abs(weekPct)}% WoW`
-      document.getElementById('trend-week-pct').style.color = weekColor
-      document.getElementById('trend-week-desc').innerHTML = `Ten tydzień: <strong style="color:var(--text);">${t.thisWeekPlays || 0}</strong> vs ubiegły tydzień: <strong style="color:var(--sub);">${t.lastWeekPlays || 0}</strong>`
-
-      // Monthly Trend details
-      const monthPct = t.month !== null ? t.month : 0
-      const monthDiff = (t.thisMonthPlays || 0) - (t.lastMonthPlays || 0)
-      const monthColor = monthPct >= 0 ? 'var(--green)' : 'var(--red)'
-      const monthArrow = monthPct >= 0 ? '▲' : '▼'
-      document.getElementById('trend-month-val').textContent = (monthDiff >= 0 ? '+' : '') + monthDiff + ' gier'
-      document.getElementById('trend-month-pct').textContent = `${monthArrow} ${Math.abs(monthPct)}% MoM`
-      document.getElementById('trend-month-pct').style.color = monthColor
-      document.getElementById('trend-month-desc').innerHTML = `Ten miesiąc: <strong style="color:var(--text);">${t.thisMonthPlays || 0}</strong> vs ubiegły miesiąc: <strong style="color:var(--sub);">${t.lastMonthPlays || 0}</strong>`
-
-      // General Ranked trends
-      document.getElementById('trend-ranked-avg').textContent = ranked.avgScore || '0'
-      document.getElementById('trend-ranked-desc').innerHTML = `Najwyższy wynik: <strong style="color:var(--yellow);">${ranked.topScore || 0}</strong> (unikalne wpisy: <strong>${ranked.total || 0}</strong>)`
-
-      // DRAW CHARTS
-      renderCharts()
-
-      // RENDER LEADERBOARD (already unique on its best score server-side!)
-      const lbTbody = document.getElementById('leaderboard-tbody')
-      if (ranked.topScores?.length) {
-        lbTbody.innerHTML = ranked.topScores.map((e, i) => `<tr>
-          <td class="rank-lbl">#${i + 1}</td>
-          <td>${esc(e.name)}</td>
-          <td class="score-lbl text-right">${e.score}</td>
-          <td class="text-right" style="color:var(--sub)">${e.date}</td>
-        </tr>`).join('')
-      } else {
-        lbTbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--sub2)">brak danych rankingowych</td></tr>`
-      }
-
-      // RENDER DAILY TABLE
-      const dailyTbody = document.getElementById('daily-tbody')
-      if (stats.perDay?.length) {
-        const recentDaily = stats.perDay.slice().reverse().slice(0, 15) // last 15 days
-        dailyTbody.innerHTML = recentDaily.map(d => `<tr>
-          <td style="font-weight:bold">${d.date}</td>
-          <td class="text-center">${d.plays}</td>
-          <td class="text-center" style="color:var(--green)">${d.correct}</td>
-          <td class="text-center" style="color:var(--red)">${d.giveup}</td>
-          <td class="text-right" style="color:var(--blue)">${d.avgWords}w</td>
-        </tr>`).join('')
-      } else {
-        dailyTbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--sub2)">brak danych historycznych</td></tr>`
-      }
-
-      // Add responsiveness window resizing event listener
-      window.addEventListener('resize', debounce(() => {
-        // Redraw charts on resize without refetching from DB
-        renderCharts()
-      }, 250))
+      // attach refresh button handler
+      const refreshBtn = document.getElementById('refresh-btn')
+      if (refreshBtn) refreshBtn.addEventListener('click', refreshStats)
       
     } catch (err) {
       console.error(err)
       toast('Nie udało się załadować danych statystycznych', 'err')
+    }
+  }
+
+  // Refresh handler to re-fetch latest stats without reloading page
+  async function refreshStats() {
+    const btn = document.getElementById('refresh-btn')
+    if (btn) { btn.disabled = true; var prev = btn.textContent; btn.textContent = 'odświeżanie...'}
+    try {
+      const r1 = await API('/api/admin/stats-overview')
+      if (r1.ok) cachedStats = await r1.json()
+      const r2 = await API('/api/admin/ranked-overview')
+      if (r2.ok) cachedRanked = await r2.json()
+      const r3 = await API('/api/admin/users-overview')
+      cachedUsers = r3.ok ? await r3.json() : cachedUsers
+      populateFromCaches()
+      toast('Zaktualizowano statystyki')
+    } catch (e) {
+      console.error(e)
+      toast('Błąd podczas odświeżania', 'err')
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = prev }
     }
   }
 

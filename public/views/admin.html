@@ -297,7 +297,7 @@
 <div id="toast"></div>
 
 <script>
-  const API = (path, opts) => fetch(path, { headers: { 'x-admin-password': sessionStorage.getItem('admpwd') || '', 'Content-Type': 'application/json', ...(opts?.headers || {}) }, ...opts })
+  const API = (path, opts) => fetch(path, { headers: { 'Authorization': (localStorage.getItem('admToken') ? 'Bearer ' + localStorage.getItem('admToken') : ''), 'Content-Type': 'application/json', ...(opts?.headers || {}) }, ...opts })
 
   // ── TOAST ─────────────────────────────────────────────────
   let toastTimer
@@ -319,7 +319,8 @@
     loginBtn.disabled = true; loginErr.textContent = ''
     const r = await fetch('/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pwd }) })
     if (r.ok) {
-      sessionStorage.setItem('admpwd', pwd)
+      const d = await r.json()
+      if (d.token) localStorage.setItem('admToken', d.token)
       loginView.style.display = 'none'; adminView.classList.add('show')
       await init()
     } else {
@@ -329,10 +330,12 @@
   }
   loginBtn.addEventListener('click', () => tryLogin(pwdInput.value))
   pwdInput.addEventListener('keydown', e => e.key === 'Enter' && tryLogin(pwdInput.value))
-  document.getElementById('logout-btn').addEventListener('click', () => { sessionStorage.removeItem('admpwd'); location.reload() })
+  document.getElementById('logout-btn').addEventListener('click', () => { localStorage.removeItem('admToken'); location.reload() })
 
-  // auto-login if session stored
-  if (sessionStorage.getItem('admpwd')) tryLogin(sessionStorage.getItem('admpwd'))
+  // auto-login if token stored
+  if (localStorage.getItem('admToken')) {
+    loginView.style.display = 'none'; adminView.classList.add('show'); init()
+  }
 
   // ── SONG SEARCH / AUTOCOMPLETE ─────────────────────────────
   let allSongs = [], selectedSong = null
