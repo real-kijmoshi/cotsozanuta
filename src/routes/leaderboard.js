@@ -1,15 +1,16 @@
 const express = require("express");
 const db = require("../../utils/db");
 const { rankedSessions, rankedModeConfig } = require("../rankedSessions");
-const { leaderboardLimiter } = require("../rateLimiters");
+const { leaderboardLimiter, leaderboardGetLimiter } = require("../rateLimiters");
 
 const router = express.Router();
 
-router.get("/monthly", (req, res) => {
+router.get("/monthly", leaderboardGetLimiter, (req, res) => {
     try {
         res.setHeader("Cache-Control", "public, max-age=300");
         const mode = db.normalizeMode(req.query.mode);
-        const data = db.getRankedByMonth(mode);
+        const gameType = db.normalizeGameType(req.query.gameType);
+        const data = db.getRankedByMonth(mode, gameType);
         res.json(data.map(r => ({
             month: r.month,
             submissions: r.submissions,
@@ -21,13 +22,14 @@ router.get("/monthly", (req, res) => {
     }
 });
 
-router.get("/", (req, res) => {
+router.get("/", leaderboardGetLimiter, (req, res) => {
     try {
         const mode = db.normalizeMode(req.query.mode);
+        const gameType = db.normalizeGameType(req.query.gameType);
         const limitParam = parseInt(req.query.limit, 10);
         const limit = Number.isInteger(limitParam) && limitParam > 0 ? Math.min(limitParam, 200) : 20;
         res.setHeader("Cache-Control", "public, max-age=30");
-        res.json(db.getLeaderboard(mode, limit));
+        res.json(db.getLeaderboard(mode, gameType, limit));
     } catch (e) {
         res.status(500).json({ error: "Failed to read leaderboard" });
     }
@@ -58,13 +60,13 @@ router.post("/", leaderboardLimiter, (req, res) => {
     session.finished  = true;
 
     const score    = session.score;
-    const safeName = String(name).replace(/[<>&"]/g, "").trim().slice(0, 32);
+    const safeName = String(name).replace(/[<>&"'`]/g, "").trim().slice(0, 32);
     if (!safeName) return res.status(400).json({ error: "Invalid name" });
 
     const safeUserId = userId ? String(userId).trim().slice(0, 128) : null;
     const today = new Date().toISOString().split("T")[0];
-    const rank = db.insertLeaderboard({ name: safeName, score, date: today, user_id: safeUserId, mode: session.mode });
-    res.json({ rank: rank || 0, mode: session.mode, score });
+    const rank = db.insertLeaderboard({ name: safeName, score, date: today, user_id: safeUserId, mode: session.mode, game_type: session.gameType || 'tekst' });
+    res.json({ rank: rank || 0, mode: session.mode, gameType: session.gameType || 'tekst', score });
 });
 
 module.exports = router;

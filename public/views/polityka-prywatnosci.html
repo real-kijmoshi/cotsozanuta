@@ -173,7 +173,7 @@
 <main>
   <div class="page-eyebrow">Dokument prawny</div>
   <h1>Polityka<br><em>Prywatności</em></h1>
-  <div class="updated">Ostatnia aktualizacja: 1 czerwca 2026</div>
+  <div class="updated">Ostatnia aktualizacja: 13 lipca 2026</div>
   <div class="divider"></div>
 
   <div class="section">
@@ -206,9 +206,19 @@
           <td>W pamięci localStorage użytkownika oraz w bazie danych serwera (pole user_id)</td>
         </tr>
         <tr>
-          <td>Zdarzenia gry (wybór trybu, start sesji bez końca/rankingowej)</td>
+          <td>Zdarzenia gry (wybór trybu, start sesji)</td>
           <td>Generowanie wskaźników aktywności, wykresów i analiz obciążenia serwera</td>
           <td>Na serwerze, całkowicie anonimowo, bez identyfikatorów</td>
+        </tr>
+        <tr>
+          <td>Wyniki gier (tryb, wynik, liczba odsłoniętych słów, czas gry, id urządzenia)</td>
+          <td>Statystyki rozgrywki, analiza popularności trybów i utworów</td>
+          <td>Na serwerze, powiązane z identyfikatorem urządzenia (UUID) – bez danych osobowych</td>
+        </tr>
+        <tr>
+          <td>Szacunkowy kraj (z nagłówków żądania)</td>
+          <td>Generowanie statystyk geograficznych (anonimowe)</td>
+          <td>Na serwerze, zapisywany tylko jako kod kraju (np. PL, DE), bez precyzyjnej lokalizacji</td>
         </tr>
         <tr>
           <td>Liczba odgadniętych piosenek (sesja rankingowa)</td>
@@ -231,13 +241,18 @@
           <td>Tylko w localStorage Twojej przeglądarki</td>
         </tr>
         <tr>
+          <td>Fragmenty audio (identyfikatory YouTube, pliki MP3)</td>
+          <td>Odtwarzanie 30-sekundowych fragmentów utworów w trybach z audio</td>
+          <td>Na serwerze w pamięci podręcznej (cache) – pliki MP3 są przechowywane tymczasowo i usuwane przy restarcie serwera</td>
+        </tr>
+        <tr>
           <td>Ustawienia gry (tryb, filtr albumów, słowa na rundę)</td>
           <td>Zapamiętanie Twoich preferencji</td>
           <td>Tylko w localStorage Twojej przeglądarki</td>
         </tr>
       </tbody>
     </table>
-    <div class="note">Serwis nie zbiera adresów IP w sposób trwały, nie tworzy profili użytkowników ani nie stosuje plików cookies do śledzenia.</div>
+    <div class="note">Serwis nie zbiera adresów IP w sposób trwały, nie tworzy profili użytkowników ani nie stosuje plików cookies do śledzenia. Kraj pochodzenia (określany automatycznie na podstawie nagłówków żądania) jest zapisywany wyłącznie w kontekście wyników gry i używany wyłącznie do generowania anonimowych statystyk geograficznych.</div>
   </div>
 
   <div class="section">
@@ -252,6 +267,7 @@
     <h2>Usługi zewnętrzne</h2>
     <ul>
       <li><strong>Genius.com</strong> – fragmenty tekstów piosenek oraz okładki albumów pobierane są za pośrednictwem publicznego API serwisu Genius.com i tymczasowo przechowywane w pamięci podręcznej serwera. Wszystkie teksty są własnością ich twórców i wydawców; serwis Cotsozanuta nie jest powiązany z Genius.com i nie posiada licencji do tych treści. Korzystając z gry, Twoja przeglądarka może ładować zasoby (np. okładki albumów) bezpośrednio z serwerów CDN Genius.com, co podlega ich <a href="https://genius.com/static/privacy" target="_blank" rel="noopener noreferrer" style="color:rgba(227,28,18,0.8)">polityce prywatności</a>.</li>
+      <li><strong>YouTube</strong> – w trybach z audio, 30-sekundowe fragmenty utworów pobierane są z serwisu YouTube za pomocą narzędzia yt-dlp i przechowywane w pamięci podręcznej serwera (cache) wyłącznie w celu odtworzenia ich w grze. Serwis nie udostępnia tych plików osobom trzecim i nie wykorzystuje ich w celach komercyjnych. Odwołanie do YouTube może wiązać się z rejestrowaniem danych przez Google zgodnie z ich polityką prywatności.</li>
       <li><strong>Google Fonts</strong> – czcionki ładowane są z serwerów Google. Odwołanie do Google Fonts może wiązać się z rejestrowaniem adresu IP przez Google zgodnie z ich polityką prywatności.</li>
     </ul>
   </div>

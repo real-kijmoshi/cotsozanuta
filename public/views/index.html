@@ -825,8 +825,7 @@
     .word-anim{animation:wordIn .18s cubic-bezier(0.15,0,0,1) forwards}
 
     /* ─── AUDIO BLOCK ───────────────────────────────────── */
-    #sc-holder{position:absolute;width:1px;height:1px;overflow:hidden;left:-9999px;top:auto;pointer-events:none}
-    #sc-holder iframe{width:1px;height:1px;border:0}
+    #audio-player{display:none}
     #audio-block{
       width:100%;display:flex;flex-direction:column;align-items:center;gap:26px;
     }
@@ -1466,7 +1465,7 @@
     .rs-cancel:hover{color:var(--text);border-color:rgba(255,255,255,0.25)}
 
     /* ─── SPLASH LEADERBOARD MODE TABS ───────────────── */
-    .slb-tabs{display:flex;gap:0;margin:2px 0 8px;border:1px solid rgba(255,255,255,0.08)}
+    .slb-tabs{display:flex;gap:0;margin:2px 0 6px;border:1px solid rgba(255,255,255,0.08)}
     .slb-tab{
       flex:1;background:none;border:none;border-right:1px solid rgba(255,255,255,0.08);
       padding:7px 4px;font-family:var(--mono);font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;
@@ -1475,6 +1474,15 @@
     .slb-tab:last-child{border-right:none}
     .slb-tab:hover{color:var(--text)}
     .slb-tab.active{background:var(--red);color:#fff}
+    .slb-type-tabs{display:flex;gap:0;margin:0 0 8px;border:1px solid rgba(255,255,255,0.06)}
+    .slb-type-tab{
+      flex:1;background:none;border:none;border-right:1px solid rgba(255,255,255,0.06);
+      padding:4px 6px;font-family:var(--mono);font-size:.5rem;letter-spacing:.12em;text-transform:uppercase;
+      color:var(--sub2);cursor:pointer;transition:color .12s,background .12s;
+    }
+    .slb-type-tab:last-child{border-right:none}
+    .slb-type-tab:hover{color:var(--text)}
+    .slb-type-tab.active{background:rgba(227,28,18,0.7);color:#fff}
 
     /* ─── SPLASH PERSONAL STATS ──────────────────────── */
     #splash-stats{
@@ -1784,14 +1792,7 @@
 </head>
 <body>
 
-<div id="announcement-toast" role="status" aria-live="polite" aria-atomic="true" style="display:none">
-  <div class="toast-icon" aria-hidden="true">🔊</div>
-  <div class="toast-body">
-    <div class="toast-title">Nowy tryb audio jest dodany!</div>
-    <div class="toast-sub">Sprawdź, czy rozpoznasz utwór Otsochodzi po dźwięku.</div>
-  </div>
-  <button class="toast-close" aria-label="Zamknij ogłoszenie">&#10005;</button>
-</div>
+<div id="toast-container"></div>
 
 <div id="bg-photo"></div>
 <div id="bg-noise"></div>
@@ -2070,6 +2071,10 @@
         <button class="slb-tab" data-mode="sprint180">3 min</button>
         <button class="slb-tab" data-mode="survival">survival</button>
       </div>
+      <div class="slb-type-tabs" id="slb-type-tabs">
+        <button class="slb-type-tab active" data-gt="tekst">tekst</button>
+        <button class="slb-type-tab" data-gt="audio">audio</button>
+      </div>
       <div class="slb-divider"></div>
       <div class="slb-rows" id="slb-rows"><div class="slb-empty">ładowanie&#8230;</div></div>
     </div>
@@ -2191,7 +2196,7 @@
 
 <canvas id="confetti-canvas"></canvas>
 <!-- Hidden YouTube player — drives the audio-guess mode via the IFrame API -->
-<div id="sc-holder" aria-hidden="true"><div id="yt-player"></div></div>
+<audio id="audio-player" preload="auto"></audio>
 <div id="ranked-select">
   <div class="rs-card">
     <div class="rs-header">
@@ -2221,13 +2226,14 @@
   </div>
 </div>
 
-<script src="https://www.youtube.com/iframe_api"></script>
+
+<script src="/utils.js"></script>
 <script>
-  let songId=null,wordIndex=0,revealedWords=[],solved=false,dailyDate=new Date(),acFocused=-1,activeMode='endless',revealCount=0,songTitle=null,hintsUnlocked=false
+  let songId=null,wordIndex=0,revealedWords=[],solved=false,dailyDate=new Date(),acFocused=-1,activeMode='endless',revealCount=0,songTitle=null,hintsUnlocked=false,gameStartTime=0
   let songCover=null,songArtists=[],songFeatured=[],lyricWords=null
   let settings={wordsPerReveal:1,startMode:'random',albumMode:'all',selectedAlbums:[]}
-  try{const s=JSON.parse(localStorage.getItem('settings'));if(s){settings.wordsPerReveal=s.wordsPerReveal||1;settings.startMode=s.startMode||'random';settings.albumMode=s.albumMode||'all';settings.selectedAlbums=Array.isArray(s.selectedAlbums)?s.selectedAlbums:[]}}catch(e){}
-  function saveSettings(){try{localStorage.setItem('settings',JSON.stringify(settings))}catch(e){}}
+  try{const s=JSON.parse(localStorage.getItem('settings'));if(s){settings.wordsPerReveal=s.wordsPerReveal||1;settings.startMode=s.startMode||'random';settings.albumMode=s.albumMode||'all';settings.selectedAlbums=Array.isArray(s.selectedAlbums)?s.selectedAlbums:[]}}catch(e){console.warn('[settings] load failed',e)}
+  function saveSettings(){try{localStorage.setItem('settings',JSON.stringify(settings))}catch(e){console.warn('[settings] save failed',e)}}
   let rankedActive=false,rankedScore=0,rankedTimer=null,rankedSecondsLeft=60,rankedSessionId=null
   // ─── RANKED SUB-MODES ───────────────────────────────────────
   // Each sub-mode has its own leaderboard on the server. sprint* run a single
@@ -2245,14 +2251,14 @@
   // gameType toggles between the classic lyrics game and the YouTube audio game.
   // The snippet grows with each reveal (ms), mirroring the word-by-word reveal.
   let gameType='audio',currentIsAudio=false
-  let ytPlayer=null,ytLoadedId=null,audioPollTimer=null,audioSnippetIdx=0,audioLimitMs=0
+  let audioPollTimer=null,audioSnippetIdx=0,audioLimitMs=0,audioPrevLimit=0,audioContinueFromPrev=false
   const AUDIO_SNIPPETS=[500,1000,2000,4000,8000,16000]  // ms unlocked per reveal step (geometric: 0.5s → 16s)
   const AUDIO_FULL_MS=10*60*1000                            // effectively "whole track" after solve
   let userId=localStorage.getItem('czs_userId')
   if(!userId){
     if(typeof crypto!=='undefined'&&typeof crypto.randomUUID==='function'){userId=crypto.randomUUID()}
     else{userId='usr_'+Math.random().toString(36).slice(2,11)+'_'+Date.now().toString(36)}
-    try{localStorage.setItem('czs_userId',userId)}catch(e){}
+    try{localStorage.setItem('czs_userId',userId)}catch(e){console.warn('[userId] save failed',e)}
   }
   const splash=document.getElementById('splash'),loading=document.getElementById('loading'),game=document.getElementById('game'),dailyUnavailable=document.getElementById('daily-unavailable'),errorScreen=document.getElementById('error')
   const dateBar=document.getElementById('date-bar'),dateLabel=document.getElementById('date-label')
@@ -2360,7 +2366,6 @@
 
   function fmtISO(d){return d.toISOString().split('T')[0]}
   function fmtLabel(d){return d.toLocaleDateString('pl-PL',{day:'numeric',month:'short',year:'numeric'})}
-  function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
   function isHeader(w){return /^\[/.test(w)}
   function showState(s){
     splash.style.display=s==='splash'?'':'none'
@@ -2458,6 +2463,7 @@
   }
   async function startGame(data){
     showState('loading')
+    gameStartTime=Date.now()
     songId=data.songId;songTitle=data.title||null;songCover=data.cover||null
     songArtists=data.artists||[];songFeatured=data.featured||[]
     lyricWords=Array.isArray(data.words)?data.words:null
@@ -2510,17 +2516,8 @@
     await startGame(d)
   }
   // ─── AUDIO MODE ───────────────────────────────────────────────
-  // Waits until the YouTube IFrame API has loaded (window.YT.Player).
-  function ensureYT(){
-    if(window.YT&&window.YT.Player)return Promise.resolve(true)
-    return new Promise(res=>{
-      let tries=0
-      const t=setInterval(()=>{
-        if(window.YT&&window.YT.Player){clearInterval(t);res(true)}
-        else if(++tries>80){clearInterval(t);res(false)}   // ~8s ceiling
-      },100)
-    })
-  }
+  const audioEl=document.getElementById('audio-player')
+  let _audioReady=false
   const AUDIO_TOTAL_MS=AUDIO_SNIPPETS[AUDIO_SNIPPETS.length-1]
   function setAudioPlayingUI(playing){
     const btn=document.getElementById('audio-play-btn')
@@ -2532,7 +2529,6 @@
     if(icon)icon.innerHTML=playing?'<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>':'<path d="M8 5v14l11-7z"/>'
     if(label)label.textContent=playing?'Gra…':'Zagraj'
   }
-  // Segmented timeline: one segment per snippet step, width ∝ seconds it adds.
   function buildAudioSegments(){
     const wrap=document.getElementById('audio-segments')
     if(!wrap||wrap.childElementCount)return
@@ -2556,81 +2552,71 @@
     ph.style.left=Math.min(100,Math.max(0,pos/AUDIO_TOTAL_MS*100))+'%'
   }
   function fmtSec(ms){return (ms/1000).toFixed(1)+' sekundy'}
-  // Idle label shows how much is unlocked; while playing it counts up live.
   function updateAudioLabel(){
     const el=document.getElementById('audio-snippet-label')
     if(el)el.textContent=fmtSec(solved?AUDIO_TOTAL_MS:AUDIO_SNIPPETS[audioSnippetIdx])
   }
-  function stopYtPoll(){clearInterval(audioPollTimer);audioPollTimer=null}
-  function startYtPoll(){
-    stopYtPoll()
+  let _audioPoll=null
+  function startAudioPoll(){
+    stopAudioPoll()
     const el=document.getElementById('audio-snippet-label')
-    audioPollTimer=setInterval(()=>{
-      if(!ytPlayer||typeof ytPlayer.getCurrentTime!=='function')return
-      const pos=ytPlayer.getCurrentTime()*1000
+    _audioPoll=setInterval(()=>{
+      if(audioEl.paused){stopAudioPoll();setAudioPlayingUI(false);return}
+      const pos=audioEl.currentTime*1000
       if(audioLimitMs>0&&pos>=audioLimitMs){
-        ytPlayer.pauseVideo();ytPlayer.seekTo(0,true)
-        setAudioPlayhead(audioLimitMs);stopYtPoll();setAudioPlayingUI(false);updateAudioLabel()
+        audioEl.pause();audioEl.currentTime=0
+        setAudioPlayhead(audioLimitMs);stopAudioPoll();setAudioPlayingUI(false);updateAudioLabel()
       }else{
         setAudioPlayhead(pos)
         if(el)el.textContent=fmtSec(Math.min(pos,audioLimitMs))
       }
     },100)
   }
-  function onYtState(e){
-    // 1 = playing, 2 = paused, 0 = ended
-    if(e.data===1){setAudioPlayingUI(true);startYtPoll()}
-    else{setAudioPlayingUI(false);stopYtPoll()}
-  }
-  function createYtPlayer(id){
-    return new Promise(res=>{
-      ytPlayer=new YT.Player('yt-player',{
-        height:'1',width:'1',videoId:id,
-        playerVars:{controls:0,disablekb:1,modestbranding:1,rel:0,playsinline:1,fs:0},
-        events:{onReady:()=>res(true),onStateChange:onYtState}
-      })
-    })
-  }
-  async function setupAudioRound(id){
+  function stopAudioPoll(){clearInterval(_audioPoll);_audioPoll=null}
+  audioEl.addEventListener('ended',()=>{stopAudioPoll();setAudioPlayingUI(false)})
+  audioEl.addEventListener('error',()=>{setFeedback('błąd audio','info');setAudioPlayingUI(false)})
+  async function setupAudioRound(ytId){
     audioSnippetIdx=0;audioLimitMs=AUDIO_SNIPPETS[0]
-    stopYtPoll()
+    stopAudioPoll()
     buildAudioSegments();refreshAudioSegments()
     updateAudioLabel();setAudioPlayhead(0);setAudioPlayingUI(false)
     revealBtn.textContent='+ dźwięk'
-    const btn=document.getElementById('audio-play-btn')
-    if(btn)btn.disabled=true
-    if(!id){setFeedback('audio niedostępne','info');return}
-    const ok=await ensureYT()
-    if(!ok){setFeedback('nie udało się załadować odtwarzacza','info');return}
-    try{
-      if(!ytPlayer){await createYtPlayer(id)}
-      else{ytPlayer.cueVideoById(id)}
-      ytLoadedId=id
-    }catch(e){setFeedback('błąd audio','info');return}
-    if(btn)btn.disabled=false
+    _audioReady=false
+    if(!ytId){setFeedback('audio niedostępne','info');return}
+    audioEl.src='/api/audio/'+encodeURIComponent(ytId)
+    audioEl.load()
+    _audioReady=true
   }
   function playAudioSnippet(){
-    if(!ytPlayer||typeof ytPlayer.playVideo!=='function')return
+    if(!_audioReady||!audioEl.src)return
     audioLimitMs=solved?AUDIO_FULL_MS:AUDIO_SNIPPETS[audioSnippetIdx]
-    setAudioPlayhead(0)
-    ytPlayer.seekTo(0,true)
-    ytPlayer.playVideo()
+    if(audioContinueFromPrev){
+      audioEl.currentTime=audioPrevLimit/1000
+      audioContinueFromPrev=false
+    }else{
+      audioEl.currentTime=0
+    }
+    setAudioPlayhead(audioEl.currentTime*1000)
+    audioEl.play().then(()=>{setAudioPlayingUI(true);startAudioPoll()}).catch(e=>console.warn('[audio] play failed',e))
   }
   function extendAudioSnippet(){
     if(solved)return
     if(audioSnippetIdx>=AUDIO_SNIPPETS.length-1){
       setFeedback('to już cały dostępny fragment','info')
+      audioContinueFromPrev=false
       playAudioSnippet()
       return
     }
+    audioPrevLimit=AUDIO_SNIPPETS[audioSnippetIdx]
     audioSnippetIdx++;revealCount++
     audioLimitMs=AUDIO_SNIPPETS[audioSnippetIdx]
+    audioContinueFromPrev=true
     refreshAudioSegments();updateAudioLabel();updateHintLock()
     revealBtn.textContent='+ dźwięk'+(revealCount>0?' · '+revealCount:'')
-    saveDailyProgress('in-progress')  // no-op outside daily mode
+    saveDailyProgress('in-progress')
     playAudioSnippet()
   }
-  function stopAudio(){stopYtPoll();if(ytPlayer&&typeof ytPlayer.pauseVideo==='function'){try{ytPlayer.pauseVideo()}catch(e){}}setAudioPlayingUI(false)}
+  function stopAudio(){stopAudioPoll();audioEl.pause();audioEl.currentTime=0;setAudioPlayingUI(false)}
   async function loadAudioEndless(){
     stopAudio()
     showState('loading');setFeedback('')
@@ -2656,7 +2642,7 @@
         songTitle,songCover,songArtists,songFeatured,
         statsSubmitted:statsSubmitted||prev.statsSubmitted||false
       }))
-    }catch(e){}
+    }catch(e){console.warn('[daily] save progress failed',e)}
   }
   async function postDailyStats(outcome){
     const dateStr=fmtISO(dailyDate)
@@ -2669,7 +2655,7 @@
         body:JSON.stringify({wordsRevealed:revealCount,outcome})
       })
       saveDailyProgress(outcome,true)
-    }catch(e){}
+    }catch(e){console.warn('[daily] post stats failed',e)}
   }
   async function showDailyStats(){
     const el=document.getElementById('daily-stats')
@@ -2788,7 +2774,7 @@
         const saved=JSON.parse(raw)
         if(String(saved.songId)===String(d.songId)){await restoreDailyProgress(saved,d);return}
       }
-    }catch(e){}
+    }catch(e){console.warn('[daily] restore progress failed',e)}
     await startGame(d)
   }
   function setActiveMode(mode){
@@ -2856,7 +2842,8 @@
     if(hintsUnlocked){lock.textContent='';return}
     const left=Math.max(0,HINT_WORDS_NEEDED-revealCount)
     if(left>0){
-      lock.textContent='wskazówka dostępna za '+left+' '+(left===1?'słowo':left>=2&&left<=4?'słowa':'słów')
+      const wLabel=currentIsAudio?(left===1?'fragment':left>=2&&left<=4?'fragmenty':'fragmentów'):(left===1?'słowo':left>=2&&left<=4?'słowa':'słów')
+      lock.textContent='wskazówka dostępna za '+left+' '+wLabel
       lock.classList.remove('ready')
     }else{
       lock.textContent='wskazówka dostępna'
@@ -2958,6 +2945,7 @@
       input.value='';input.classList.add('shake')
       setTimeout(()=>input.classList.remove('shake'),280)
       setTimeout(()=>input.focus(),50)
+      if(currentIsAudio)extendAudioSnippet()
     }
   }
   function buildRevealCard(label){
@@ -2987,9 +2975,10 @@
         // Notify server about the correct guess (server tracks score authoritatively)
         if(rankedSessionId){
           fetch('/api/ranked/correct',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:rankedSessionId,songId})})
-            .then(r=>r.ok?r.json():null).then(d=>{if(d&&typeof d.score==='number'){rankedScore=d.score;rankedScoreVal.textContent=rankedScore}}).catch(()=>{})
+            .then(r=>r.ok?r.json():null).then(d=>{if(d&&typeof d.score==='number'){rankedScore=d.score;rankedScoreVal.textContent=rankedScore}}).catch(e=>console.warn('[ranked] correct POST failed',e))
         }
         rankedScore++;rankedScoreVal.textContent=rankedScore
+        recordGameResult('correct',revealCount)
         // Survival: freeze the per-song clock the instant they solve, so the
         // ~600ms transition can't wrongly time them out mid-fetch.
         if(RANKED_META[rankedMode].kind==='survival')clearInterval(rankedTimer)
@@ -3012,6 +3001,7 @@
       if(activeMode==='endless')document.getElementById('next-btn').classList.add('show')
       showShareSection()
     }else if(type==='skip'){
+      recordGameResult('giveup',revealCount)
       setTimeout(async()=>{
         if(!rankedActive)return
         const r=await fetch(rankedSongUrl(rankedSessionId),{headers:{'X-User-Id':userId||''}}),d=await r.json()
@@ -3071,19 +3061,21 @@
   function stopRankedTimer(){clearInterval(rankedTimer);rankedActive=false;rankedBar.classList.remove('show')}
   async function endRankedRound(){
     rankedActive=false;clearInterval(rankedTimer);rankedBar.classList.remove('show')
+    recordGameResult('giveup',revealCount)
     const meta=RANKED_META[rankedMode]
     reEyebrow.textContent='rankingowy · '+meta.label+' · '+(meta.kind==='survival'?'koniec gry':'koniec czasu')
     reFinalScore.innerHTML=rankedScore+'<span>'+rankedScoreNoun(rankedScore)+'</span>'
     reNameInput.value=localStorage.getItem('czs_last_username')||'';reSubmitBtn.disabled=false
-    await loadLeaderboard(0,rankedMode)
+    await loadLeaderboard(0,rankedMode,gameType==='audio'?'audio':'tekst')
     rankedEnd.classList.add('show')
     reNameInput.focus()
     showState('splash')
   }
-  async function loadLeaderboard(highlightScore,mode){
+  async function loadLeaderboard(highlightScore,mode,gt){
     const m=mode||rankedMode
+    const g=gt||(gameType==='audio'?'audio':'tekst')
     try{
-      const r=await fetch('/api/leaderboard?mode='+encodeURIComponent(m)+'&limit=20'),board=await r.json()
+      const r=await fetch('/api/leaderboard?mode='+encodeURIComponent(m)+'&gameType='+encodeURIComponent(g)+'&limit=20'),board=await r.json()
       if(!board.length){reBoard.innerHTML='<div class="re-empty">brak wyników</div>';return}
       reBoard.innerHTML=board.map((e,i)=>{
         const hl=highlightScore&&e.score===highlightScore?'highlight':''
@@ -3099,7 +3091,7 @@
       const r=await fetch('/api/leaderboard',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,sessionId:rankedSessionId,userId})})
       const d=await r.json()
       if(!r.ok){reSubmitBtn.disabled=false;return}
-      try{localStorage.setItem('czs_last_username',name)}catch(e){}
+      try{localStorage.setItem('czs_last_username',name)}catch(e){console.warn('[username] save failed',e)}
       await loadLeaderboard(rankedScore)
       reNameInput.value=''
     }catch(e){reSubmitBtn.disabled=false}
@@ -3120,7 +3112,7 @@
     // Start server-side session first, then fetch first song
     let sid=null
     try{
-      const sr=await fetch('/api/ranked/start',{method:'POST',headers:{'Content-Type':'application/json','X-User-Id':userId||''},body:JSON.stringify({mode:rankedMode})})
+      const sr=await fetch('/api/ranked/start',{method:'POST',headers:{'Content-Type':'application/json','X-User-Id':userId||''},body:JSON.stringify({mode:rankedMode,gameType:gameType==='audio'?'audio':'tekst'})})
       const sd=await sr.json()
       if(sd.sessionId)sid=sd.sessionId
     }catch(e){showError('Błąd serwera. Spróbuj ponownie.');return}
@@ -3141,7 +3133,9 @@
     endGame('giveup')
   })
   document.getElementById('next-btn').addEventListener('click',()=>{gameType==='audio'?loadAudioEndless():loadEndless()})
-  document.getElementById('audio-play-btn').addEventListener('click',()=>{playAudioSnippet()})
+  document.getElementById('audio-play-btn').addEventListener('click',()=>{
+    playAudioSnippet()
+  })
   document.getElementById('home-link').addEventListener('click',e=>{
     e.preventDefault()
     stopRankedTimer()
@@ -3191,13 +3185,15 @@
 
   // ─── SPLASH LEADERBOARD ───────────────────────────────────
   let splashLbMode='sprint60'
-  async function loadSplashLeaderboard(mode){
+  let splashLbGt='tekst'
+  async function loadSplashLeaderboard(mode,gt){
     if(mode&&RANKED_META[mode])splashLbMode=mode
+    if(gt)splashLbGt=gt
     const el=document.getElementById('slb-rows')
     if(!el)return
     el.innerHTML='<div class="slb-empty">ładowanie…</div>'
     try{
-      const r=await fetch('/api/leaderboard?mode='+encodeURIComponent(splashLbMode)+'&limit=10')
+      const r=await fetch('/api/leaderboard?mode='+encodeURIComponent(splashLbMode)+'&gameType='+encodeURIComponent(splashLbGt)+'&limit=10')
       const board=await r.json()
       if(!Array.isArray(board)||!board.length){
         el.innerHTML='<div class="slb-empty">brak wyników &mdash; bądź pierwszy!</div>'
@@ -3223,6 +3219,12 @@
       loadSplashLeaderboard(tab.dataset.mode)
     })
   })
+  document.querySelectorAll('#slb-type-tabs .slb-type-tab').forEach(tab=>{
+    tab.addEventListener('click',()=>{
+      document.querySelectorAll('#slb-type-tabs .slb-type-tab').forEach(t=>t.classList.toggle('active',t===tab))
+      loadSplashLeaderboard(null,tab.dataset.gt)
+    })
+  })
   loadSplashLeaderboard()
 
   // ─── PLAYER STATS ─────────────────────────────────────
@@ -3237,7 +3239,7 @@
       if(parsed&&typeof parsed==='object'&&!parsed.lyrics&&!parsed.audio&&typeof parsed.gamesPlayed==='number'){
         localStorage.setItem(STATS_KEY,JSON.stringify({lyrics:parsed,audio:emptyStats()}))
       }
-    }catch(e){}
+    }catch(e){console.warn('[stats] migrate legacy failed',e)}
   }
   function emptyStats(){return{gamesPlayed:0,gamesWon:0,gamesGivenUp:0,currentStreak:0,maxStreak:0,lastWinDate:null,totalWordsToWin:0,dist:{}}}
   function getStats(category){
@@ -3248,16 +3250,25 @@
         const cat=s[category]
         if(cat&&typeof cat==='object')return{...emptyStats(),...cat}
       }
-    }catch(e){}
+    }catch(e){console.warn('[stats] get failed',e)}
     return emptyStats()
   }
-  function saveStats(category,s){try{const all=getAllStats();all[category]=s;localStorage.setItem(STATS_KEY,JSON.stringify(all))}catch(e){}}
+  function saveStats(category,s){try{const all=getAllStats();all[category]=s;localStorage.setItem(STATS_KEY,JSON.stringify(all))}catch(e){console.warn('[stats] save failed',e)}}
   function getAllStats(){
     migrateLegacyStats()
-    try{const s=JSON.parse(localStorage.getItem(STATS_KEY));if(s&&typeof s==='object')return{lyrics:emptyStats(),audio:emptyStats(),...s}}catch(e){}
+    try{const s=JSON.parse(localStorage.getItem(STATS_KEY));if(s&&typeof s==='object')return{lyrics:emptyStats(),audio:emptyStats(),...s}}catch(e){console.warn('[stats] getAll failed',e)}
     return{lyrics:emptyStats(),audio:emptyStats()}
   }
   function recordGameResult(outcome,wordsRevealed){
+    const durationMs=gameStartTime?Date.now()-gameStartTime:0
+    const mode=activeMode==='daily'?'daily':activeMode==='ranked'?'ranked':currentIsAudio?'audio':'endless'
+    // Server-side recording (fire-and-forget)
+    fetch('/api/game/result',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-User-Id':userId||''},
+      body:JSON.stringify({mode,rankedMode:activeMode==='ranked'?rankedMode:null,outcome,wordsRevealed:revealCount,durationMs})
+    }).catch(e=>console.warn('[game] result POST failed',e))
+    // Local stats (client-side)
     if(activeMode==='ranked')return
     const category=currentIsAudio?'audio':'lyrics'
     const st=getStats(category),today=fmtISO(new Date()),yesterday=fmtISO(new Date(Date.now()-86400000))
@@ -3287,15 +3298,16 @@
     const st=getStats(statsCategory)
     const winRate=st.gamesPlayed?Math.round(st.gamesWon/st.gamesPlayed*100):0
     const avgWords=st.gamesWon>0?(st.totalWordsToWin/st.gamesWon).toFixed(1):'—'
+    const isAudio=statsCategory==='audio'
     const allKeys=[]
     for(let i=1;i<=14;i++){if(st.dist[String(i)])allKeys.push(String(i))}
     if(st.dist['15+'])allKeys.push('15+')
     const maxCount=allKeys.reduce((m,k)=>Math.max(m,st.dist[k]||0),1)
-    const pw=n=>n===1?'słowo':n<5?'słowa':'słów'
+    const pw=n=>isAudio?(n===1?'fragment':n<5?'fragmenty':'fragmentów'):(n===1?'słowo':n<5?'słowa':'słów')
     const distHtml=allKeys.map(k=>{
       const cnt=st.dist[k]||0,pct=Math.round(cnt/maxCount*100)
       const isPlus=k==='15+',n=isPlus?15:parseInt(k)
-      const lbl=isPlus?'15+ słów':(n+' '+pw(n))
+      const lbl=isPlus?('15+ '+(isAudio?'fragmentów':'słów')):(n+' '+pw(n))
       return'<div class="ss-dist-row"><div class="ss-dist-lbl">'+lbl+'</div><div class="ss-dist-track"><div class="ss-dist-fill" style="width:0%" data-w="'+pct+'"></div></div><div class="ss-dist-count">'+cnt+'</div></div>'
     }).join('')
     panel.innerHTML=
@@ -3312,9 +3324,9 @@
         +'<div class="ss-kpi"><div class="ss-kpi-val accent">'+winRate+'%</div><div class="ss-kpi-lbl">winrate</div></div>'
         +'<div class="ss-kpi"><div class="ss-kpi-val">'+st.gamesPlayed+'</div><div class="ss-kpi-lbl">rozegrane</div></div>'
         +'<div class="ss-kpi"><div class="ss-kpi-val">'+st.currentStreak+'</div><div class="ss-kpi-lbl">seria 🔥</div></div>'
-        +'<div class="ss-kpi"><div class="ss-kpi-val">'+avgWords+'</div><div class="ss-kpi-lbl">śr. słów</div></div>'
+        +'<div class="ss-kpi"><div class="ss-kpi-val">'+avgWords+'</div><div class="ss-kpi-lbl">śr. '+(isAudio?'fragmentów':'słów')+'</div></div>'
       +'</div>'
-      +(distHtml?'<div class="ss-dist-title">słowa do trafienia</div><div class="ss-dist-rows">'+distHtml+'</div>':'')
+      +(distHtml?'<div class="ss-dist-title">'+(isAudio?'fragmenty do trafienia':'słowa do trafienia')+'</div><div class="ss-dist-rows">'+distHtml+'</div>':'')
     requestAnimationFrame(()=>panel.querySelectorAll('.ss-dist-fill').forEach(b=>b.style.width=b.dataset.w+'%'))
     document.getElementById('stats-reset-btn').addEventListener('click',function(){
       if(this.dataset.confirm==='1'){
@@ -3345,9 +3357,9 @@
         const k=localStorage.key(i)
         if(!k||!k.startsWith('daily_'))continue
         const date=k.slice(6)
-        try{const d=JSON.parse(localStorage.getItem(k));if(d&&d.outcome)h[date]=d.outcome}catch(e){}
+        try{const d=JSON.parse(localStorage.getItem(k));if(d&&d.outcome)h[date]=d.outcome}catch(e){console.warn('[daily] parse entry failed',e)}
       }
-    }catch(e){}
+    }catch(e){console.warn('[daily] iterate history failed',e)}
     return h
   }
   function calcDailyStreaks(h){
@@ -3461,9 +3473,9 @@
         try{
           const d=JSON.parse(localStorage.getItem(k))
           if(d)entries.push({date,outcome:d.outcome||'in-progress',songTitle:d.songTitle||null,revealCount:d.revealCount||0})
-        }catch(e){}
+        }catch(e){console.warn('[daily] parse entry failed',e)}
       }
-    }catch(e){}
+    }catch(e){console.warn('[daily] iterate history failed',e)}
     return entries.sort((a,b)=>b.date.localeCompare(a.date))
   }
   function renderHistory(filter){
@@ -3525,10 +3537,11 @@
   }
   function stopDailyCountdown(){clearInterval(_countdownTimer);_countdownTimer=null}
 
-  function generateShareText(mode,date,wordsRevealed,won,streak){
+  function generateShareText(mode,date,wordsRevealed,won,streak,isAudio){
     const dateStr=(()=>{try{const[y,m,d]=date.split('-');return d+'.'+m+'.'+y}catch(e){return date}})()
-    const modeLabel=mode==='daily'?'Dzienny':mode==='endless'?'Niekończący':'Rankingowy'
-    const resultLine=won?'✅ Odgadnięto w '+wordsRevealed+' słowach':'❌ Poddano po '+wordsRevealed+' słowach'
+    const modeLabel=mode==='daily'?(isAudio?'Dzienny Audio':'Dzienny'):mode==='endless'?'Niekończący':'Rankingowy'
+    const wStr=isAudio?(wordsRevealed===1?'fragment':wordsRevealed<5?'fragmenty':'fragmentów'):(wordsRevealed===1?'słowem':wordsRevealed<5?'słowach':'słowach')
+    const resultLine=won?'✅ Odgadnięto w '+wordsRevealed+' '+wStr:'❌ Poddano po '+wordsRevealed+' '+(isAudio?(wordsRevealed<5?'fragmentach':'fragmentach'):'słowach')
     const squares=[]
     for(let i=0;i<Math.max(1,wordsRevealed-1);i++)squares.push('⬛')
     squares.push(won?'🟩':'🟥')
@@ -3536,7 +3549,7 @@
     return 'COTSOZANUTA 🎵\n📅 '+dateStr+' | Tryb: '+modeLabel+'\n'+resultLine+streakLine+'\n'+squares.join('')+'\ncotsozanuta.pl'
   }
 
-  async function generateShareImage(mode,date,wordsRevealed,won,cover,streak){
+  async function generateShareImage(mode,date,wordsRevealed,won,cover,streak,isAudio){
     const SIZE=1080
     const canvas=document.createElement('canvas')
     canvas.width=SIZE;canvas.height=SIZE
@@ -3564,7 +3577,7 @@
           img.onerror=res
           img.src=cover
         })
-      }catch(e){}
+      }catch(e){console.warn('[share] cover image load failed',e)}
     }
 
     // Dark overlay
@@ -3577,7 +3590,7 @@
     ctx.fillRect(0,0,SIZE,6)
 
     // Load fonts
-    try{await document.fonts.load("bold 72px 'Anton'")}catch(e){}
+    try{await document.fonts.load("bold 72px 'Anton'")}catch(e){console.warn('[share] font load failed',e)}
 
     // Title
     ctx.font="bold 72px 'Anton', sans-serif"
@@ -3608,7 +3621,8 @@
     ctx.font="500 40px 'Barlow Condensed', sans-serif"
     ctx.fillStyle='rgba(242,233,228,0.75)'
     ctx.letterSpacing='2px'
-    ctx.fillText('po '+wordsRevealed+' słowach',SIZE/2,450)
+    const wLabel=isAudio?(wordsRevealed<5?'fragmentach':'fragmentach'):(wordsRevealed===1?'słowem':'słowach')
+    ctx.fillText('po '+wordsRevealed+' '+wLabel,SIZE/2,450)
 
     // Emoji squares
     const squares=[]
@@ -3672,7 +3686,7 @@
     const h=getDailyHistory()
     const{cur}=calcDailyStreaks(h)
     const date=activeMode==='daily'?fmtISO(dailyDate):fmtISO(new Date())
-    const text=generateShareText(activeMode,date,revealCount,solved,cur)
+    const text=generateShareText(activeMode,date,revealCount,solved,cur,currentIsAudio)
     const copied=document.getElementById('share-copied')
     try{
       if(navigator.share&&/Mobi|Android/i.test(navigator.userAgent)){
@@ -3699,7 +3713,7 @@
     const copied=document.getElementById('share-copied')
     try{
       if(copied)copied.textContent='generowanie...'
-      const blob=await generateShareImage(activeMode,date,revealCount,solved,songCover,cur)
+      const blob=await generateShareImage(activeMode,date,revealCount,solved,songCover,cur,currentIsAudio)
       const url=URL.createObjectURL(blob)
       const a=document.createElement('a')
       a.href=url;a.download='cotsozanuta-'+date+'.png';a.click()
@@ -3710,36 +3724,80 @@
     }
   })
 
-  // ─── ANNOUNCEMENT TOAST ─────────────────────────────────
-  (function initAnnouncementToast(){
-    const toast=document.getElementById('announcement-toast')
-    if(!toast){console.warn('[toast] element not found');return}
-    const closeBtn=toast.querySelector('.toast-close')
-    if(!closeBtn){console.warn('[toast] close button not found');return}
-    let hideTimer
-    function hideToast(){
-      toast.classList.remove('show')
-      setTimeout(()=>{if(!toast.classList.contains('show'))toast.style.display='none'},350)
+  // ─── ANNOUNCEMENT TOASTS ─────────────────────────────────
+  ;(function initAnnouncementToasts(){
+    const container=document.getElementById('toast-container')
+    if(!container)return
+
+    const POS_STYLES={
+      'top':'top:18px;left:50%;transform:translateX(-50%) translateY(-160%);',
+      'top-left':'top:18px;left:18px;transform:translateY(-160%);',
+      'top-right':'top:18px;right:18px;left:auto;transform:translateY(-160%);',
+      'bottom':'bottom:18px;left:50%;transform:translateX(-50%) translateY(160%);',
+      'bottom-left':'bottom:18px;left:18px;transform:translateY(160%);',
+      'bottom-right':'bottom:18px;right:18px;left:auto;transform:translateY(160%);',
     }
-    function showToast(){
-      toast.style.display='flex'
-      requestAnimationFrame(()=>toast.classList.add('show'))
-      hideTimer=setTimeout(hideToast,6500)
+    const SHOW_TRANSFORM={
+      'top':'translateX(-50%) translateY(0)','top-left':'translateY(0)','top-right':'translateY(0)',
+      'bottom':'translateX(-50%) translateY(0)','bottom-left':'translateY(0)','bottom-right':'translateY(0)',
     }
-    closeBtn.addEventListener('click',()=>{
-      clearTimeout(hideTimer)
-      hideToast()
-    })
-    // Show once per user; bump the key when the announcement changes.
-    const ANNOUNCEMENT_KEY='announcement-audio-mode-v2'
-    if(!localStorage.getItem(ANNOUNCEMENT_KEY)){
-      localStorage.setItem(ANNOUNCEMENT_KEY,'1')
-      setTimeout(showToast,900)
-      console.log('[toast] showing audio mode announcement')
-    }else{
-      console.log('[toast] already seen')
+
+    function showSingleToast(t){
+      const pos=t.position||'top'
+      const bg=t.bg_color||'rgba(10,6,6,0.96)'
+      const border=t.border_color||'rgba(227,28,18,0.45)'
+      const accent=t.accent_color||'#e31c12'
+      const dur=typeof t.duration==='number'?t.duration:6500
+
+      const el=document.createElement('div')
+      el.setAttribute('role','status')
+      el.setAttribute('aria-live','polite')
+      el.style.cssText=`position:fixed;z-index:400;max-width:min(92vw,420px);width:max-content;background:${bg};border:1px solid ${border};border-left:4px solid ${accent};border-radius:6px;box-shadow:0 12px 40px rgba(0,0,0,0.55),0 0 24px ${accent}22;padding:14px 18px;display:flex;align-items:center;gap:14px;font-family:var(--cond);color:var(--text);opacity:0;pointer-events:none;transition:transform .45s cubic-bezier(.22,1,.36,1),opacity .35s ease;${POS_STYLES[pos]||POS_STYLES.top}`
+
+      el.innerHTML=`<div style="width:34px;height:34px;border-radius:50%;background:${accent}30;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0">${t.icon||'🔔'}</div><div style="flex:1;min-width:0"><div style="font-family:var(--display);font-size:1.05rem;letter-spacing:.04em;text-transform:uppercase;line-height:1.1;margin-bottom:3px">${esc(t.title)}</div>${t.subtitle?'<div style="font-size:.82rem;color:var(--sub);line-height:1.25">'+esc(t.subtitle)+'</div>':''}</div><button aria-label="Zamknij" style="background:none;border:none;color:var(--sub);font-size:1.1rem;cursor:pointer;padding:4px;line-height:1;flex-shrink:0;transition:color .12s" onmouseover="this.style.color=\'var(--text)\'" onmouseout="this.style.color=\'var(--sub)\'">&#10005;</button>`
+
+      container.appendChild(el)
+      const closeBtn=el.querySelector('button')
+      let hideTimer
+      function hide(){
+        clearTimeout(hideTimer)
+        el.classList.remove('show')
+        el.style.opacity='0'
+        el.style.transform=POS_STYLES[pos]||POS_STYLES.top
+        setTimeout(()=>el.remove(),500)
+      }
+      closeBtn.addEventListener('click',hide)
+
+      requestAnimationFrame(()=>{
+        el.style.opacity='1'
+        el.classList.add('show')
+        el.style.transform=SHOW_TRANSFORM[pos]||'translateY(0)'
+      })
+
+      if(dur>0)hideTimer=setTimeout(hide,dur)
     }
+
+    async function loadToasts(){
+      try{
+        const r=await fetch('/api/toasts')
+        if(!r.ok)return
+        const toasts=await r.json()
+        if(!toasts.length)return
+        const seen=JSON.parse(localStorage.getItem('czs_toast_seen')||'{}')
+        let delay=900
+        for(const t of toasts){
+          const key='toast_'+t.id
+          if(t.once_per_user && seen[key])continue
+          seen[key]=Date.now()
+          setTimeout(()=>showSingleToast(t),delay)
+          delay+=1500
+        }
+        localStorage.setItem('czs_toast_seen',JSON.stringify(seen))
+      }catch(e){console.warn('[toast] load failed',e)}
+    }
+    loadToasts()
   })()
+  if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{})
 </script>
 </body>
 </html>

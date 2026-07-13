@@ -8,4 +8,7 @@
 module.exports = {
     otsochodziId: null,
     cachedAlbums: null,
+    // Per-song health: Map<songId, { title, hasLyrics, hasYoutube, lastError, checkedAt }>
+    // Populated during warmup and on-demand fetches.
+    songHealth: new Map(),
 };

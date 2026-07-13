@@ -11,6 +11,7 @@ const {
     rankedSessions,
     rankedModeConfig,
     rankedTimeExpired,
+    isAtCapacity,
 } = require("../rankedSessions");
 const { rankedSongLimiter, rankedStartLimiter, rankedCorrectLimiter } = require("../rateLimiters");
 
@@ -62,18 +63,21 @@ router.get("/song", rankedSongLimiter, async (req, res) => {
 
 // ── Ranked: start a session ──────────────────────────────────
 router.post("/start", rankedStartLimiter, (req, res) => {
+    if (isAtCapacity()) return res.status(503).json({ error: "Server is at session capacity, try again shortly" });
     const mode = RANKED_MODES[req.body?.mode] ? req.body.mode : DEFAULT_RANKED_MODE;
+    const gameType = db.normalizeGameType(req.body?.gameType);
     const cfg  = rankedModeConfig(mode);
     const sessionId = crypto.randomBytes(32).toString("hex");
     const now = Date.now();
     rankedSessions.set(sessionId, {
         mode,
+        gameType,
         startedAt:  now,
         lastActivity: now,
-        issuedAt:   null,  // when the current pending song was issued (survival per-song timer)
+        issuedAt:   null,
         score:      0,
         usedSongs:  new Set(),
-        pendingId:  null,   // songId the server last issued via /api/game/endless
+        pendingId:  null,
         finished:   false,
         submitted:  false,
     });

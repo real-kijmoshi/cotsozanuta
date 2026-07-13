@@ -2,10 +2,12 @@ const express = require("express");
 const genius = require("../../utils/genius");
 const db = require("../../utils/db");
 const state = require("../state");
-const { pickSong } = require("../songPicker");
+const { pickSong, autoPickDaily } = require("../songPicker");
 const { getCountry } = require("../geo");
 const { rankedSessions } = require("../rankedSessions");
 const { rankedSongLimiter } = require("../rateLimiters");
+const { gameResultLimiter } = require("../rateLimiters");
+const { publicGetLimiter } = require("../rateLimiters");
 
 const router = express.Router();
 
@@ -91,7 +93,26 @@ router.get("/audio/endless", rankedSongLimiter, async (req, res) => {
     }
 });
 
-router.get("/daily/:date", async (req, res) => {
+// ── Record game result ──────────────────────────────────────
+router.post("/result", gameResultLimiter, (req, res) => {
+    const { mode, rankedMode, outcome, wordsRevealed, durationMs } = req.body;
+    if (!mode || !outcome) return res.status(400).json({ error: "Missing mode or outcome" });
+    if (!["endless", "audio", "ranked", "daily"].includes(mode)) return res.status(400).json({ error: "Invalid mode" });
+    if (!["correct", "giveup"].includes(outcome)) return res.status(400).json({ error: "Invalid outcome" });
+    const uid = req.headers['x-user-id'] ? String(req.headers['x-user-id']).trim().slice(0, 128) : null;
+    db.logGameResult({
+        mode,
+        rankedMode: rankedMode || null,
+        outcome,
+        wordsRevealed: Math.max(0, Math.min(500, parseInt(wordsRevealed) || 0)),
+        durationMs: Math.max(0, Math.min(600000, parseInt(durationMs) || 0)),
+        userId: uid,
+        country: getCountry(req),
+    });
+    res.json({ ok: true });
+});
+
+router.get("/daily/:date", publicGetLimiter, async (req, res) => {
     const { date } = req.params;
     try {
         if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
@@ -101,9 +122,15 @@ router.get("/daily/:date", async (req, res) => {
             return res.status(400).json({ error: "Date cannot be in the future" });
         }
 
-        const dailyData = db.getDailyByDate(date);
+        let dailyData = db.getDailyByDate(date);
         if (!dailyData) {
-            return res.status(404).json({ error: "No game found for this date" });
+            const today = new Date().toISOString().split("T")[0];
+            if (date === today && state.otsochodziId) {
+                dailyData = await autoPickDaily(state.otsochodziId, date, db);
+            }
+            if (!dailyData) {
+                return res.status(404).json({ error: "No game found for this date" });
+            }
         }
 
         const { songID, wordIndex } = dailyData;

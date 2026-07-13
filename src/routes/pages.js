@@ -16,5 +16,6 @@ router.get("/regulamin", page("regulamin.html"));
 router.get("/polityka-prywatnosci", page("polityka-prywatnosci.html"));
 router.get("/discografia", page("discografia.html"));
 router.get("/ranking", page("ranking.html"));
+router.get("/scheduled-maintenance", page("scheduled-maintenance.html"));
 
 module.exports = router;

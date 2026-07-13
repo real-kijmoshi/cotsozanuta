@@ -147,6 +147,19 @@
     .mini-lb tr:hover td { background: rgba(255,255,255,0.02); }
     .mini-lb .rank { color: var(--sub2); }
     .mini-lb .score-val { color: var(--ok); font-weight: bold; }
+
+    /* song health */
+    .sh-table { width: 100%; border-collapse: collapse; font-size: .62rem; }
+    .sh-table th { text-align: left; padding: 6px 10px; color: var(--sub); letter-spacing: .1em;
+      text-transform: uppercase; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--surface); }
+    .sh-table td { padding: 6px 10px; border-bottom: 1px solid rgba(255,255,255,0.03); vertical-align: middle; }
+    .sh-table tr:hover td { background: rgba(255,255,255,0.02); }
+    .sh-table .sh-status { display: inline-block; padding: 2px 7px; border-radius: 3px; font-size: .55rem; letter-spacing: .08em; }
+    .sh-table .sh-status.ok { background: rgba(34,197,94,0.15); color: var(--ok); }
+    .sh-table .sh-status.warn { background: rgba(234,179,8,0.12); color: var(--yellow); }
+    .sh-table .sh-status.err { background: rgba(227,28,18,0.12); color: var(--red); }
+    .sh-table .sh-err { color: var(--red); font-size: .5rem; }
+    .sh-scroll { max-height: 420px; overflow-y: auto; border: 1px solid var(--border); }
   </style>
 </head>
 <body>
@@ -238,6 +251,23 @@
         <div class="kpi"><div class="kpi-val" id="kpi-audio-share">—</div><div class="kpi-label">udział audio</div></div>
       </div>
 
+      <!-- KPIs row 4 — comprehensive: per-mode win rates + durations -->
+      <div class="kpi-row" style="margin-bottom:10px">
+        <div class="kpi"><div class="kpi-val green" id="kpi-gr-endless-wr">—</div><div class="kpi-label">endless win%</div><div class="kpi-sub" id="kpi-gr-endless-sub">—</div></div>
+        <div class="kpi"><div class="kpi-val yellow" id="kpi-gr-audio-wr">—</div><div class="kpi-label">audio win%</div><div class="kpi-sub" id="kpi-gr-audio-sub">—</div></div>
+        <div class="kpi"><div class="kpi-val" id="kpi-gr-daily-wr">—</div><div class="kpi-label">daily win%</div><div class="kpi-sub" id="kpi-gr-daily-sub">—</div></div>
+        <div class="kpi"><div class="kpi-val" id="kpi-gr-ranked-wr">—</div><div class="kpi-label">ranked win%</div><div class="kpi-sub" id="kpi-gr-ranked-sub">—</div></div>
+      </div>
+
+      <!-- KPIs row 5 — users & engagement -->
+      <div class="kpi-row" style="margin-bottom:10px">
+        <div class="kpi"><div class="kpi-val" id="kpi-gr-total-results">—</div><div class="kpi-label">wszystkie wyniki</div></div>
+        <div class="kpi"><div class="kpi-val green" id="kpi-gr-dau">—</div><div class="kpi-label">DAU dziś</div><div class="kpi-sub" id="kpi-gr-dau-sub">—</div></div>
+        <div class="kpi"><div class="kpi-val" id="kpi-gr-avg-gpu">—</div><div class="kpi-label">śr. gier/użytk.</div><div class="kpi-sub" id="kpi-gr-gpu-sub">—</div></div>
+        <div class="kpi"><div class="kpi-val" id="kpi-gr-streak">—</div><div class="kpi-label">mediana serii</div><div class="kpi-sub" id="kpi-gr-streak-sub">—</div></div>
+        <div class="kpi"><div class="kpi-val" id="kpi-gr-avg-dur">—</div><div class="kpi-label">śr. czas gry</div><div class="kpi-sub" id="kpi-gr-dur-sub">—</div></div>
+      </div>
+
       <!-- bar charts -->
       <div class="charts-grid">
         <div class="chart-wrap">
@@ -294,6 +324,99 @@
     </div>
   </div>
 
+  <!-- SONG HEALTH -->
+  <div class="panel">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+      <h2 style="margin-bottom:0">zdrowie piosenek</h2>
+      <button class="btn primary" id="sh-recheck-btn" style="font-size:.55rem">ponownie sprawdź</button>
+    </div>
+    <div id="sh-recheck-progress" style="display:none;margin-bottom:14px">
+      <div style="font-size:.58rem;color:var(--sub);letter-spacing:.1em;margin-bottom:6px" id="sh-recheck-msg">sprawdzanie…</div>
+      <div style="height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden">
+        <div id="sh-recheck-bar" style="height:100%;width:0%;background:var(--red);transition:width .3s"></div>
+      </div>
+    </div>
+    <div id="sh-loading" style="color:var(--sub2);font-size:.6rem;letter-spacing:.1em"><span class="spinner-sm"></span>ładowanie…</div>
+    <div id="sh-content" style="display:none">
+      <div class="kpi-row" style="margin-bottom:16px">
+        <div class="kpi"><div class="kpi-val" id="sh-total">—</div><div class="kpi-label">wszystkie</div></div>
+        <div class="kpi"><div class="kpi-val green" id="sh-ok">—</div><div class="kpi-label">ok (tekst + audio)</div></div>
+        <div class="kpi"><div class="kpi-val red" id="sh-failed">—</div><div class="kpi-label">problemy</div></div>
+        <div class="kpi"><div class="kpi-val yellow" id="sh-no-lyrics">—</div><div class="kpi-label">brak tekstu</div></div>
+        <div class="kpi"><div class="kpi-val" id="sh-no-audio">—</div><div class="kpi-label">brak audio</div></div>
+      </div>
+      <div class="row" style="margin-bottom:10px">
+        <label>filtr</label>
+        <select id="sh-filter">
+          <option value="all">wszystkie</option>
+          <option value="ok">ok</option>
+          <option value="no-lyrics">brak tekstu</option>
+          <option value="no-audio">brak audio</option>
+          <option value="errors">błędy</option>
+        </select>
+      </div>
+      <div id="sh-table-wrap"></div>
+    </div>
+  </div>
+
+  <!-- TOASTS / ANNOUNCEMENTS -->
+  <div class="panel">
+    <h2>ogłoszenia (toast)</h2>
+    <div id="toasts-loading" style="color:var(--sub2);font-size:.6rem;letter-spacing:.1em"><span class="spinner-sm"></span>ładowanie…</div>
+    <div id="toasts-content" style="display:none">
+
+      <!-- New / Edit form -->
+      <div id="toast-form-wrap" style="display:none; margin-bottom:16px; border:1px solid var(--border); padding:14px; background:var(--bg);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <h2 style="margin-bottom:0" id="toast-form-title">nowe ogłoszenie</h2>
+          <button class="btn" id="toast-form-cancel" style="font-size:.55rem">anuluj</button>
+        </div>
+        <div class="row"><label>tytuł</label><input type="text" id="tf-title" placeholder="np. Nowy tryb audio!" style="flex:1;min-width:200px"></div>
+        <div class="row"><label>podtytuł</label><input type="text" id="tf-subtitle" placeholder="opcjonalny opis" style="flex:1;min-width:200px"></div>
+        <div class="row"><label>ikona</label><input type="text" id="tf-icon" placeholder="emoji np. 🔊" value="🔔" style="width:80px"></div>
+        <div class="row">
+          <label>kolory</label>
+          <input type="text" id="tf-bg" placeholder="tło (CSS)" style="width:130px" title="kolor tła np. rgba(10,6,6,0.96)">
+          <input type="text" id="tf-border" placeholder="obramowanie" style="width:130px" title="kolor ramki">
+          <input type="text" id="tf-accent" placeholder="akcent" style="width:100px" title="kolor akcentu (lewy pasek)">
+        </div>
+        <div class="row">
+          <label>pozycja</label>
+          <select id="tf-position">
+            <option value="top">góra (środek)</option>
+            <option value="top-left">góra lewo</option>
+            <option value="top-right">góra prawo</option>
+            <option value="bottom">dół (środek)</option>
+            <option value="bottom-left">dół lewo</option>
+            <option value="bottom-right">dół prawo</option>
+          </select>
+          <label>czas (ms)</label>
+          <input type="number" id="tf-duration" value="6500" min="0" step="500" style="width:90px" title="0 = ręczne zamknięcie">
+        </div>
+        <div class="row">
+          <label>od daty</label>
+          <input type="date" id="tf-start">
+          <label>do daty</label>
+          <input type="date" id="tf-end">
+        </div>
+        <div class="row">
+          <label><input type="checkbox" id="tf-once" checked> raz na użytkownika</label>
+          <label><input type="checkbox" id="tf-enabled" checked> włączone</label>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button class="btn primary" id="tf-save">zapisz</button>
+          <button class="btn" id="tf-preview" title="podgląd">podgląd</button>
+        </div>
+      </div>
+
+      <div class="row" style="margin-bottom:10px">
+        <button class="btn primary" id="toast-new-btn">+ nowe ogłoszenie</button>
+      </div>
+
+      <div id="toasts-table-wrap"></div>
+    </div>
+  </div>
+
   <!-- SCHEDULE -->
   <div class="panel">
     <h2>harmonogram</h2>
@@ -305,8 +428,13 @@
 
 <div id="toast"></div>
 
+<script src="/utils.js"></script>
 <script>
-  const API = (path, opts) => fetch(path, { headers: { 'Authorization': (localStorage.getItem('admToken') ? 'Bearer ' + localStorage.getItem('admToken') : ''), 'Content-Type': 'application/json', ...(opts?.headers || {}) }, ...opts })
+  const API = async (path, opts) => {
+    const r = await fetch(path, { headers: { 'Authorization': (localStorage.getItem('admToken') ? 'Bearer ' + localStorage.getItem('admToken') : ''), 'Content-Type': 'application/json', ...(opts?.headers || {}) }, ...opts });
+    if (r.status === 401) { localStorage.removeItem('admToken'); location.reload(); throw new Error('Unauthorized'); }
+    return r;
+  }
 
   // ── TOAST ─────────────────────────────────────────────────
   let toastTimer
@@ -340,6 +468,8 @@
   loginBtn.addEventListener('click', () => tryLogin(pwdInput.value))
   pwdInput.addEventListener('keydown', e => e.key === 'Enter' && tryLogin(pwdInput.value))
   document.getElementById('logout-btn').addEventListener('click', () => { localStorage.removeItem('admToken'); location.reload() })
+
+  const today = new Date().toISOString().split('T')[0]
 
   // auto-login if token stored
   if (localStorage.getItem('admToken')) {
@@ -462,7 +592,6 @@
 
   // ── SCHEDULE TABLE ─────────────────────────────────────────
   const scheduleWrap = document.getElementById('schedule-wrap')
-  const today = new Date().toISOString().split('T')[0]
 
   async function loadSchedule() {
     const r = await API('/api/admin/daily')
@@ -513,8 +642,7 @@
     // load all songs
     const r = await API('/api/admin/songs')
     if (r.ok) allSongs = await r.json()
-    await loadSchedule()
-    await loadStats()
+    await Promise.allSettled([loadSchedule(), loadStats(), loadSongHealth(), loadToasts()])
     loadRanked()  // fire-and-forget, independent of other panels
   }
 
@@ -567,6 +695,48 @@
     document.getElementById('kpi-text-plays').textContent  = totalText
     document.getElementById('kpi-audio-sub').textContent   = totalAll ? Math.round(totalAudio / totalAll * 100) + '% wszystkich' : '—'
     document.getElementById('kpi-audio-share').textContent = totalAll ? Math.round(totalAudio / totalAll * 100) + '%' : '—'
+
+    // ── Comprehensive stats from game_results ──────────────────
+    if (d.comprehensive) {
+      const c = d.comprehensive
+      const modes = c.modeTotals || []
+
+      function fmtDur(ms) { if (!ms) return '—'; if (ms < 60000) return Math.round(ms/1000) + 's'; return (ms/60000).toFixed(1) + 'm' }
+      function fmtPct(v) { return v !== null && v !== undefined ? v + '%' : '—' }
+
+      for (const m of modes) {
+        const prefix = 'kpi-gr-' + m.mode + '-wr'
+        const subEl = document.getElementById('kpi-gr-' + m.mode + '-sub')
+        const valEl = document.getElementById(prefix)
+        if (valEl) { valEl.textContent = fmtPct(m.winRate); valEl.className = 'kpi-val ' + (m.winRate >= 50 ? 'green' : m.winRate >= 30 ? 'yellow' : 'red') }
+        if (subEl) subEl.textContent = m.wins + ' / ' + m.total + ' · śr. ' + (m.avgWords || '—') + ' słów'
+      }
+
+      document.getElementById('kpi-gr-total-results').textContent = c.totalGameResults || 0
+      document.getElementById('kpi-gr-dau').textContent = c.dauMetrics?.today || 0
+      document.getElementById('kpi-gr-dau-sub').textContent = 'śr. 7d: ' + (c.dauMetrics?.avg7d || 0) + ' · śr. 30d: ' + (c.dauMetrics?.avg30d || 0)
+
+      const gpu = c.gamesPerUserDist
+      if (gpu) {
+        document.getElementById('kpi-gr-avg-gpu').textContent = gpu.avg || '—'
+        document.getElementById('kpi-gr-gpu-sub').textContent = 'med: ' + (gpu.median ?? '—') + ' · p75: ' + (gpu.p75 ?? '—') + ' · p90: ' + (gpu.p90 ?? '—')
+      }
+
+      const sd = c.streakDist
+      if (sd) {
+        document.getElementById('kpi-gr-streak').textContent = sd.median ?? '—'
+        document.getElementById('kpi-gr-streak-sub').textContent = 'najl. med: ' + (sd.bestMedian ?? '—') + ' · max: ' + (sd.bestMax || 0)
+      }
+
+      // Avg duration (weighted across all modes)
+      const durModes = modes.filter(m => m.avgDuration)
+      if (durModes.length) {
+        const totalGames = durModes.reduce((s, m) => s + m.total, 0)
+        const weightedDur = totalGames ? durModes.reduce((s, m) => s + m.avgDuration * m.total, 0) / totalGames : 0
+        document.getElementById('kpi-gr-avg-dur').textContent = fmtDur(weightedDur)
+        document.getElementById('kpi-gr-dur-sub').textContent = durModes.map(m => m.mode + ': ' + fmtDur(m.avgDuration)).join(' · ')
+      }
+    }
 
     // last 30 days for bar charts
     const last30 = d.perDay.slice(-30)
@@ -624,6 +794,321 @@
       el.querySelectorAll('.gd-fill-c,.gd-fill-g').forEach(b => b.style.width = b.dataset.w + '%')
     })
   }
+
+  // ── SONG HEALTH ─────────────────────────────────────────
+  let shData = []
+  async function loadSongHealth() {
+    try {
+      const r = await API('/api/admin/song-health')
+      document.getElementById('sh-loading').style.display = 'none'
+      if (!r.ok) return
+      const d = await r.json()
+      document.getElementById('sh-content').style.display = 'block'
+      shData = d.songs || []
+
+      const noLyrics = shData.filter(s => !s.hasLyrics).length
+      const noAudio  = shData.filter(s => s.hasLyrics && !s.hasYoutube).length
+
+      document.getElementById('sh-total').textContent   = d.total
+      document.getElementById('sh-ok').textContent      = d.ok
+      document.getElementById('sh-failed').textContent   = d.failed
+      document.getElementById('sh-no-lyrics').textContent = noLyrics
+      document.getElementById('sh-no-audio').textContent  = noAudio
+
+      renderShTable('all')
+
+      document.getElementById('sh-filter').addEventListener('change', function () {
+        renderShTable(this.value)
+      })
+    } catch (e) {
+      document.getElementById('sh-loading').textContent = 'błąd ładowania'
+    }
+  }
+
+  function renderShTable(filter) {
+    let songs = shData
+    if (filter === 'ok') songs = shData.filter(s => s.hasLyrics && s.hasYoutube && !s.lastError)
+    else if (filter === 'no-lyrics') songs = shData.filter(s => !s.hasLyrics)
+    else if (filter === 'no-audio') songs = shData.filter(s => s.hasLyrics && !s.hasYoutube)
+    else if (filter === 'errors') songs = shData.filter(s => s.lastError)
+
+    const rows = songs.map(s => {
+      let statusCls, statusText
+      if (s.hasLyrics && s.hasYoutube && !s.lastError) { statusCls = 'ok'; statusText = 'OK' }
+      else if (s.lastError) { statusCls = 'err'; statusText = 'BŁĄD' }
+      else if (!s.hasLyrics) { statusCls = 'err'; statusText = 'BRAK TEKSTU' }
+      else { statusCls = 'warn'; statusText = 'BRAK AUDIO' }
+
+      const issues = []
+      if (!s.hasLyrics) issues.push('tekst')
+      if (s.hasLyrics && !s.hasYoutube) issues.push('audio')
+      if (s.lastError) issues.push(esc(s.lastError))
+
+      const ytInput = (!s.hasYoutube && s.hasLyrics)
+        ? `<div style="display:flex;gap:4px;align-items:center">
+             <input type="text" class="sh-yt-input" data-id="${s.id}" placeholder="YouTube URL" style="flex:1;min-width:120px;font-size:.55rem;padding:4px 6px">
+             <button class="btn sh-yt-save" data-id="${s.id}" style="font-size:.5rem;padding:4px 8px">zapisz</button>
+           </div>`
+        : (s.hasYoutube ? '<span style="color:var(--ok);font-size:.55rem">✓</span>' : '—')
+
+      return `<tr>
+        <td>${s.cover ? `<img class="tbl-cover" src="${esc(s.cover)}" alt="" onerror="this.style.display='none'">` : `<span class="tbl-cover-ph">♪</span>`}</td>
+        <td>${esc(s.title)}</td>
+        <td style="color:var(--sub)">#${s.id}</td>
+        <td><span class="sh-status ${statusCls}">${statusText}</span></td>
+        <td style="color:var(--sub)">${s.hasLyrics ? '✓' : '✗'} tekst</td>
+        <td style="color:var(--sub)">${s.hasYoutube ? '✓' : '✗'} audio</td>
+        <td class="sh-err">${issues.length ? issues.join(', ') : '—'}</td>
+        <td>${ytInput}</td>
+      </tr>`
+    }).join('')
+
+    const wrap = document.getElementById('sh-table-wrap')
+    if (songs.length) {
+      wrap.innerHTML = `<div class="sh-scroll"><table class="sh-table">
+        <thead><tr><th></th><th>piosenka</th><th>id</th><th>status</th><th>tekst</th><th>audio</th><th>problemy</th><th>youtube</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>`
+
+      // Wire up set-youtube buttons
+      wrap.querySelectorAll('.sh-yt-save').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const songId = btn.dataset.id
+          const input = wrap.querySelector(`.sh-yt-input[data-id="${songId}"]`)
+          const url = (input?.value || '').trim()
+          if (!url) { toast('wpisz URL', 'err'); return }
+          btn.disabled = true
+          btn.textContent = '...'
+          const r = await API('/api/admin/set-youtube', { method: 'POST', body: JSON.stringify({ songId: Number(songId), youtubeUrl: url }) })
+          const d = await r.json()
+          btn.disabled = false
+          btn.textContent = 'zapisz'
+          if (r.ok) {
+            toast('zapisano ✓')
+            // Update local data
+            const song = shData.find(s => String(s.id) === songId)
+            if (song) { song.hasYoutube = true; song.lastError = null }
+            renderShTable(document.getElementById('sh-filter').value)
+          } else {
+            toast(d.error || 'błąd', 'err')
+          }
+        })
+      })
+    } else {
+      wrap.innerHTML = '<div style="color:var(--sub2);font-size:.6rem;letter-spacing:.1em;padding:12px">brak wyników</div>'
+    }
+  }
+
+  // ── RECHECK SONGS ──────────────────────────────────────────
+  document.getElementById('sh-recheck-btn').addEventListener('click', async () => {
+    const btn = document.getElementById('sh-recheck-btn')
+    const progWrap = document.getElementById('sh-recheck-progress')
+    const progBar  = document.getElementById('sh-recheck-bar')
+    const progMsg  = document.getElementById('sh-recheck-msg')
+    btn.disabled = true
+    btn.textContent = 'sprawdzanie…'
+    progWrap.style.display = 'block'
+    progBar.style.width = '0%'
+    progMsg.textContent = 'rozpoczynanie…'
+
+    try {
+      const resp = await fetch('/api/admin/recheck', {
+        headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('admToken') || '') }
+      })
+      const reader = resp.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop()
+        for (const line of lines) {
+          if (!line.startsWith('data:')) continue
+          try {
+            const d = JSON.parse(line.slice(5))
+            if (d.phase === 'progress') {
+              const pct = Math.round(d.current / d.total * 100)
+              progBar.style.width = pct + '%'
+              progMsg.textContent = `sprawdzanie ${d.current}/${d.total} (${pct}%)`
+            } else if (d.phase === 'done') {
+              progBar.style.width = '100%'
+              progMsg.textContent = 'gotowe ✓'
+              toast('sprawdzono wszystkie piosenki ✓')
+              await loadSongHealth()
+            } else if (d.phase === 'error') {
+              progMsg.textContent = 'błąd: ' + d.message
+              toast('błąd: ' + d.message, 'err')
+            }
+          } catch (_) { /* SSE partial message, ignore */ }
+        }
+      }
+    } catch (e) {
+      progMsg.textContent = 'błąd połączenia'
+      toast('błąd połączenia', 'err')
+    }
+
+    btn.disabled = false
+    btn.textContent = 'ponownie sprawdź'
+  })
+
+  // ── TOASTS MANAGEMENT ──────────────────────────────────────
+  let toastsData = [], editingToastId = null
+  const toastFormWrap = document.getElementById('toast-form-wrap')
+
+  async function loadToasts() {
+    const r = await API('/api/admin/toasts')
+    document.getElementById('toasts-loading').style.display = 'none'
+    if (!r.ok) return
+    document.getElementById('toasts-content').style.display = 'block'
+    toastsData = await r.json()
+    renderToastsTable()
+  }
+
+  function renderToastsTable() {
+    const wrap = document.getElementById('toasts-table-wrap')
+    if (!toastsData.length) {
+      wrap.innerHTML = '<div style="color:var(--sub2);font-size:.6rem;letter-spacing:.1em;padding:12px">brak ogłoszeń</div>'
+      return
+    }
+    const now = new Date().toISOString().slice(0, 10)
+    const rows = toastsData.map(t => {
+      const isScheduled = t.start_date || t.end_date
+      const isActive = t.enabled && (!t.start_date || t.start_date <= now) && (!t.end_date || t.end_date >= now)
+      let statusHtml
+      if (!t.enabled) statusHtml = '<span class="sh-status warn">WYŁĄCZONE</span>'
+      else if (isActive) statusHtml = '<span class="sh-status ok">AKTYWNE</span>'
+      else statusHtml = '<span class="sh-status err">POZA DATAMI</span>'
+
+      const schedule = []
+      if (t.start_date) schedule.push('od ' + t.start_date)
+      if (t.end_date) schedule.push('do ' + t.end_date)
+      const scheduleStr = schedule.length ? schedule.join(' ') : 'bez ograniczeń'
+
+      return `<tr data-id="${t.id}">
+        <td style="font-size:.85rem">${esc(t.icon || '🔔')}</td>
+        <td><strong>${esc(t.title)}</strong>${t.subtitle ? '<br><span style="color:var(--sub);font-size:.55rem">' + esc(t.subtitle) + '</span>' : ''}</td>
+        <td style="color:var(--sub);font-size:.58rem">${scheduleStr}</td>
+        <td>${t.duration ? (t.duration / 1000).toFixed(1) + 's' : 'ręczne'}</td>
+        <td>${t.once_per_user ? 'raz' : 'zawsze'}</td>
+        <td>${statusHtml}</td>
+        <td>
+          <button class="tbl-del toast-edit" data-id="${t.id}" title="edytuj">✎</button>
+          <button class="tbl-del toast-del" data-id="${t.id}" title="usuń">✕</button>
+        </td>
+      </tr>`
+    }).join('')
+
+    wrap.innerHTML = `<table class="sh-table">
+      <thead><tr><th></th><th>tytuł</th><th>harmonogram</th><th>czas</th><th>powtarzanie</th><th>status</th><th></th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`
+
+    wrap.querySelectorAll('.toast-edit').forEach(btn => {
+      btn.addEventListener('click', (e) => { e.stopPropagation(); openToastForm(parseInt(btn.dataset.id)) })
+    })
+    wrap.querySelectorAll('.toast-del').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation()
+        if (!confirm('Usunąć ogłoszenie?')) return
+        const r = await API('/api/admin/toasts/' + btn.dataset.id, { method: 'DELETE' })
+        if (r.ok) { toast('usunięto'); await loadToasts() }
+        else toast('błąd', 'err')
+      })
+    })
+  }
+
+  function openToastForm(id) {
+    const t = id ? toastsData.find(x => x.id === id) : null
+    editingToastId = t ? t.id : null
+    document.getElementById('toast-form-title').textContent = t ? 'edytuj ogłoszenie' : 'nowe ogłoszenie'
+    document.getElementById('tf-title').value = t ? t.title : ''
+    document.getElementById('tf-subtitle').value = t ? (t.subtitle || '') : ''
+    document.getElementById('tf-icon').value = t ? (t.icon || '🔔') : '🔔'
+    document.getElementById('tf-bg').value = t ? (t.bg_color || '') : ''
+    document.getElementById('tf-border').value = t ? (t.border_color || '') : ''
+    document.getElementById('tf-accent').value = t ? (t.accent_color || '') : ''
+    document.getElementById('tf-position').value = t ? (t.position || 'top') : 'top'
+    document.getElementById('tf-duration').value = t ? (t.duration ?? 6500) : 6500
+    document.getElementById('tf-start').value = t ? (t.start_date || '') : ''
+    document.getElementById('tf-end').value = t ? (t.end_date || '') : ''
+    document.getElementById('tf-once').checked = t ? !!t.once_per_user : true
+    document.getElementById('tf-enabled').checked = t ? !!t.enabled : true
+    toastFormWrap.style.display = 'block'
+    toastFormWrap.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  document.getElementById('toast-new-btn').addEventListener('click', () => openToastForm(null))
+  document.getElementById('toast-form-cancel').addEventListener('click', () => { toastFormWrap.style.display = 'none'; editingToastId = null })
+
+  document.getElementById('tf-save').addEventListener('click', async () => {
+    const payload = {
+      title: document.getElementById('tf-title').value,
+      subtitle: document.getElementById('tf-subtitle').value,
+      icon: document.getElementById('tf-icon').value,
+      bg_color: document.getElementById('tf-bg').value,
+      border_color: document.getElementById('tf-border').value,
+      accent_color: document.getElementById('tf-accent').value,
+      position: document.getElementById('tf-position').value,
+      duration: parseInt(document.getElementById('tf-duration').value) || 0,
+      start_date: document.getElementById('tf-start').value || null,
+      end_date: document.getElementById('tf-end').value || null,
+      once_per_user: document.getElementById('tf-once').checked,
+      enabled: document.getElementById('tf-enabled').checked,
+    }
+    if (!payload.title.trim()) { toast('podaj tytuł', 'err'); return }
+    let r
+    if (editingToastId) {
+      r = await API('/api/admin/toasts/' + editingToastId, { method: 'PUT', body: JSON.stringify(payload) })
+    } else {
+      r = await API('/api/admin/toasts', { method: 'POST', body: JSON.stringify(payload) })
+    }
+    if (r.ok) {
+      toast(editingToastId ? 'zaktualizowano' : 'utworzono')
+      toastFormWrap.style.display = 'none'
+      editingToastId = null
+      await loadToasts()
+    } else {
+      const d = await r.json().catch(() => ({}))
+      toast(d.error || 'błąd', 'err')
+    }
+  })
+
+  document.getElementById('tf-preview').addEventListener('click', () => {
+    const icon = document.getElementById('tf-icon').value || '🔔'
+    const title = document.getElementById('tf-title').value || 'Podgląd tytułu'
+    const sub = document.getElementById('tf-subtitle').value || 'Podgląd podtytułu'
+    const bg = document.getElementById('tf-bg').value || 'rgba(10,6,6,0.96)'
+    const border = document.getElementById('tf-border').value || 'rgba(227,28,18,0.45)'
+    const accent = document.getElementById('tf-accent').value || '#e31c12'
+    const pos = document.getElementById('tf-position').value
+    const dur = parseInt(document.getElementById('tf-duration').value) || 6500
+
+    const el = document.createElement('div')
+    el.style.cssText = `
+      position:fixed;z-index:9999;max-width:min(92vw,420px);width:max-content;
+      background:${bg};border:1px solid ${border};border-left:4px solid ${accent};
+      border-radius:6px;box-shadow:0 12px 40px rgba(0,0,0,0.55);
+      padding:14px 18px;display:flex;align-items:center;gap:14px;
+      font-family:var(--cond);color:var(--text);opacity:0;transition:opacity .3s;
+    `
+    if (pos.includes('top')) el.style.top = '18px'
+    if (pos.includes('bottom')) el.style.bottom = '18px'
+    if (pos.includes('left')) el.style.left = '18px'
+    if (pos.includes('right')) el.style.right = '18px'
+    if (!pos.includes('left') && !pos.includes('right')) { el.style.left = '50%'; el.style.transform = 'translateX(-50%)' }
+
+    el.innerHTML = `
+      <div style="width:34px;height:34px;border-radius:50%;background:rgba(227,28,18,0.18);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0">${icon}</div>
+      <div style="flex:1;min-width:0"><div style="font-family:var(--display);font-size:1.05rem;letter-spacing:.04em;text-transform:uppercase;line-height:1.1;margin-bottom:3px">${esc(title)}</div><div style="font-size:.82rem;color:var(--sub);line-height:1.25">${esc(sub)}</div></div>
+      <button style="background:none;border:none;color:var(--sub);font-size:1.1rem;cursor:pointer;padding:4px" onclick="this.parentElement.remove()">&#10005;</button>
+    `
+    document.body.appendChild(el)
+    requestAnimationFrame(() => el.style.opacity = '1')
+    if (dur > 0) setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 400) }, dur)
+  })
 
   // ── RANKED OVERVIEW ────────────────────────────────────────
   async function loadRanked() {
@@ -763,9 +1248,6 @@
     ctx.textAlign = 'right'; ctx.fillText(maxVal, pad.l - 3, pad.t + 8)
   }
 
-  function esc(s) {
-    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
-  }
 </script>
 </body>
 </html>

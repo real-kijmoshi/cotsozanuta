@@ -22,9 +22,10 @@ function adminAuth(req, res, next) {
     const authHeader = String(req.headers['authorization'] || '')
     if (authHeader.toLowerCase().startsWith('bearer ')) {
         const token = authHeader.slice(7).trim()
-        const secret = process.env.ADMIN_JWT_SECRET || pwd
+        const secret = process.env.ADMIN_JWT_SECRET
+        if (!secret) return res.status(500).json({ error: "ADMIN_JWT_SECRET not configured" });
         try {
-            const payload = jwt.verify(token, secret)
+            const payload = jwt.verify(token, secret, { maxAge: "24h" })
             if (payload && payload.admin) return next()
         } catch (e) {
             // fallthrough to legacy check

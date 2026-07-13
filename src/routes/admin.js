@@ -19,7 +19,8 @@ router.post("/login", loginLimiter, (req, res) => {
     const pwd = process.env.ADMIN_PASSWORD;
     if (!pwd) return res.status(500).json({ error: "ADMIN_PASSWORD not set" });
     if (!timingSafeEqual(String(req.body.password || ""), pwd)) return res.status(401).json({ error: "Wrong password" });
-    const secret = process.env.ADMIN_JWT_SECRET || pwd
+    const secret = process.env.ADMIN_JWT_SECRET;
+    if (!secret) return res.status(500).json({ error: "JWT secret not configured" });
     const token = jwt.sign({ admin: true }, secret, { expiresIn: process.env.ADMIN_JWT_EXPIRES || '12h' })
     res.json({ ok: true, token })
 })
@@ -29,6 +30,7 @@ router.get("/songs", adminAuth, async (req, res) => {
         const songs = await genius.getAllSongs(state.otsochodziId);
         res.json(songs.map(s => ({ id: s.id, title: s.title, cover: s.cover || null, artists: s.artists || [] })));
     } catch (e) {
+        console.error("[admin] songs:", e.message);
         res.status(500).json({ error: "Failed to fetch songs" });
     }
 })
@@ -46,6 +48,7 @@ router.get("/lyrics/:songId", adminAuth, async (req, res) => {
         if (!info?.lyrics) return res.status(404).json({ error: "No lyrics found" });
         res.json({ lyrics: info.lyrics, title: info.title, cover: info.cover || null, wordCount: info.lyrics.split(/\s+/).filter(Boolean).length });
     } catch (e) {
+        console.error("[admin] lyrics:", e.message);
         res.status(500).json({ error: "Failed to fetch lyrics" });
     }
 })
@@ -54,6 +57,7 @@ router.get("/daily", adminAuth, (req, res) => {
     try {
         res.json(db.getDaily());
     } catch (e) {
+        console.error("[admin] daily GET:", e.message);
         res.status(500).json({ error: "Failed to read daily" });
     }
 })
@@ -67,6 +71,7 @@ router.post("/daily", adminAuth, (req, res) => {
         db.upsertDaily({ date, songID, wordIndex });
         res.json({ ok: true });
     } catch (e) {
+        console.error("[admin] daily POST:", e.message);
         res.status(500).json({ error: "Failed to write daily" });
     }
 })
@@ -76,6 +81,7 @@ router.delete("/daily/:date", adminAuth, (req, res) => {
         db.deleteDaily(req.params.date);
         res.json({ ok: true });
     } catch (e) {
+        console.error("[admin] daily DELETE:", e.message);
         res.status(500).json({ error: "Failed to write daily" });
     }
 })
@@ -243,9 +249,9 @@ router.get("/stats-overview", adminAuth, (req, res) => {
         }
         const monthlyGamePlaysList = Object.values(monthlyGamePlays).sort((a,b) => a.month.localeCompare(b.month));
 
-        // ── Where plays come from (country), split text vs audio ──
-        const countryRows = db.getPlaysByCountry();       // [{ country, category, count }]
-        const usersByCountry = db.getUniqueUsersByCountry(); // [{ country, users }]
+        // ── Country breakdown (from game_plays) ──────────────────
+        const countryRows = db.getPlaysByCountry();
+        const usersByCountry = db.getUniqueUsersByCountry();
         const countryMap = {};
         for (const r of countryRows) {
             if (!countryMap[r.country]) countryMap[r.country] = { country: r.country, text: 0, audio: 0, total: 0, users: 0 };
@@ -258,12 +264,139 @@ router.get("/stats-overview", adminAuth, (req, res) => {
         }
         const countries = Object.values(countryMap).sort((a, b) => b.total - a.total);
 
+        // ════════════════════════════════════════════════════════════
+        // COMPREHENSIVE GAME RESULTS (from game_results table)
+        // ════════════════════════════════════════════════════════════
+
+        // Helper: percentiles from sorted array
+        const percentile = (sorted, p) => {
+            if (!sorted.length) return null;
+            const idx = Math.ceil(p / 100 * sorted.length) - 1;
+            return sorted[Math.max(0, idx)];
+        };
+
+        // ── Per-mode totals ────────────────────────────────────────
+        const modeTotals = db.getGameResultModeTotals();
+        const modeMap = {};
+        for (const r of modeTotals) {
+            modeMap[r.mode] = {
+                total: r.total,
+                wins: r.wins,
+                giveups: r.giveups,
+                winRate: r.total ? Math.round(r.wins / r.total * 100) : 0,
+                avgWords: r.avgWords ? Math.round(r.avgWords * 10) / 10 : null,
+                minWords: r.minWords,
+                maxWords: r.maxWords,
+                avgDuration: r.avgDuration ? Math.round(r.avgDuration) : null,
+            };
+        }
+
+        // ── Games per user distribution ────────────────────────────
+        const gpuRows = db.getGameResultGamesPerUser();
+        const gpuAll = gpuRows.map(r => r.games).sort((a, b) => a - b);
+        const gpuAudio = gpuRows.map(r => r.audio_games).sort((a, b) => a - b);
+        const gpuText = gpuRows.map(r => r.text_games).sort((a, b) => a - b);
+        const totalGr = gpuAll.reduce((s, v) => s + v, 0);
+        const gamesPerUserDist = {
+            total: gpuRows.length,
+            totalGames: totalGr,
+            avg: gpuRows.length ? Math.round(totalGr / gpuRows.length * 10) / 10 : null,
+            median: calcMedian(gpuAll),
+            p25: percentile(gpuAll, 25),
+            p75: percentile(gpuAll, 75),
+            p90: percentile(gpuAll, 90),
+            p95: percentile(gpuAll, 95),
+            max: gpuAll.length ? gpuAll[gpuAll.length - 1] : null,
+            audio: {
+                players: gpuRows.filter(r => r.audio_games > 0).length,
+                avg: gpuRows.length ? Math.round(gpuAudio.reduce((s, v) => s + v, 0) / gpuRows.length * 10) / 10 : null,
+                median: calcMedian(gpuAudio),
+                p75: percentile(gpuAudio, 75),
+            },
+            text: {
+                players: gpuRows.filter(r => r.text_games > 0).length,
+                avg: gpuRows.length ? Math.round(gpuText.reduce((s, v) => s + v, 0) / gpuRows.length * 10) / 10 : null,
+                median: calcMedian(gpuText),
+                p75: percentile(gpuText, 75),
+            },
+        };
+
+        // ── Win streaks per user ───────────────────────────────────
+        const streakRows = db.getGameResultStreaks();
+        const userStreaks = {};
+        for (const r of streakRows) {
+            if (!userStreaks[r.user_id]) userStreaks[r.user_id] = { current: 0, best: 0, lastOutcome: null, lastTimestamp: 0 };
+            const s = userStreaks[r.user_id];
+            if (s.lastOutcome === "correct" && r.outcome === "correct" && r.timestamp - s.lastTimestamp < 86400000 * 3) {
+                s.current++;
+            } else if (r.outcome === "correct") {
+                s.current = 1;
+            } else {
+                s.current = 0;
+            }
+            s.best = Math.max(s.best, s.current);
+            s.lastOutcome = r.outcome;
+            s.lastTimestamp = r.timestamp;
+        }
+        const allUserStreaks = Object.values(userStreaks);
+        const streakDist = {
+            avg: allUserStreaks.length ? Math.round(allUserStreaks.reduce((s, v) => s + v.current, 0) / allUserStreaks.length * 10) / 10 : null,
+            median: calcMedian(allUserStreaks.map(s => s.current)),
+            bestMedian: calcMedian(allUserStreaks.map(s => s.best)),
+            bestMax: allUserStreaks.length ? Math.max(...allUserStreaks.map(s => s.best)) : 0,
+            usersOnStreak: allUserStreaks.filter(s => s.current >= 2).length,
+            usersOnStreak5: allUserStreaks.filter(s => s.current >= 5).length,
+        };
+
+        // ── DAU / WAU / MAU from game_results ─────────────────────
+        const grDau = db.getGameResultDauByDate();
+        const last30Dau = grDau.slice(-30).map(r => r.dau);
+        const last7Dau  = grDau.slice(-7).map(r => r.dau);
+        const dauMetrics = {
+            today: grDau.length ? grDau[grDau.length - 1].dau : 0,
+            avg7d: last7Dau.length ? Math.round(last7Dau.reduce((s, v) => s + v, 0) / last7Dau.length) : 0,
+            avg30d: last30Dau.length ? Math.round(last30Dau.reduce((s, v) => s + v, 0) / last30Dau.length) : 0,
+            peak: grDau.length ? Math.max(...grDau.map(r => r.dau)) : 0,
+        };
+
+        // ── Word distribution per mode ─────────────────────────────
+        const wordDistRows = db.getGameResultWordDist();
+        const wordDistByMode = {};
+        for (const r of wordDistRows) {
+            if (!wordDistByMode[r.mode]) wordDistByMode[r.mode] = [];
+            wordDistByMode[r.mode].push({ words: r.words, total: r.total, correct: r.correct, giveup: r.giveup });
+        }
+
+        // ── Country breakdown from game_results (per mode) ─────────
+        const grCountryRows = db.getGameResultByCountry();
+        const grCountryMap = {};
+        for (const r of grCountryRows) {
+            if (!grCountryMap[r.country]) grCountryMap[r.country] = { country: r.country, modes: {}, total: 0 };
+            grCountryMap[r.country].modes[r.mode] = { total: r.total, wins: r.wins };
+            grCountryMap[r.country].total += r.total;
+        }
+        const grCountries = Object.values(grCountryMap).sort((a, b) => b.total - a.total);
+
+        // ── Retention: WAU returning week-over-week ────────────────
+        const wauRows = db.getGameResultWauByWeek();
+        const retention = [];
+        for (let i = 1; i < wauRows.length; i++) {
+            const prev = wauRows[i - 1];
+            const curr = wauRows[i];
+            retention.push({
+                week: curr.year + '-W' + curr.week,
+                wau: curr.wau,
+                prevWau: prev.wau,
+            });
+        }
+
         res.json({
+            // Legacy fields (kept for backward compat)
             dates, perDay, totals,
             byMonth: Object.values(byMonth).sort((a, b) => a.month.localeCompare(b.month)),
-            streak:   { current: currentStreak, best: bestStreak },
+            streak: { current: currentStreak, best: bestStreak },
             peakDay,
-            trends:   { week: weekTrend, month: monthTrend, thisWeekPlays, lastWeekPlays, thisMonthPlays, lastMonthPlays },
+            trends: { week: weekTrend, month: monthTrend, thisWeekPlays, lastWeekPlays, thisMonthPlays, lastMonthPlays },
             avgWords: { correct: avgWordsCorrect, giveup: avgWordsGiveup },
             medianWords: { correct: medianWordsCorrect, giveup: medianWordsGiveup },
             wordDistribution, peakBucket,
@@ -272,16 +405,21 @@ router.get("/stats-overview", adminAuth, (req, res) => {
             countries,
             gamePlays: {
                 breakdown: gamePlaysBreakdown,
-                totals: {
-                    daily: totalDaily,
-                    endless: totalEndless,
-                    ranked: totalRanked,
-                    audio: totalAudio,
-                    text: totalText,
-                    all: totalPlaysAll
-                },
-                monthly: monthlyGamePlaysList
-            }
+                totals: { daily: totalDaily, endless: totalEndless, ranked: totalRanked, audio: totalAudio, text: totalText, all: totalPlaysAll },
+                monthly: monthlyGamePlaysList,
+            },
+
+            // ═══ NEW COMPREHENSIVE DATA ═══
+            comprehensive: {
+                modeTotals,                          // per-mode: total, wins, giveups, winRate, avgWords, avgDuration
+                gamesPerUserDist,                    // full distribution with percentiles, audio vs text split
+                streakDist,                          // streak stats across all users
+                dauMetrics,                          // DAU today, avg7d, avg30d, peak
+                wordDistByMode,                      // word distribution broken down per mode
+                grCountries,                         // country breakdown per mode from game_results
+                retention,                           // week-over-week WAU retention
+                totalGameResults: modeTotals.reduce((s, m) => s + m.total, 0),
+            },
         });
     } catch (e) {
         console.error(e);
@@ -292,16 +430,18 @@ router.get("/stats-overview", adminAuth, (req, res) => {
 router.get("/ranked-overview", adminAuth, (req, res) => {
     try {
         const mode     = db.normalizeMode(req.query.mode);
-        const stats    = db.getRankedStats(mode);
-        const byMonth  = db.getRankedByMonth(mode).map(r => ({
+        const gameType = db.normalizeGameType(req.query.gameType);
+        const stats    = db.getRankedStats(mode, gameType);
+        const byMonth  = db.getRankedByMonth(mode, gameType).map(r => ({
             month:       r.month,
             submissions: r.submissions,
             avgScore:    Math.round((r.avgScore || 0) * 10) / 10,
             topScore:    r.topScore || 0,
         }));
-        const topScores = db.getLeaderboard(mode, 10);
+        const topScores = db.getLeaderboard(mode, gameType, 10);
         res.json({
             mode,
+            gameType,
             total:    stats.total    || 0,
             avgScore: stats.avgScore ? Math.round(stats.avgScore * 10) / 10 : 0,
             topScore: stats.topScore || 0,
@@ -355,6 +495,174 @@ router.get("/users-overview", adminAuth, (req, res) => {
     } catch (e) {
         console.error(e);
         res.status(500).json({ error: "Failed to build users overview" });
+    }
+})
+
+router.get("/song-health", adminAuth, (req, res) => {
+    try {
+        const allSongs = state.songHealth;
+        const total = allSongs.size;
+        const ok = [];
+        const failed = [];
+        for (const [id, h] of allSongs) {
+            const record = { id, ...h };
+            if (h.hasLyrics && h.hasYoutube) ok.push(record);
+            else failed.push(record);
+        }
+        res.json({ total, ok: ok.length, failed: failed.length, songs: [...failed, ...ok] });
+    } catch (e) {
+        console.error("[admin] song-health:", e.message);
+        res.status(500).json({ error: "Failed to fetch song health" });
+    }
+})
+
+// ── SONG RECHECK ─────────────────────────────────────────────
+// Streams progress via SSE while re-fetching Genius metadata for all songs.
+router.get("/recheck", adminAuth, async (req, res) => {
+  const { SKIP_PATTERNS } = require("../config");
+  res.writeHead(200, {
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache",
+    "Connection": "keep-alive",
+    "X-Accel-Buffering": "no",
+  });
+
+  let closed = false;
+  req.on("close", () => { closed = true; });
+
+  try {
+    const allSongs = await genius.getAllSongs(state.otsochodziId);
+    if (closed) return;
+    const eligible = allSongs.filter(s => !SKIP_PATTERNS.test(s.title));
+    const BATCH = 5, DELAY = 800;
+
+    res.write(`data:${JSON.stringify({ phase: "start", total: eligible.length })}\n\n`);
+
+    for (let i = 0; i < eligible.length; i += BATCH) {
+      if (closed) break;
+      const batch = eligible.slice(i, i + BATCH);
+      const results = await Promise.allSettled(batch.map(s => genius.getSongById(s.id)));
+      for (let j = 0; j < batch.length; j++) {
+        const s = batch[j];
+        const r = results[j];
+        const info = r.status === "fulfilled" ? r.value : null;
+        const errMsg = r.status === "rejected" ? r.reason?.message || "unknown" : (!info ? "no data" : null);
+        state.songHealth.set(s.id, {
+          title: s.title,
+          cover: s.cover || null,
+          hasLyrics: !!(info && info.lyrics),
+          hasYoutube: !!(info && info.youtube),
+          hasAlbum: !!(info && info.album),
+          lastError: errMsg,
+          checkedAt: new Date().toISOString(),
+        });
+      }
+      const done = Math.min(i + BATCH, eligible.length);
+      res.write(`data:${JSON.stringify({ phase: "progress", current: done, total: eligible.length })}\n\n`);
+      if (i + BATCH < eligible.length) await new Promise(r => setTimeout(r, DELAY));
+    }
+
+    if (!closed) res.write(`data:${JSON.stringify({ phase: "done" })}\n\n`);
+  } catch (e) {
+    if (!closed) res.write(`data:${JSON.stringify({ phase: "error", message: e.message })}\n\n`);
+  }
+  if (!closed) res.end();
+})
+
+// ── SET YOUTUBE URL FOR A SONG ───────────────────────────────
+router.post("/set-youtube", adminAuth, async (req, res) => {
+  const { songId, youtubeUrl } = req.body;
+  const songIdInt = parseInt(songId, 10);
+  if (!Number.isInteger(songIdInt) || songIdInt <= 0) return res.status(400).json({ error: "Invalid songId" });
+  if (!youtubeUrl || typeof youtubeUrl !== "string") return res.status(400).json({ error: "Missing youtubeUrl" });
+
+  const ytId = genius.extractYouTubeId ? genius.extractYouTubeId(youtubeUrl) : null;
+  if (!ytId) return res.status(400).json({ error: "Could not extract YouTube ID from URL" });
+
+  // Store in Genius cache
+  genius.setYoutubeId(songIdInt, ytId);
+
+  // Update songHealth
+  const prev = state.songHealth.get(songIdInt) || { title: `#${songIdInt}`, cover: null, hasLyrics: false, hasYoutube: false, hasAlbum: false, lastError: null, checkedAt: null };
+  prev.hasYoutube = true;
+  prev.lastError = null;
+  prev.checkedAt = new Date().toISOString();
+  state.songHealth.set(songIdInt, prev);
+
+  // Delete any cached audio so it re-downloads from the new URL
+  const audio = require("../../utils/audio");
+  audio.clearFailure(ytId);
+
+  res.json({ ok: true, ytId });
+})
+
+// ── Toasts CRUD ──────────────────────────────────────────────
+router.get("/toasts", adminAuth, (req, res) => {
+    try {
+        res.json(db.getAllToasts());
+    } catch (e) {
+        console.error("[admin] toasts GET:", e.message);
+        res.status(500).json({ error: "Failed to fetch toasts" });
+    }
+})
+
+router.get("/toasts/:id", adminAuth, (req, res) => {
+    try {
+        const t = db.getToastById(parseInt(req.params.id, 10));
+        if (!t) return res.status(404).json({ error: "Toast not found" });
+        res.json(t);
+    } catch (e) {
+        console.error("[admin] toast GET by id:", e.message);
+        res.status(500).json({ error: "Failed to fetch toast" });
+    }
+})
+
+router.post("/toasts", adminAuth, (req, res) => {
+    try {
+        const { title, subtitle, icon, bg_color, border_color, accent_color, position, duration, start_date, end_date, once_per_user, enabled } = req.body;
+        if (!title || !title.trim()) return res.status(400).json({ error: "Title is required" });
+        const id = db.insertToast({
+            title: title.trim(), subtitle: subtitle||'', icon: icon||'🔔',
+            bg_color: bg_color||'', border_color: border_color||'', accent_color: accent_color||'',
+            position: position||'top', duration: typeof duration==='number' ? duration : 6500,
+            start_date: start_date||null, end_date: end_date||null,
+            once_per_user: once_per_user !== false, enabled: enabled !== false,
+        });
+        res.json({ ok: true, id });
+    } catch (e) {
+        console.error("[admin] toast POST:", e.message);
+        res.status(500).json({ error: "Failed to create toast" });
+    }
+})
+
+router.put("/toasts/:id", adminAuth, (req, res) => {
+    try {
+        const id = parseInt(req.params.id, 10);
+        const existing = db.getToastById(id);
+        if (!existing) return res.status(404).json({ error: "Toast not found" });
+        const { title, subtitle, icon, bg_color, border_color, accent_color, position, duration, start_date, end_date, once_per_user, enabled } = req.body;
+        if (!title || !title.trim()) return res.status(400).json({ error: "Title is required" });
+        db.updateToast(id, {
+            title: title.trim(), subtitle: subtitle||'', icon: icon||'🔔',
+            bg_color: bg_color||'', border_color: border_color||'', accent_color: accent_color||'',
+            position: position||'top', duration: typeof duration==='number' ? duration : 6500,
+            start_date: start_date||null, end_date: end_date||null,
+            once_per_user: once_per_user !== false, enabled: enabled !== false,
+        });
+        res.json({ ok: true });
+    } catch (e) {
+        console.error("[admin] toast PUT:", e.message);
+        res.status(500).json({ error: "Failed to update toast" });
+    }
+})
+
+router.delete("/toasts/:id", adminAuth, (req, res) => {
+    try {
+        db.deleteToast(parseInt(req.params.id, 10));
+        res.json({ ok: true });
+    } catch (e) {
+        console.error("[admin] toast DELETE:", e.message);
+        res.status(500).json({ error: "Failed to delete toast" });
     }
 })
 

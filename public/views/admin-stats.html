@@ -495,8 +495,13 @@
 
 <div id="toast"></div>
 
+<script src="/utils.js"></script>
 <script>
-  const API = (path, opts) => fetch(path, { headers: { 'Authorization': (localStorage.getItem('admToken') ? 'Bearer ' + localStorage.getItem('admToken') : ''), 'Content-Type': 'application/json', ...(opts?.headers || {}) }, ...opts })
+  const API = async (path, opts) => {
+    const r = await fetch(path, { headers: { 'Authorization': (localStorage.getItem('admToken') ? 'Bearer ' + localStorage.getItem('admToken') : ''), 'Content-Type': 'application/json', ...(opts?.headers || {}) }, ...opts });
+    if (r.status === 401) { localStorage.removeItem('admToken'); location.reload(); throw new Error('Unauthorized'); }
+    return r;
+  }
 
   // ── TOAST ─────────────────────────────────────────────────
   let toastTimer
@@ -1050,10 +1055,7 @@
     }
   }
 
-  // Helper clear esc
-  function esc(s) {
-    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
-  }
+  // Helper clear esc — now shared via /utils.js
 
   // Turn a 2-letter ISO country code into its flag emoji ("PL" → 🇵🇱)
   function flagEmoji(cc) {

@@ -1,6 +1,7 @@
 // ── Ranked session store ─────────────────────────────────────
 // Sessions expire after inactivity, cleaned up every 5 minutes.
 const RANKED_GRACE_MS = 3_000; // tiny grace for network latency
+const MAX_SESSIONS = 10_000;
 
 // Each ranked sub-mode has its own leaderboard (see utils/db.js RANKED_MODES).
 //   sprint60/sprint180 — a fixed total window; score = songs guessed.
@@ -18,6 +19,10 @@ function rankedModeConfig(mode) { return RANKED_MODES[mode] || RANKED_MODES[DEFA
 
 // sessionId → session object.
 const rankedSessions = new Map();
+
+function isAtCapacity() {
+    return rankedSessions.size >= MAX_SESSIONS;
+}
 
 // True when the time available to answer the CURRENT pending song has run out.
 //   sprint*  — the whole-run window elapsed.
@@ -50,4 +55,6 @@ module.exports = {
     rankedModeConfig,
     rankedTimeExpired,
     startSessionCleanup,
+    isAtCapacity,
+    MAX_SESSIONS,
 };

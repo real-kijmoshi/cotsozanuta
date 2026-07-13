@@ -2,12 +2,15 @@
 node_modules/
 server.log
 *.log
+logs/
 db/cache/
 db/leaderboard.json
 db/daily-stats.json
 db/app.db
 db/app.db-shm
 db/app.db-wal
+db/audio/
+db/audio-failures.json
 
 
 .claude/

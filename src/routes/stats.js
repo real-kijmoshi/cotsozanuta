@@ -1,10 +1,10 @@
 const express = require("express");
 const db = require("../../utils/db");
-const { statsLimiter } = require("../rateLimiters");
+const { statsLimiter, publicGetLimiter } = require("../rateLimiters");
 
 const router = express.Router();
 
-router.get("/:date", (req, res) => {
+router.get("/:date", publicGetLimiter, (req, res) => {
     const { date } = req.params;
     try {
         // Stats for past days never change — safe to cache for an hour.
@@ -13,7 +13,7 @@ router.get("/:date", (req, res) => {
         const all = [...day.correct, ...day.giveup];
         if (!all.length) return res.json({ total: 0, correctCount: 0, buckets: [] });
 
-        const max = Math.max(...all);
+        const max = all.reduce((a, b) => a > b ? a : b, -Infinity);
         // Pre-compute frequency counts in O(n) instead of O(n * buckets)
         const correctFreq = new Map();
         const giveupFreq  = new Map();
@@ -29,6 +29,7 @@ router.get("/:date", (req, res) => {
         }
         res.json({ total: all.length, correctCount: day.correct.length, buckets });
     } catch (e) {
+        console.error("[stats] GET:", e.message);
         res.status(500).json({ error: "Failed to read stats" });
     }
 });
@@ -48,6 +49,7 @@ router.post("/:date", statsLimiter, (req, res) => {
         db.addStat(date, outcome, w);
         res.json({ ok: true });
     } catch (e) {
+        console.error("[stats] POST:", e.message);
         res.status(500).json({ error: "Failed to write stats" });
     }
 });

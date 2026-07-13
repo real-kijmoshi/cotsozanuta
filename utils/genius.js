@@ -13,11 +13,42 @@ const api = axios.create({
   timeout: 10000,
 });
 
+// ── LRU cache helper ────────────────────────────────────────
+class LRU {
+  constructor(maxSize = 10000) {
+    this.maxSize = maxSize;
+    this.map = new Map();
+  }
+  has(key) { return this.map.has(key); }
+  get(key) {
+    if (!this.map.has(key)) return undefined;
+    const v = this.map.get(key);
+    // Move to end (most recently used)
+    this.map.delete(key);
+    this.map.set(key, v);
+    return v;
+  }
+  set(key, value) {
+    if (this.map.has(key)) this.map.delete(key);
+    else if (this.map.size >= this.maxSize) {
+      // Evict oldest (first entry)
+      const oldest = this.map.keys().next().value;
+      this.map.delete(oldest);
+    }
+    this.map.set(key, value);
+  }
+  delete(key) { this.map.delete(key); }
+  clear() { this.map.clear(); }
+  entries() { return this.map.entries(); }
+  values() { return this.map.values(); }
+  get size() { return this.map.size; }
+}
+
 // Cache management
 const cacheDir = path.join(__dirname, "../db/cache");
-const artistCache = new Map();
-const songCache = new Map();
-const lyricsCache = new Map();
+const artistCache = new LRU(500);   // ~500 artist lookups is more than enough
+const songCache = new LRU(20000);   // each artist can have ~200 songs; cover ~100 artists
+const lyricsCache = new LRU(20000); // lyrics for each song
 // In-flight deduplication: multiple concurrent callers for the same uncached
 // song share one promise instead of hammering the Genius API in parallel.
 const inFlightSongs = new Map();
@@ -31,12 +62,12 @@ if (!fs.existsSync(cacheDir)) {
 // saveSongCache is debounced (2 s) to batch the write storm during warm-up
 // when many songs are fetched concurrently.
 const saveArtistCache = () =>
-  fs.writeFileSync(path.join(cacheDir, "artists.json"), JSON.stringify(Array.from(artistCache.entries())));
+  fs.promises.writeFile(path.join(cacheDir, "artists.json"), JSON.stringify(Array.from(artistCache.entries()))).catch(e => console.error("[CACHE] artist save failed:", e.message));
 let _saveSongCacheTimer = null;
 const saveSongCache = () => {
   clearTimeout(_saveSongCacheTimer);
   _saveSongCacheTimer = setTimeout(
-    () => fs.writeFileSync(path.join(cacheDir, "songs.json"), JSON.stringify(Array.from(songCache.entries()))),
+    () => fs.promises.writeFile(path.join(cacheDir, "songs.json"), JSON.stringify(Array.from(songCache.entries()))).catch(e => console.error("[CACHE] song save failed:", e.message)),
     2000
   );
 };
@@ -47,13 +78,13 @@ const flushSongCache = () => {
   fs.writeFileSync(path.join(cacheDir, "songs.json"), JSON.stringify(Array.from(songCache.entries())));
 };
 const saveLyricsCache = () =>
-  fs.writeFileSync(path.join(cacheDir, "lyrics.json"), JSON.stringify(Array.from(lyricsCache.entries())));
+  fs.promises.writeFile(path.join(cacheDir, "lyrics.json"), JSON.stringify(Array.from(lyricsCache.entries()))).catch(e => console.error("[CACHE] lyrics save failed:", e.message));
 
 // Load cache from disk
-const loadCacheFile = (filename, map) => {
+const loadCacheFile = (filename, lru) => {
   try {
     const data = JSON.parse(fs.readFileSync(path.join(cacheDir, filename)));
-    data.forEach(([key, value]) => map.set(key, value));
+    for (const [key, value] of data) lru.set(key, value);
   } catch (err) {
     // file missing or corrupt — start with empty map for this cache
   }
@@ -376,6 +407,19 @@ const getWordArray = async (songId) => {
   return words;
 };
 
+const setYoutubeId = (songId, youtubeId) => {
+  const key = String(songId);
+  let entry = songCache.get(key);
+  if (!entry) {
+    // Create a minimal placeholder so the ID is stored
+    entry = { id: Number(songId), title: null, cover: null, artists: [], album: null, releaseDate: null, featured: [], youtube: null, soundcloud: null, lyrics: null };
+  }
+  entry.youtube = youtubeId;
+  songCache.set(key, entry);
+  saveSongCache();
+  return entry;
+};
+
 module.exports = {
   getArtistIdByName,
   getAllSongs,
@@ -388,4 +432,6 @@ module.exports = {
   searchCachedSongsByName,
   clearCache,
   flushSongCache,
+  setYoutubeId,
+  extractYouTubeId,
 };

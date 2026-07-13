@@ -2,7 +2,7 @@ const express = require("express");
 const genius = require("../../utils/genius");
 const db = require("../../utils/db");
 const state = require("../state");
-const { lyricsLimiter } = require("../rateLimiters");
+const { lyricsLimiter, publicGetLimiter } = require("../rateLimiters");
 
 const router = express.Router();
 
@@ -35,7 +35,7 @@ router.get("/lyrics", lyricsLimiter, async (req, res) => {
     }
 });
 
-router.get("/autocomplete/songs", async (req, res) => {
+router.get("/autocomplete/songs", publicGetLimiter, async (req, res) => {
     const { query } = req.query;
     if (!query || query.trim().length < 2) {
         return res.status(400).json({ error: "Query must be at least 2 characters" });
@@ -54,7 +54,7 @@ router.get("/autocomplete/songs", async (req, res) => {
     }
 });
 
-router.get("/discography", async (req, res) => {
+router.get("/discography", publicGetLimiter, async (req, res) => {
     if (!state.otsochodziId) return res.status(503).json({ error: "Server is initializing" });
     try {
         const allSongs = await genius.getAllSongs(state.otsochodziId);
@@ -161,7 +161,7 @@ router.get("/discography", async (req, res) => {
     }
 });
 
-router.get("/albums", async (req, res) => {
+router.get("/albums", publicGetLimiter, async (req, res) => {
     if (!state.otsochodziId) return res.status(503).json({ error: "Server is initializing" });
     if (state.cachedAlbums) return res.json(state.cachedAlbums);
     try {
@@ -191,7 +191,19 @@ router.get("/albums", async (req, res) => {
         }).map(a => ({ id: a.id, name: a.name }));
         res.json(state.cachedAlbums);
     } catch (e) {
+        console.error("[content] albums:", e.message);
         res.status(500).json({ error: "Failed to fetch albums" });
+    }
+});
+
+// ── Public: active toasts ─────────────────────────────────────
+router.get("/toasts", publicGetLimiter, (req, res) => {
+    try {
+        const toasts = db.getActiveToasts();
+        res.json(toasts);
+    } catch (e) {
+        console.error("[content] toasts:", e.message);
+        res.json([]);
     }
 });
 
