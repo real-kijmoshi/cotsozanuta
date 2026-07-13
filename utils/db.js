@@ -73,10 +73,45 @@ db.exec(`
       console.error("[DB] Failed to add user_id to game_plays:", err.message);
     }
   }
+  // country: 2-letter ISO code of where the play came from (best-effort, may be NULL)
+  if (!gpCols.some(c => c.name === "country")) {
+    try {
+      db.exec("ALTER TABLE game_plays ADD COLUMN country TEXT;");
+      console.log("[DB] Added country column to game_plays.");
+    } catch (err) {
+      console.error("[DB] Failed to add country to game_plays:", err.message);
+    }
+  }
   try {
     db.exec("CREATE INDEX IF NOT EXISTS idx_game_plays_user_id ON game_plays(user_id);");
+    db.exec("CREATE INDEX IF NOT EXISTS idx_game_plays_country ON game_plays(country);");
   } catch (err) {
-    console.error("[DB] Failed to create idx_game_plays_user_id:", err.message);
+    console.error("[DB] Failed to create game_plays indexes:", err.message);
+  }
+})();
+
+// ── Migrate: add per-mode leaderboards ───────────────────────
+// Historically there was a single leaderboard (the 60-second ranked run).
+// We now keep one board per ranked sub-mode. Existing rows are 60s runs, so
+// they are migrated into the 1-Minute Sprint board ("sprint60").
+const RANKED_MODES = ["sprint60", "sprint180", "survival"];
+const DEFAULT_RANKED_MODE = "sprint60";
+(function migrateLeaderboardMode() {
+  const cols = db.prepare("PRAGMA table_info(leaderboard)").all();
+  if (!cols.some(c => c.name === "mode")) {
+    try {
+      db.exec(`ALTER TABLE leaderboard ADD COLUMN mode TEXT NOT NULL DEFAULT '${DEFAULT_RANKED_MODE}';`);
+      // Backfill any pre-existing rows (the DEFAULT already covers them, but be explicit).
+      db.exec(`UPDATE leaderboard SET mode = '${DEFAULT_RANKED_MODE}' WHERE mode IS NULL OR mode = '';`);
+      console.log("[DB] Added mode column to leaderboard (existing rows → sprint60).");
+    } catch (err) {
+      console.error("[DB] Failed to add mode column:", err.message);
+    }
+  }
+  try {
+    db.exec("CREATE INDEX IF NOT EXISTS idx_lb_mode_score ON leaderboard(mode, score DESC);");
+  } catch (err) {
+    console.error("[DB] Failed to create idx_lb_mode_score:", err.message);
   }
 })();
 
@@ -93,9 +128,9 @@ db.exec(`
     const countRows = db.prepare("SELECT COUNT(*) AS n FROM leaderboard").get().n;
     if (countRows > 0) {
       const duplicates = db.prepare(`
-        SELECT name, COUNT(*) as cnt 
-        FROM leaderboard 
-        GROUP BY LOWER(name) 
+        SELECT mode, name, COUNT(*) as cnt
+        FROM leaderboard
+        GROUP BY mode, LOWER(name)
         HAVING cnt > 1
       `).all();
       if (duplicates.length > 0) {
@@ -103,15 +138,15 @@ db.exec(`
         db.transaction(() => {
           for (const dup of duplicates) {
             const rows = db.prepare(`
-              SELECT id, score 
-              FROM leaderboard 
-              WHERE LOWER(name) = ? 
+              SELECT id, score
+              FROM leaderboard
+              WHERE mode = ? AND LOWER(name) = ?
               ORDER BY score DESC, date DESC
-            `).all(dup.name.toLowerCase());
-            
+            `).all(dup.mode, dup.name.toLowerCase());
+
             const keepId = rows[0].id;
-            const deleteStmt = db.prepare("DELETE FROM leaderboard WHERE LOWER(name) = ? AND id != ?");
-            deleteStmt.run(dup.name.toLowerCase(), keepId);
+            const deleteStmt = db.prepare("DELETE FROM leaderboard WHERE mode = ? AND LOWER(name) = ? AND id != ?");
+            deleteStmt.run(dup.mode, dup.name.toLowerCase(), keepId);
           }
         })();
         console.log("[DB] Leaderboard deduplicated successfully");
@@ -164,27 +199,32 @@ const stmts = {
   upsertDaily:     db.prepare("INSERT OR REPLACE INTO daily (date, song_id, word_index) VALUES (?, ?, ?)"),
   deleteDaily:     db.prepare("DELETE FROM daily WHERE date = ?"),
 
-  getTopLb:        db.prepare("SELECT name, score, date FROM leaderboard ORDER BY score DESC LIMIT ?"),
-  insertLb:        db.prepare("INSERT INTO leaderboard (name, score, date, user_id) VALUES (?, ?, ?, ?)"),
-  trimLb:          db.prepare("DELETE FROM leaderboard WHERE id NOT IN (SELECT id FROM leaderboard ORDER BY score DESC LIMIT 200)"),
-  getRankById:     db.prepare("SELECT COUNT(*) + 1 AS rank FROM leaderboard WHERE score > (SELECT score FROM leaderboard WHERE id = ?)"),
-  getRankByScore:  db.prepare("SELECT COUNT(*) + 1 AS rank FROM leaderboard WHERE score > ?"),
-  getRankedStats:   db.prepare("SELECT COUNT(*) AS total, AVG(score) AS avgScore, MAX(score) AS topScore FROM leaderboard"),
-  getRankedByMonth: db.prepare("SELECT substr(date,1,7) AS month, COUNT(*) AS submissions, AVG(score) AS avgScore, MAX(score) AS topScore FROM leaderboard GROUP BY month ORDER BY month"),
+  getTopLb:        db.prepare("SELECT name, score, date FROM leaderboard WHERE mode = ? ORDER BY score DESC, date ASC LIMIT ?"),
+  insertLb:        db.prepare("INSERT INTO leaderboard (name, score, date, user_id, mode) VALUES (?, ?, ?, ?, ?)"),
+  trimLb:          db.prepare("DELETE FROM leaderboard WHERE mode = ? AND id NOT IN (SELECT id FROM leaderboard WHERE mode = ? ORDER BY score DESC LIMIT 200)"),
+  getRankById:     db.prepare("SELECT COUNT(*) + 1 AS rank FROM leaderboard WHERE mode = (SELECT mode FROM leaderboard WHERE id = ?) AND score > (SELECT score FROM leaderboard WHERE id = ?)"),
+  getRankByScore:  db.prepare("SELECT COUNT(*) + 1 AS rank FROM leaderboard WHERE mode = ? AND score > ?"),
+  getRankedStats:   db.prepare("SELECT COUNT(*) AS total, AVG(score) AS avgScore, MAX(score) AS topScore FROM leaderboard WHERE mode = ?"),
+  getRankedByMonth: db.prepare("SELECT substr(date,1,7) AS month, COUNT(*) AS submissions, AVG(score) AS avgScore, MAX(score) AS topScore FROM leaderboard WHERE mode = ? GROUP BY month ORDER BY month"),
   getStatsByDate:  db.prepare("SELECT outcome, words FROM daily_stats WHERE date = ?"),
   addStat:         db.prepare("INSERT INTO daily_stats (date, outcome, words) VALUES (?, ?, ?)"),
   getAllStats:      db.prepare("SELECT date, outcome, words FROM daily_stats ORDER BY date"),
 
   // Game Play logs
-  logGamePlay:        db.prepare("INSERT INTO game_plays (mode, date, timestamp, user_id) VALUES (?, ?, ?, ?)"),
+  logGamePlay:        db.prepare("INSERT INTO game_plays (mode, date, timestamp, user_id, country) VALUES (?, ?, ?, ?, ?)"),
   getGamePlays:       db.prepare("SELECT mode, date, COUNT(*) AS count FROM game_plays GROUP BY mode, date ORDER BY date"),
   getUniqueUserCount: db.prepare(`SELECT COUNT(*) AS total FROM (SELECT user_id FROM game_plays WHERE user_id IS NOT NULL UNION SELECT user_id FROM leaderboard WHERE user_id IS NOT NULL)`),
   getNewUsersByMonth: db.prepare(`SELECT substr(first_date,1,7) AS month, COUNT(*) AS new_users FROM (SELECT user_id, MIN(date) AS first_date FROM (SELECT user_id, date FROM game_plays WHERE user_id IS NOT NULL UNION ALL SELECT user_id, date FROM leaderboard WHERE user_id IS NOT NULL) GROUP BY user_id) GROUP BY month ORDER BY month`),
   getDauByDate:       db.prepare(`SELECT date, COUNT(DISTINCT user_id) AS dau FROM game_plays WHERE user_id IS NOT NULL GROUP BY date ORDER BY date`),
   getGamesPerUser:    db.prepare(`SELECT user_id, COUNT(*) AS games FROM game_plays WHERE user_id IS NOT NULL GROUP BY user_id ORDER BY games`),
+  // Category = 'audio' for audio mode, 'text' for lyric-based modes (endless, ranked, daily).
+  getGamesPerUserByCat: db.prepare(`SELECT user_id, CASE WHEN mode = 'audio' THEN 'audio' ELSE 'text' END AS category, COUNT(*) AS games FROM game_plays WHERE user_id IS NOT NULL GROUP BY user_id, category ORDER BY games`),
+  // Where plays come from, split by audio vs text so the two are reported separately.
+  getPlaysByCountry:  db.prepare(`SELECT COALESCE(country, '??') AS country, CASE WHEN mode = 'audio' THEN 'audio' ELSE 'text' END AS category, COUNT(*) AS count FROM game_plays GROUP BY country, category`),
+  getUniqueUsersByCountry: db.prepare(`SELECT COALESCE(country, '??') AS country, COUNT(DISTINCT user_id) AS users FROM game_plays WHERE user_id IS NOT NULL GROUP BY country`),
   getSongDailyCounts: db.prepare("SELECT song_id AS songID, COUNT(*) AS count FROM daily GROUP BY song_id"),
-  getExistingLb:   db.prepare("SELECT id, score, name, date, user_id FROM leaderboard WHERE LOWER(name) = ?"),
-  getExistingLbByUid: db.prepare("SELECT id, score, name, date, user_id FROM leaderboard WHERE user_id = ?"),
+  getExistingLb:   db.prepare("SELECT id, score, name, date, user_id FROM leaderboard WHERE mode = ? AND LOWER(name) = ?"),
+  getExistingLbByUid: db.prepare("SELECT id, score, name, date, user_id FROM leaderboard WHERE mode = ? AND user_id = ?"),
   updateLb:        db.prepare("UPDATE leaderboard SET score = ?, date = ?, name = ?, user_id = ? WHERE id = ?"),
   deleteLbId:      db.prepare("DELETE FROM leaderboard WHERE id = ?"),
 };
@@ -197,11 +237,19 @@ module.exports = {
   deleteDaily(date)     { stmts.deleteDaily.run(date); },
 
   // ── Leaderboard ──────────────────────────────────────────────
-  getLeaderboard(n = 200) { return stmts.getTopLb.all(n); },
-  insertLeaderboard({ name, score, date, user_id }) {
+  RANKED_MODES,
+  DEFAULT_RANKED_MODE,
+  isValidMode(mode) { return RANKED_MODES.includes(mode); },
+  normalizeMode(mode) { return RANKED_MODES.includes(mode) ? mode : DEFAULT_RANKED_MODE; },
+  getLeaderboard(mode = DEFAULT_RANKED_MODE, n = 200) {
+    const m = RANKED_MODES.includes(mode) ? mode : DEFAULT_RANKED_MODE;
+    return stmts.getTopLb.all(m, n);
+  },
+  insertLeaderboard({ name, score, date, user_id, mode }) {
+    const m = RANKED_MODES.includes(mode) ? mode : DEFAULT_RANKED_MODE;
     const uid = user_id ? String(user_id).trim() : null;
-    const existingByUid = uid ? stmts.getExistingLbByUid.get(uid) : null;
-    const existingByName = stmts.getExistingLb.get(name.toLowerCase());
+    const existingByUid = uid ? stmts.getExistingLbByUid.get(m, uid) : null;
+    const existingByName = stmts.getExistingLb.get(m, name.toLowerCase());
     let rank;
 
     if (existingByUid && existingByName) {
@@ -209,12 +257,12 @@ module.exports = {
         // Same row: update if score is higher, keep highest and update name casing
         if (score > existingByUid.score) {
           stmts.updateLb.run(score, date, name, uid, existingByUid.id);
-          const res = stmts.getRankByScore.get(score);
+          const res = stmts.getRankByScore.get(m, score);
           rank = res ? res.rank : 1;
         } else {
           // Keep old score, old date, but refresh name casing / user_id if needed
           stmts.updateLb.run(existingByUid.score, existingByUid.date, name, uid, existingByUid.id);
-          const res = stmts.getRankByScore.get(existingByUid.score);
+          const res = stmts.getRankByScore.get(m, existingByUid.score);
           rank = res ? res.rank : 1;
         }
       } else {
@@ -223,22 +271,22 @@ module.exports = {
           stmts.deleteLbId.run(existingByName.id);
           if (score > existingByUid.score) {
             stmts.updateLb.run(score, date, name, uid, existingByUid.id);
-            const res = stmts.getRankByScore.get(score);
+            const res = stmts.getRankByScore.get(m, score);
             rank = res ? res.rank : 1;
           } else {
             stmts.updateLb.run(existingByUid.score, existingByUid.date, name, uid, existingByUid.id);
-            const res = stmts.getRankByScore.get(existingByUid.score);
+            const res = stmts.getRankByScore.get(m, existingByUid.score);
             rank = res ? res.rank : 1;
           }
         } else {
           stmts.deleteLbId.run(existingByUid.id);
           if (score > existingByName.score) {
             stmts.updateLb.run(score, date, name, uid, existingByName.id);
-            const res = stmts.getRankByScore.get(score);
+            const res = stmts.getRankByScore.get(m, score);
             rank = res ? res.rank : 1;
           } else {
             stmts.updateLb.run(existingByName.score, existingByName.date, name, uid, existingByName.id);
-            const res = stmts.getRankByScore.get(existingByName.score);
+            const res = stmts.getRankByScore.get(m, existingByName.score);
             rank = res ? res.rank : 1;
           }
         }
@@ -247,11 +295,11 @@ module.exports = {
       // Only UUID exists: player changed nickname
       if (score > existingByUid.score) {
         stmts.updateLb.run(score, date, name, uid, existingByUid.id);
-        const res = stmts.getRankByScore.get(score);
+        const res = stmts.getRankByScore.get(m, score);
         rank = res ? res.rank : 1;
       } else {
         stmts.updateLb.run(existingByUid.score, existingByUid.date, name, uid, existingByUid.id);
-        const res = stmts.getRankByScore.get(existingByUid.score);
+        const res = stmts.getRankByScore.get(m, existingByUid.score);
         rank = res ? res.rank : 1;
       }
     } else if (existingByName) {
@@ -259,25 +307,25 @@ module.exports = {
       // Associate with this device's UUID.
       if (score > existingByName.score) {
         stmts.updateLb.run(score, date, name, uid, existingByName.id);
-        const res = stmts.getRankByScore.get(score);
+        const res = stmts.getRankByScore.get(m, score);
         rank = res ? res.rank : 1;
       } else {
         stmts.updateLb.run(existingByName.score, existingByName.date, name, uid, existingByName.id);
-        const res = stmts.getRankByScore.get(existingByName.score);
+        const res = stmts.getRankByScore.get(m, existingByName.score);
         rank = res ? res.rank : 1;
       }
     } else {
       // Brand new entry
-      const { lastInsertRowid } = stmts.insertLb.run(name, score, date, uid);
-      const { rank: newRank } = stmts.getRankById.get(lastInsertRowid);
+      const { lastInsertRowid } = stmts.insertLb.run(name, score, date, uid, m);
+      const { rank: newRank } = stmts.getRankById.get(lastInsertRowid, lastInsertRowid);
       rank = newRank;
     }
 
-    stmts.trimLb.run();
+    stmts.trimLb.run(m, m);
     return rank;
   },
-  getRankedStats()   { return stmts.getRankedStats.get(); },
-  getRankedByMonth() { return stmts.getRankedByMonth.all(); },
+  getRankedStats(mode = DEFAULT_RANKED_MODE)   { return stmts.getRankedStats.get(RANKED_MODES.includes(mode) ? mode : DEFAULT_RANKED_MODE); },
+  getRankedByMonth(mode = DEFAULT_RANKED_MODE) { return stmts.getRankedByMonth.all(RANKED_MODES.includes(mode) ? mode : DEFAULT_RANKED_MODE); },
 
   // ── Stats ────────────────────────────────────────────────────
   getStatsByDate(date) {
@@ -296,14 +344,18 @@ module.exports = {
   },
 
   // ── Game Play logging ────────────────────────────────────────
-  logGamePlay(mode, userId, date) {
+  logGamePlay(mode, userId, date, country) {
     const d = date || new Date().toISOString().split("T")[0];
     const uid = userId ? String(userId).trim().slice(0, 128) : null;
-    stmts.logGamePlay.run(mode, d, Date.now(), uid);
+    const cc  = country ? String(country).trim().toUpperCase().slice(0, 2) : null;
+    stmts.logGamePlay.run(mode, d, Date.now(), uid, cc);
   },
   getGamePlays() {
     return stmts.getGamePlays.all();
   },
+  getGamesPerUserByCat() { return stmts.getGamesPerUserByCat.all(); },
+  getPlaysByCountry()    { return stmts.getPlaysByCountry.all(); },
+  getUniqueUsersByCountry() { return stmts.getUniqueUsersByCountry.all(); },
 
   // ── User analytics ──────────────────────────────────────────────────────
   getUniqueUserCount() { return stmts.getUniqueUserCount.get(); },

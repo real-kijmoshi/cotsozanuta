@@ -1,0 +1,361 @@
+const express = require("express");
+const genius = require("../../utils/genius");
+const db = require("../../utils/db");
+const state = require("../state");
+const { adminAuth, timingSafeEqual } = require("../middleware/adminAuth");
+const { loginLimiter } = require("../rateLimiters");
+const jwt = require("jsonwebtoken");
+
+const router = express.Router();
+
+function calcMedian(arr) {
+    if (!arr.length) return null;
+    const sorted = [...arr].sort((a, b) => a - b);
+    const mid = Math.floor(sorted.length / 2);
+    return sorted.length % 2 ? sorted[mid] : Math.round((sorted[mid - 1] + sorted[mid]) / 2 * 10) / 10;
+}
+
+router.post("/login", loginLimiter, (req, res) => {
+    const pwd = process.env.ADMIN_PASSWORD;
+    if (!pwd) return res.status(500).json({ error: "ADMIN_PASSWORD not set" });
+    if (!timingSafeEqual(String(req.body.password || ""), pwd)) return res.status(401).json({ error: "Wrong password" });
+    const secret = process.env.ADMIN_JWT_SECRET || pwd
+    const token = jwt.sign({ admin: true }, secret, { expiresIn: process.env.ADMIN_JWT_EXPIRES || '12h' })
+    res.json({ ok: true, token })
+})
+
+router.get("/songs", adminAuth, async (req, res) => {
+    try {
+        const songs = await genius.getAllSongs(state.otsochodziId);
+        res.json(songs.map(s => ({ id: s.id, title: s.title, cover: s.cover || null, artists: s.artists || [] })));
+    } catch (e) {
+        res.status(500).json({ error: "Failed to fetch songs" });
+    }
+})
+
+router.get("/lyrics/:songId", adminAuth, async (req, res) => {
+    const songIdInt = parseInt(req.params.songId, 10);
+    if (!Number.isInteger(songIdInt) || songIdInt <= 0) {
+        return res.status(400).json({ error: "Invalid songId" });
+    }
+    if (!state.otsochodziId || !genius.isArtistSong(state.otsochodziId, songIdInt)) {
+        return res.status(404).json({ error: "Song not in Otsochodzi catalog" });
+    }
+    try {
+        const info = await genius.getSongById(songIdInt);
+        if (!info?.lyrics) return res.status(404).json({ error: "No lyrics found" });
+        res.json({ lyrics: info.lyrics, title: info.title, cover: info.cover || null, wordCount: info.lyrics.split(/\s+/).filter(Boolean).length });
+    } catch (e) {
+        res.status(500).json({ error: "Failed to fetch lyrics" });
+    }
+})
+
+router.get("/daily", adminAuth, (req, res) => {
+    try {
+        res.json(db.getDaily());
+    } catch (e) {
+        res.status(500).json({ error: "Failed to read daily" });
+    }
+})
+
+router.post("/daily", adminAuth, (req, res) => {
+    const { date, songID, wordIndex } = req.body;
+    if (!date || !songID || typeof wordIndex !== "number") return res.status(400).json({ error: "Missing fields" });
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return res.status(400).json({ error: "Invalid date format" });
+    if (wordIndex < 0 || !Number.isInteger(wordIndex)) return res.status(400).json({ error: "Invalid wordIndex" });
+    try {
+        db.upsertDaily({ date, songID, wordIndex });
+        res.json({ ok: true });
+    } catch (e) {
+        res.status(500).json({ error: "Failed to write daily" });
+    }
+})
+
+router.delete("/daily/:date", adminAuth, (req, res) => {
+    try {
+        db.deleteDaily(req.params.date);
+        res.json({ ok: true });
+    } catch (e) {
+        res.status(500).json({ error: "Failed to write daily" });
+    }
+})
+
+router.get("/stats-overview", adminAuth, (req, res) => {
+    try {
+        const raw = db.getAllStats();  // { "YYYY-MM-DD": { correct: [], giveup: [] } }
+        const dates = Object.keys(raw).sort();
+
+        const perDay = dates.map(d => {
+            const day = raw[d];
+            const correct = day.correct.length;
+            const giveup  = day.giveup.length;
+            const plays   = correct + giveup;
+            const avgWords = plays ? Math.round([...day.correct, ...day.giveup].reduce((a, b) => a + b, 0) / plays * 10) / 10 : 0;
+            return { date: d, plays, correct, giveup, avgWords };
+        });
+
+        // monthly active users (unique days played per month treated as proxy)
+        const byMonth = {};
+        for (const d of perDay) {
+            const m = d.date.slice(0, 7);
+            if (!byMonth[m]) byMonth[m] = { month: m, plays: 0, correct: 0, giveup: 0, days: 0 };
+            byMonth[m].plays   += d.plays;
+            byMonth[m].correct += d.correct;
+            byMonth[m].giveup  += d.giveup;
+            byMonth[m].days    += 1;
+        }
+
+        const totals = perDay.reduce((acc, d) => {
+            acc.plays   += d.plays;
+            acc.correct += d.correct;
+            acc.giveup  += d.giveup;
+            return acc;
+        }, { plays: 0, correct: 0, giveup: 0 });
+
+        // ── Streaks ──────────────────────────────────────────────
+        const todayStr = new Date().toISOString().split('T')[0];
+        const dateSet  = new Set(dates);
+        let currentStreak = 0;
+        { const d = new Date(todayStr); while (dateSet.has(d.toISOString().split('T')[0])) { currentStreak++; d.setDate(d.getDate() - 1); } }
+        let bestStreak = 0, runStreak = 0;
+        for (let i = 0; i < dates.length; i++) {
+            if (i === 0) { runStreak = 1; }
+            else { runStreak = (new Date(dates[i]) - new Date(dates[i - 1])) / 86400000 === 1 ? runStreak + 1 : 1; }
+            if (runStreak > bestStreak) bestStreak = runStreak;
+        }
+
+        // ── Peak day ─────────────────────────────────────────────
+        const peakDay = perDay.length ? perDay.reduce((best, d) => d.plays > best.plays ? d : best) : null;
+
+        // ── Week & month trends ───────────────────────────────────
+        const nowMs = Date.now();
+        const thisWeekPlays = perDay.filter(d => (nowMs - new Date(d.date).getTime()) / 86400000 < 7).reduce((s, d) => s + d.plays, 0);
+        const lastWeekPlays = perDay.filter(d => { const age = (nowMs - new Date(d.date).getTime()) / 86400000; return age >= 7 && age < 14; }).reduce((s, d) => s + d.plays, 0);
+        const weekTrend = lastWeekPlays ? Math.round((thisWeekPlays - lastWeekPlays) / lastWeekPlays * 100) : null;
+        const prevMonthDate = new Date(todayStr); prevMonthDate.setDate(1); prevMonthDate.setMonth(prevMonthDate.getMonth() - 1);
+        const thisMonth = todayStr.slice(0, 7), lastMonth = prevMonthDate.toISOString().slice(0, 7);
+        const thisMonthPlays = perDay.filter(d => d.date.startsWith(thisMonth)).reduce((s, d) => s + d.plays, 0);
+        const lastMonthPlays = perDay.filter(d => d.date.startsWith(lastMonth)).reduce((s, d) => s + d.plays, 0);
+        const monthTrend = lastMonthPlays ? Math.round((thisMonthPlays - lastMonthPlays) / lastMonthPlays * 100) : null;
+
+        // ── Avg words per outcome ─────────────────────────────────
+        const allCorrectWords = Object.values(raw).flatMap(d => d.correct);
+        const allGiveupWords  = Object.values(raw).flatMap(d => d.giveup);
+        const avgWordsCorrect = allCorrectWords.length ? Math.round(allCorrectWords.reduce((a, b) => a + b, 0) / allCorrectWords.length * 10) / 10 : null;
+        const avgWordsGiveup  = allGiveupWords.length  ? Math.round(allGiveupWords.reduce((a, b) => a + b, 0) / allGiveupWords.length  * 10) / 10 : null;
+
+        // ── Median words per outcome ──────────────────────────────
+        const medianWordsCorrect = calcMedian(allCorrectWords);
+        const medianWordsGiveup  = calcMedian(allGiveupWords);
+
+        // ── Word count distribution (buckets of 3 words) ─────────
+        const allWords = [...allCorrectWords, ...allGiveupWords];
+        const distMax  = allWords.length ? Math.max(...allWords) : 0;
+        const BUCKET   = 3;
+        const wordDistribution = [];
+        for (let i = 1; i <= Math.min(distMax + BUCKET, 33); i += BUCKET) {
+            const lo = i, hi = i + BUCKET - 1;
+            wordDistribution.push({
+                label:   `${lo}–${hi}`,
+                correct: allCorrectWords.filter(w => w >= lo && w <= hi).length,
+                giveup:  allGiveupWords.filter(w => w >= lo && w <= hi).length,
+            });
+        }
+        const peakBucket = wordDistribution.length
+            ? wordDistribution.reduce((best, b) => (b.correct + b.giveup) > (best.correct + best.giveup) ? b : best)
+            : null;
+
+        // ── Game Plays detailed breakdown (Daily, Endless, Ranked, Audio) ──
+        // "text" modes = lyric-based (daily, endless, ranked); "audio" = guess-by-sound.
+        // We keep them separate everywhere so the two experiences can be compared.
+        const gamePlaysRaw = db.getGamePlays(); // [{ mode, date, count }]
+        const playsByDate = {}; // { "YYYY-MM-DD": { endless, ranked, daily, audio } }
+        const blank = () => ({ endless: 0, ranked: 0, daily: 0, audio: 0 });
+
+        // Populate endless, ranked and audio from game_plays
+        for (const row of gamePlaysRaw) {
+            if (!playsByDate[row.date]) playsByDate[row.date] = blank();
+            if (row.mode === "endless") playsByDate[row.date].endless += row.count;
+            if (row.mode === "ranked")  playsByDate[row.date].ranked  += row.count;
+            if (row.mode === "audio")   playsByDate[row.date].audio   += row.count;
+        }
+
+        // Populate daily completions from daily_stats (for backward compatibility and total accuracy)
+        for (const d of perDay) {
+            if (!playsByDate[d.date]) playsByDate[d.date] = blank();
+            playsByDate[d.date].daily += d.plays; // daily plays = correct + giveup in daily_stats
+        }
+
+        // Build a sorted array of all unique dates and their breakdown
+        const allStatsDates = Array.from(new Set([
+            ...Object.keys(playsByDate),
+            ...dates
+        ])).sort();
+
+        const gamePlaysBreakdown = allStatsDates.map(d => {
+            const p = playsByDate[d] || blank();
+            const text = p.daily + p.endless + p.ranked;
+            return {
+                date: d,
+                daily: p.daily,
+                endless: p.endless,
+                ranked: p.ranked,
+                audio: p.audio,
+                text,                       // sum of lyric-based modes
+                total: text + p.audio
+            };
+        });
+
+        const totalEndless = gamePlaysBreakdown.reduce((s, g) => s + g.endless, 0);
+        const totalRanked  = gamePlaysBreakdown.reduce((s, g) => s + g.ranked, 0);
+        const totalDaily   = gamePlaysBreakdown.reduce((s, g) => s + g.daily, 0);
+        const totalAudio   = gamePlaysBreakdown.reduce((s, g) => s + g.audio, 0);
+        const totalText    = totalEndless + totalRanked + totalDaily;
+        const totalPlaysAll = totalText + totalAudio;
+
+        // ── Avg & median games per unique user (overall + per category) ──
+        const uniqueUsers = db.getUniqueUserCount().total || 0;
+        const avgGamesPerUser = uniqueUsers ? Math.round(totalPlaysAll / uniqueUsers * 10) / 10 : null;
+        const gamesPerUserRows = db.getGamesPerUser(); // already sorted ASC by games
+        const medianGamesPerUser = calcMedian(gamesPerUserRows.map(r => r.games));
+
+        // Per-category games/user: how much a user plays audio vs text.
+        const perCatRows = db.getGamesPerUserByCat(); // [{ user_id, category, games }]
+        const textGamesByUser  = perCatRows.filter(r => r.category === "text").map(r => r.games);
+        const audioGamesByUser = perCatRows.filter(r => r.category === "audio").map(r => r.games);
+        const gamesPerUserByCat = {
+            text:  { avg: textGamesByUser.length  ? Math.round(totalText  / textGamesByUser.length  * 10) / 10 : null, median: calcMedian(textGamesByUser),  players: textGamesByUser.length },
+            audio: { avg: audioGamesByUser.length ? Math.round(totalAudio / audioGamesByUser.length * 10) / 10 : null, median: calcMedian(audioGamesByUser), players: audioGamesByUser.length },
+        };
+
+        const monthlyGamePlays = {}; // { "YYYY-MM": { daily, endless, ranked, audio, text, total } }
+        for (const g of gamePlaysBreakdown) {
+            const m = g.date.slice(0, 7);
+            if (!monthlyGamePlays[m]) {
+                monthlyGamePlays[m] = { month: m, daily: 0, endless: 0, ranked: 0, audio: 0, text: 0, total: 0 };
+            }
+            monthlyGamePlays[m].daily   += g.daily;
+            monthlyGamePlays[m].endless += g.endless;
+            monthlyGamePlays[m].ranked  += g.ranked;
+            monthlyGamePlays[m].audio   += g.audio;
+            monthlyGamePlays[m].text    += g.text;
+            monthlyGamePlays[m].total   += g.total;
+        }
+        const monthlyGamePlaysList = Object.values(monthlyGamePlays).sort((a,b) => a.month.localeCompare(b.month));
+
+        // ── Where plays come from (country), split text vs audio ──
+        const countryRows = db.getPlaysByCountry();       // [{ country, category, count }]
+        const usersByCountry = db.getUniqueUsersByCountry(); // [{ country, users }]
+        const countryMap = {};
+        for (const r of countryRows) {
+            if (!countryMap[r.country]) countryMap[r.country] = { country: r.country, text: 0, audio: 0, total: 0, users: 0 };
+            countryMap[r.country][r.category] += r.count;
+            countryMap[r.country].total += r.count;
+        }
+        for (const r of usersByCountry) {
+            if (!countryMap[r.country]) countryMap[r.country] = { country: r.country, text: 0, audio: 0, total: 0, users: 0 };
+            countryMap[r.country].users = r.users;
+        }
+        const countries = Object.values(countryMap).sort((a, b) => b.total - a.total);
+
+        res.json({
+            dates, perDay, totals,
+            byMonth: Object.values(byMonth).sort((a, b) => a.month.localeCompare(b.month)),
+            streak:   { current: currentStreak, best: bestStreak },
+            peakDay,
+            trends:   { week: weekTrend, month: monthTrend, thisWeekPlays, lastWeekPlays, thisMonthPlays, lastMonthPlays },
+            avgWords: { correct: avgWordsCorrect, giveup: avgWordsGiveup },
+            medianWords: { correct: medianWordsCorrect, giveup: medianWordsGiveup },
+            wordDistribution, peakBucket,
+            avgGamesPerUser, medianGamesPerUser,
+            gamesPerUserByCat,
+            countries,
+            gamePlays: {
+                breakdown: gamePlaysBreakdown,
+                totals: {
+                    daily: totalDaily,
+                    endless: totalEndless,
+                    ranked: totalRanked,
+                    audio: totalAudio,
+                    text: totalText,
+                    all: totalPlaysAll
+                },
+                monthly: monthlyGamePlaysList
+            }
+        });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: "Failed to build stats overview" });
+    }
+})
+
+router.get("/ranked-overview", adminAuth, (req, res) => {
+    try {
+        const mode     = db.normalizeMode(req.query.mode);
+        const stats    = db.getRankedStats(mode);
+        const byMonth  = db.getRankedByMonth(mode).map(r => ({
+            month:       r.month,
+            submissions: r.submissions,
+            avgScore:    Math.round((r.avgScore || 0) * 10) / 10,
+            topScore:    r.topScore || 0,
+        }));
+        const topScores = db.getLeaderboard(mode, 10);
+        res.json({
+            mode,
+            total:    stats.total    || 0,
+            avgScore: stats.avgScore ? Math.round(stats.avgScore * 10) / 10 : 0,
+            topScore: stats.topScore || 0,
+            byMonth,
+            topScores,
+        });
+    } catch (e) {
+        res.status(500).json({ error: "Failed to fetch ranked overview" });
+    }
+})
+
+router.get("/users-overview", adminAuth, (req, res) => {
+    try {
+        const todayStr = new Date().toISOString().split("T")[0];
+        const weekAgo  = new Date(Date.now() - 7  * 86400000).toISOString().split("T")[0];
+        const monthAgo = new Date(Date.now() - 30 * 86400000).toISOString().split("T")[0];
+
+        const totalUnique = db.getUniqueUserCount().total || 0;
+        const newByMonth  = db.getNewUsersByMonth();
+        const dauByDate   = db.getDauByDate();
+
+        // New users this week / this month (first appearance within window)
+        const newThisWeek  = newByMonth.reduce((s, r) => {
+            // can't filter by week from monthly buckets, use DAU approach instead
+            return s;
+        }, 0);
+        // Compute new-user counts from raw first-seen data using a direct query proxy:
+        // We count entries in newByMonth whose month >= weekAgo month and <= today
+        // For exact week-level: use a threshold on dauByDate dates
+        const newUsersThisWeek  = newByMonth
+            .filter(r => r.month >= weekAgo.slice(0, 7))
+            .reduce((s, r) => s + r.new_users, 0);
+        const newUsersThisMonth = newByMonth
+            .filter(r => r.month === todayStr.slice(0, 7))
+            .reduce((s, r) => s + r.new_users, 0);
+
+        // DAU today and last 7-day average
+        const dauToday = (dauByDate.find(r => r.date === todayStr) || { dau: 0 }).dau;
+        const last7Dau = dauByDate.filter(r => r.date >= weekAgo).map(r => r.dau);
+        const avgDauWeek = last7Dau.length ? Math.round(last7Dau.reduce((a, b) => a + b, 0) / last7Dau.length) : 0;
+
+        res.json({
+            totalUnique,
+            newUsersThisWeek,
+            newUsersThisMonth,
+            dauToday,
+            avgDauWeek,
+            newByMonth,   // [{ month, new_users }]
+            dauByDate,    // [{ date, dau }]
+        });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: "Failed to build users overview" });
+    }
+})
+
+module.exports = router;

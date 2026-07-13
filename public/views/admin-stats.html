@@ -56,6 +56,16 @@
     .section-label.accent-yellow { border-color: var(--yellow);color: var(--yellow); }
     .section-label.accent-red    { border-color: var(--red);   color: var(--red); }
 
+    /* ── RANKED MODE TABS ── */
+    .rank-mode-tabs { display: flex; gap: 0; border: 1px solid var(--border); flex-shrink: 0; }
+    .rank-mode-tab { background: none; border: none; border-right: 1px solid var(--border); cursor: pointer;
+      padding: 6px 12px; font-family: var(--mono); font-size: .58rem; letter-spacing: .1em; text-transform: uppercase;
+      color: var(--sub); transition: color .12s, background .12s; }
+    .rank-mode-tab:last-child { border-right: none; }
+    .rank-mode-tab:hover { color: var(--text); }
+    .rank-mode-tab.active { background: var(--red); color: #fff; }
+    .rank-mode-tab:disabled { opacity: .5; cursor: default; }
+
     /* ── STATS CARDS ── */
     .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 8px; }
     .kpi { background: var(--surface); border: 1px solid var(--border); border-left-width: 3px; padding: 16px 20px; }
@@ -160,6 +170,16 @@
         <div class="kpi-label">tryb rankingowy</div>
         <div class="kpi-sub" id="kpi-ranked-sub">—</div>
       </div>
+      <div class="kpi accent-yellow">
+        <div class="kpi-val yellow" id="kpi-audio-plays">—</div>
+        <div class="kpi-label">tryb audio</div>
+        <div class="kpi-sub" id="kpi-audio-sub">—</div>
+      </div>
+      <div class="kpi accent-green">
+        <div class="kpi-val green" id="kpi-text-plays">—</div>
+        <div class="kpi-label">tryby tekstowe</div>
+        <div class="kpi-sub" id="kpi-text-sub">dzienny + endless + rank</div>
+      </div>
     </div>
 
     <!-- ── WYNIKI DZIENNE ── -->
@@ -258,7 +278,7 @@
           <div id="trend-month-desc" style="font-size:.56rem; color:var(--sub2); letter-spacing:.04em;">Ten miesiąc: — vs ubiegły: —</div>
         </div>
         <div style="padding: 4px 0 4px 20px;">
-          <div style="font-size:.56rem; color:var(--sub); letter-spacing:.14em; text-transform:uppercase; margin-bottom:10px;">Ranking · podsumowanie</div>
+          <div style="font-size:.56rem; color:var(--sub); letter-spacing:.14em; text-transform:uppercase; margin-bottom:10px;">Ranking · podsumowanie · <span id="trend-ranked-mode-lbl">1 min</span></div>
           <div style="display:flex; align-items:baseline; gap:10px; margin-bottom:6px;">
             <span id="trend-ranked-avg" style="font-size:1.6rem; font-weight:bold; color:var(--green);">—</span>
             <span style="font-size:.56rem; text-transform:uppercase; color:var(--sub); letter-spacing:.1em;">śr. wynik</span>
@@ -280,6 +300,7 @@
             <div class="legend-item"><div class="legend-color" style="background:var(--green)"></div>dzienna</div>
             <div class="legend-item"><div class="legend-color" style="background:var(--blue)"></div>endless</div>
             <div class="legend-item"><div class="legend-color" style="background:var(--red)"></div>rankingowa</div>
+            <div class="legend-item"><div class="legend-color" style="background:var(--yellow)"></div>audio</div>
           </div>
         </div>
         <div class="chart-wrap">
@@ -295,6 +316,7 @@
             <div class="legend-item"><div class="legend-color" style="background:var(--green)"></div>dzienne</div>
             <div class="legend-item"><div class="legend-color" style="background:var(--blue)"></div>endless</div>
             <div class="legend-item"><div class="legend-color" style="background:var(--red)"></div>rank</div>
+            <div class="legend-item"><div class="legend-color" style="background:var(--yellow)"></div>audio</div>
           </div>
         </div>
         <div class="chart-wrap">
@@ -320,7 +342,7 @@
 
       <!-- ranked stats and overview charts -->
       <div class="chart-panel">
-        <div class="chart-title">Średni wynik rankingowy miesięcznie</div>
+        <div class="chart-title">Średni wynik rankingowy miesięcznie &middot; <span id="chart-ranked-avg-mode-lbl">1 min</span></div>
         <div class="chart-wrap">
           <canvas class="chart" id="chart-ranked-avg"></canvas>
         </div>
@@ -328,7 +350,7 @@
 
       <!-- ranked submission volume -->
       <div class="chart-panel">
-        <div class="chart-title">Zgłoszenia do tabeli wyników</div>
+        <div class="chart-title">Zgłoszenia do tabeli wyników &middot; <span id="chart-ranked-sub-mode-lbl">1 min</span></div>
         <div class="chart-wrap">
           <canvas class="chart" id="chart-ranked-submissions"></canvas>
         </div>
@@ -367,12 +389,19 @@
     </div>
 
     <!-- LEADERBOARD & DETAILED LIST -->
-    <div class="section-label" style="margin-bottom:16px">Tabele</div>
+    <div class="section-label" style="margin-bottom:16px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+      <span>Tabele</span>
+      <div class="rank-mode-tabs" id="admin-rank-mode-tabs">
+        <button class="rank-mode-tab active" data-mode="sprint60">1 min</button>
+        <button class="rank-mode-tab" data-mode="sprint180">3 min</button>
+        <button class="rank-mode-tab" data-mode="survival">survival</button>
+      </div>
+    </div>
     <div class="charts-grid">
-      
+
       <!-- Top players -->
       <div class="table-panel" style="margin-bottom:0">
-        <h2>Unikalni liderzy rankingu (najlepszy wynik handlowy)</h2>
+        <h2>Unikalni liderzy rankingu (najlepszy wynik) &middot; <span id="leaderboard-mode-lbl">1 min</span></h2>
         <div class="table-container">
           <table id="leaderboard-table">
             <thead>
@@ -415,6 +444,50 @@
         </div>
       </div>
 
+    </div>
+
+    <!-- ── SKĄD GRAJĄ (KRAJE) ── -->
+    <div class="section-label accent-blue" style="margin:28px 0 16px">Skąd grają · kraje (tekst vs audio)</div>
+    <div class="charts-grid">
+      <div class="table-panel" style="margin-bottom:0">
+        <h2>Uruchomienia wg kraju</h2>
+        <div class="table-container">
+          <table id="country-table">
+            <thead>
+              <tr>
+                <th>Kraj</th>
+                <th class="text-center">Gracze</th>
+                <th class="text-center" style="color:var(--green)">Tekst</th>
+                <th class="text-center" style="color:var(--yellow)">Audio</th>
+                <th class="text-right">Razem</th>
+              </tr>
+            </thead>
+            <tbody id="country-tbody">
+              <tr><td colspan="5" style="text-align:center;color:var(--sub2)">ładowanie danych geograficznych...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- audio vs text engagement -->
+      <div class="table-panel" style="margin-bottom:0">
+        <h2>Zaangażowanie · tekst vs audio</h2>
+        <div class="table-container">
+          <table id="engagement-table">
+            <thead>
+              <tr>
+                <th>Tryb</th>
+                <th class="text-center">Gracze</th>
+                <th class="text-center">Śr. gier/gracz</th>
+                <th class="text-right">Mediana gier/gracz</th>
+              </tr>
+            </thead>
+            <tbody id="engagement-tbody">
+              <tr><td colspan="4" style="text-align:center;color:var(--sub2)">ładowanie...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
 
   </div>
@@ -660,6 +733,8 @@
   let cachedRanked = null;
   let cachedUsers = null;
   let resizeListenerAdded = false;
+  let currentRankedMode = 'sprint60';
+  const RANKED_MODE_LABELS = { sprint60: '1 min', sprint180: '3 min', survival: 'survival' };
 
   // Populate DOM from cached objects (used on initial load and refresh)
   function populateFromCaches() {
@@ -681,6 +756,12 @@
 
     document.getElementById('kpi-ranked-plays').textContent = stats.gamePlays?.totals?.ranked ?? 0
     document.getElementById('kpi-ranked-sub').textContent = `zgłoszenia: ${ranked.total || 0}`
+
+    const audioTotal = stats.gamePlays?.totals?.audio ?? 0
+    document.getElementById('kpi-audio-plays').textContent = audioTotal
+    document.getElementById('kpi-audio-sub').textContent = `mediana/gracz: ${stats.gamesPerUserByCat?.audio?.median ?? '—'}`
+    document.getElementById('kpi-text-plays').textContent = stats.gamePlays?.totals?.text ?? 0
+    document.getElementById('kpi-text-sub').innerHTML = `mediana/gracz: ${stats.gamesPerUserByCat?.text?.median ?? '—'}`
 
     // Populating KPIs Row 2
     document.getElementById('kpi-streak-cur').textContent = stats.streak?.current ?? '—'
@@ -741,6 +822,11 @@
     document.getElementById('trend-month-desc').innerHTML = `Ten miesiąc: <strong style="color:var(--text);">${t.thisMonthPlays || 0}</strong> vs ubiegły miesiąc: <strong style="color:var(--sub);">${t.lastMonthPlays || 0}</strong>`
 
     // General Ranked trends
+    const rankedModeLbl = RANKED_MODE_LABELS[ranked.mode || currentRankedMode] || currentRankedMode
+    document.getElementById('trend-ranked-mode-lbl').textContent = rankedModeLbl
+    document.getElementById('leaderboard-mode-lbl').textContent = rankedModeLbl
+    document.getElementById('chart-ranked-avg-mode-lbl').textContent = rankedModeLbl
+    document.getElementById('chart-ranked-sub-mode-lbl').textContent = rankedModeLbl
     document.getElementById('trend-ranked-avg').textContent = ranked.avgScore || '0'
     document.getElementById('trend-ranked-desc').innerHTML = `Najwyższy wynik: <strong style="color:var(--yellow);">${ranked.topScore || 0}</strong> (unikalne wpisy: <strong>${ranked.total || 0}</strong>)`
 
@@ -775,6 +861,36 @@
       dailyTbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--sub2)">brak danych historycznych</td></tr>`
     }
 
+    // RENDER COUNTRIES TABLE
+    const countryTbody = document.getElementById('country-tbody')
+    if (countryTbody) {
+      const rows = stats.countries || []
+      if (rows.length) {
+        countryTbody.innerHTML = rows.slice(0, 25).map(c => `<tr>
+          <td style="font-weight:bold">${flagEmoji(c.country)} ${c.country === '??' ? 'nieznany' : esc(c.country)}</td>
+          <td class="text-center">${c.users || 0}</td>
+          <td class="text-center" style="color:var(--green)">${c.text || 0}</td>
+          <td class="text-center" style="color:var(--yellow)">${c.audio || 0}</td>
+          <td class="text-right" style="font-weight:bold">${c.total || 0}</td>
+        </tr>`).join('')
+      } else {
+        countryTbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--sub2)">brak danych geograficznych (dane pojawią się po wdrożeniu za CDN)</td></tr>`
+      }
+    }
+
+    // RENDER ENGAGEMENT (text vs audio) TABLE
+    const engTbody = document.getElementById('engagement-tbody')
+    if (engTbody) {
+      const g = stats.gamesPerUserByCat || {}
+      const mkRow = (label, d, color) => `<tr>
+        <td style="font-weight:bold;color:${color}">${label}</td>
+        <td class="text-center">${d?.players ?? 0}</td>
+        <td class="text-center">${d?.avg ?? '—'}</td>
+        <td class="text-right" style="font-weight:bold">${d?.median ?? '—'}</td>
+      </tr>`
+      engTbody.innerHTML = mkRow('Tekstowe', g.text, 'var(--green)') + mkRow('Audio', g.audio, 'var(--yellow)')
+    }
+
     // Ensure resize listener only added once
     if (!resizeListenerAdded) {
       window.addEventListener('resize', debounce(() => { renderCharts() }, 250))
@@ -793,7 +909,8 @@
       drawStackedBarChart('chart-gameplays-daily', dateLabels, [
         { name: 'Dzienny', values: last30.map(x => x.daily), color: 'rgba(34,197,94,0.75)' },
         { name: 'Endless', values: last30.map(x => x.endless), color: 'rgba(59,130,246,0.65)' },
-        { name: 'Ranked',  values: last30.map(x => x.ranked), color: 'rgba(239,68,68,0.55)' }
+        { name: 'Ranked',  values: last30.map(x => x.ranked), color: 'rgba(239,68,68,0.55)' },
+        { name: 'Audio',   values: last30.map(x => x.audio || 0), color: 'rgba(234,179,8,0.6)' }
       ])
     }
 
@@ -804,7 +921,8 @@
       drawStackedBarChart('chart-gameplays-monthly', mLabels, [
         { name: 'Dzienny', values: monthly.map(x => x.daily), color: 'rgba(34,197,94,0.75)' },
         { name: 'Endless', values: monthly.map(x => x.endless), color: 'rgba(59,130,246,0.65)' },
-        { name: 'Ranked',  values: monthly.map(x => x.ranked), color: 'rgba(239,68,68,0.55)' }
+        { name: 'Ranked',  values: monthly.map(x => x.ranked), color: 'rgba(239,68,68,0.55)' },
+        { name: 'Audio',   values: monthly.map(x => x.audio || 0), color: 'rgba(234,179,8,0.6)' }
       ])
     }
 
@@ -865,7 +983,7 @@
       cachedStats = stats
 
       // 2. Fetch ranked overview
-      const sr2 = await API('/api/admin/ranked-overview')
+      const sr2 = await API('/api/admin/ranked-overview?mode=' + encodeURIComponent(currentRankedMode))
       const ranked = await sr2.json()
       cachedRanked = ranked
 
@@ -878,7 +996,12 @@
       // attach refresh button handler
       const refreshBtn = document.getElementById('refresh-btn')
       if (refreshBtn) refreshBtn.addEventListener('click', refreshStats)
-      
+
+      // attach ranked mode tab handlers
+      document.querySelectorAll('#admin-rank-mode-tabs .rank-mode-tab').forEach(tab => {
+        tab.addEventListener('click', () => selectRankedMode(tab.dataset.mode))
+      })
+
     } catch (err) {
       console.error(err)
       toast('Nie udało się załadować danych statystycznych', 'err')
@@ -892,7 +1015,7 @@
     try {
       const r1 = await API('/api/admin/stats-overview')
       if (r1.ok) cachedStats = await r1.json()
-      const r2 = await API('/api/admin/ranked-overview')
+      const r2 = await API('/api/admin/ranked-overview?mode=' + encodeURIComponent(currentRankedMode))
       if (r2.ok) cachedRanked = await r2.json()
       const r3 = await API('/api/admin/users-overview')
       cachedUsers = r3.ok ? await r3.json() : cachedUsers
@@ -906,9 +1029,36 @@
     }
   }
 
+  // Switch the ranked leaderboard/charts to another sub-mode's board without
+  // refetching the (unrelated) main stats/users overviews.
+  async function selectRankedMode(mode) {
+    if (mode === currentRankedMode || !RANKED_MODE_LABELS[mode]) return
+    const tabs = document.querySelectorAll('#admin-rank-mode-tabs .rank-mode-tab')
+    tabs.forEach(t => { t.disabled = true })
+    try {
+      const r = await API('/api/admin/ranked-overview?mode=' + encodeURIComponent(mode))
+      if (!r.ok) throw new Error('bad response')
+      cachedRanked = await r.json()
+      currentRankedMode = mode
+      tabs.forEach(t => t.classList.toggle('active', t.dataset.mode === mode))
+      populateFromCaches()
+    } catch (e) {
+      console.error(e)
+      toast('Błąd ładowania rankingu dla tego trybu', 'err')
+    } finally {
+      tabs.forEach(t => { t.disabled = false })
+    }
+  }
+
   // Helper clear esc
   function esc(s) {
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+  }
+
+  // Turn a 2-letter ISO country code into its flag emoji ("PL" → 🇵🇱)
+  function flagEmoji(cc) {
+    if (!cc || cc.length !== 2 || cc === '??' || !/^[A-Za-z]{2}$/.test(cc)) return '🌐'
+    return String.fromCodePoint(...cc.toUpperCase().split('').map(c => 0x1F1E6 + c.charCodeAt(0) - 65))
   }
 
   // Debouncing for resize performance

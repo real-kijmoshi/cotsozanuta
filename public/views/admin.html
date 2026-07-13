@@ -15,6 +15,7 @@
       --sub: #8a7f7a;
       --sub2: #5a5250;
       --ok: #22c55e;
+      --yellow: #eab308;
       --mono: 'Courier New', monospace;
     }
     body { background: var(--bg); color: var(--text); font-family: var(--mono); min-height: 100vh; padding: 32px 16px; }
@@ -113,6 +114,7 @@
     .kpi-val { font-size: 1.6rem; letter-spacing: .04em; color: var(--text); line-height: 1; margin-bottom: 4px; }
     .kpi-val.green { color: var(--ok); }
     .kpi-val.red   { color: var(--red); }
+    .kpi-val.yellow { color: var(--yellow); }
     .kpi-val.up    { color: var(--ok); }
     .kpi-val.down  { color: var(--red); }
     .kpi-label { font-size: .5rem; letter-spacing: .18em; text-transform: uppercase; color: var(--sub2); }
@@ -219,7 +221,7 @@
       </div>
 
       <!-- KPIs row 2 — growth & difficulty -->
-      <div class="kpi-row" style="margin-bottom:20px">
+      <div class="kpi-row" style="margin-bottom:14px">
         <div class="kpi"><div class="kpi-val" id="kpi-streak-cur">—</div><div class="kpi-label">seria dni</div></div>
         <div class="kpi"><div class="kpi-val" id="kpi-streak-best">—</div><div class="kpi-label">najlepsza seria</div></div>
         <div class="kpi"><div class="kpi-val" id="kpi-peak">—</div><div class="kpi-label">rekordowy dzień</div><div class="kpi-sub" id="kpi-peak-date"></div></div>
@@ -227,6 +229,13 @@
         <div class="kpi"><div class="kpi-val" id="kpi-month-trend">—</div><div class="kpi-label">t/t miesiąc</div><div class="kpi-sub" id="kpi-month-sub"></div></div>
         <div class="kpi"><div class="kpi-val" id="kpi-avg-correct-w">—</div><div class="kpi-label">śr. słów (sukces)</div></div>
         <div class="kpi"><div class="kpi-val red" id="kpi-avg-giveup-w">—</div><div class="kpi-label">śr. słów (poddanie)</div></div>
+      </div>
+
+      <!-- KPIs row 3 — audio vs lyrics -->
+      <div class="kpi-row" style="margin-bottom:20px">
+        <div class="kpi"><div class="kpi-val yellow" id="kpi-audio-plays">—</div><div class="kpi-label">tryb audio</div><div class="kpi-sub" id="kpi-audio-sub">—</div></div>
+        <div class="kpi"><div class="kpi-val green" id="kpi-text-plays">—</div><div class="kpi-label">tryb tekst</div><div class="kpi-sub" id="kpi-text-sub">dzienny + endless + rank</div></div>
+        <div class="kpi"><div class="kpi-val" id="kpi-audio-share">—</div><div class="kpi-label">udział audio</div></div>
       </div>
 
       <!-- bar charts -->
@@ -548,6 +557,16 @@
     document.getElementById('kpi-month-sub').textContent = mt.sub
     document.getElementById('kpi-avg-correct-w').textContent = d.avgWords?.correct ?? '—'
     document.getElementById('kpi-avg-giveup-w').textContent  = d.avgWords?.giveup  ?? '—'
+
+    // audio vs lyrics
+    const gp = d.gamePlays?.totals ?? {}
+    const totalAudio = gp.audio ?? 0
+    const totalText  = gp.text  ?? 0
+    const totalAll   = (gp.all ?? (totalAudio + totalText)) || d.totals.plays
+    document.getElementById('kpi-audio-plays').textContent = totalAudio
+    document.getElementById('kpi-text-plays').textContent  = totalText
+    document.getElementById('kpi-audio-sub').textContent   = totalAll ? Math.round(totalAudio / totalAll * 100) + '% wszystkich' : '—'
+    document.getElementById('kpi-audio-share').textContent = totalAll ? Math.round(totalAudio / totalAll * 100) + '%' : '—'
 
     // last 30 days for bar charts
     const last30 = d.perDay.slice(-30)

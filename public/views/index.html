@@ -253,6 +253,33 @@
     .mode-switch button:hover{color:var(--text);background:rgba(227,28,18,0.1)}
     .mode-switch button.active{background:var(--red);color:#fff}
 
+    /* ─── GAME TYPE SWITCH (Tekst / Audio) ──────────────
+       Shares the mode-bar tab aesthetic: full-width, underline-active. */
+    #type-switch{
+      display:flex;width:100%;margin:0;
+      background:rgba(6,4,4,0.92);
+      border-bottom:1px solid rgba(255,255,255,0.06);
+      backdrop-filter:blur(6px);
+      position:relative;z-index:96;
+    }
+    #type-switch button{
+      flex:1;padding:12px 10px;border:none;
+      border-right:1px solid rgba(255,255,255,0.05);
+      background:transparent;
+      font-family:var(--mono);font-size:.75rem;letter-spacing:.14em;text-transform:uppercase;
+      color:var(--sub);cursor:pointer;position:relative;
+      transition:color .12s,background .12s;
+    }
+    #type-switch button:last-child{border-right:none}
+    #type-switch button::after{
+      content:'';position:absolute;bottom:0;left:0;right:0;height:2px;
+      background:var(--red);transform:scaleX(0);transform-origin:center;
+      transition:transform .15s cubic-bezier(0.15,0,0,1);
+    }
+    #type-switch button:hover{color:var(--text);background:rgba(255,255,255,0.03)}
+    #type-switch button.active{color:var(--text)}
+    #type-switch button.active::after{transform:scaleX(1)}
+
     /* ─── MODE TAB BAR ─────────────────────────────────── */
     #mode-bar{
       display:flex;
@@ -628,6 +655,10 @@
       background:rgba(227,28,18,0.06);backdrop-filter:blur(4px);
     }
     #ranked-bar.show{display:flex}
+    #ranked-mode-lbl{
+      font-family:var(--mono);font-size:.56rem;letter-spacing:.16em;text-transform:uppercase;
+      color:var(--red);border:1px solid rgba(227,28,18,0.35);padding:4px 9px;
+    }
     #ranked-timer{
       font-family:var(--display);font-size:2.1rem;color:var(--text);
       letter-spacing:.06em;min-width:52px;text-align:center;
@@ -793,43 +824,88 @@
     }
     .word-anim{animation:wordIn .18s cubic-bezier(0.15,0,0,1) forwards}
 
+    /* ─── AUDIO BLOCK ───────────────────────────────────── */
+    #sc-holder{position:absolute;width:1px;height:1px;overflow:hidden;left:-9999px;top:auto;pointer-events:none}
+    #sc-holder iframe{width:1px;height:1px;border:0}
+    #audio-block{
+      width:100%;display:flex;flex-direction:column;align-items:center;gap:26px;
+    }
+    /* clean primary pill — matches #next-btn, not a big orb */
+    #audio-play-btn{
+      display:inline-flex;align-items:center;gap:10px;
+      font-family:var(--display);font-size:.95rem;letter-spacing:.14em;text-transform:uppercase;
+      background:var(--red);border:none;
+      padding:12px 32px;color:#fff;cursor:pointer;
+      box-shadow:0 6px 22px rgba(227,28,18,0.30);
+      transition:transform .14s cubic-bezier(.2,.85,.25,1),box-shadow .18s ease,background .18s ease,opacity .14s;
+    }
+    #audio-play-btn:hover{transform:translateY(-1px);box-shadow:0 9px 28px rgba(227,28,18,0.45)}
+    #audio-play-btn:active{transform:translateY(0);box-shadow:0 4px 16px rgba(227,28,18,0.3)}
+    #audio-play-btn:disabled{opacity:.4;cursor:not-allowed;pointer-events:none;transform:none;box-shadow:none}
+    #audio-play-btn svg{color:#fff;flex-shrink:0}
+    /* while sounding: switch to a dark ghost so it reads as "active" */
+    #audio-play-btn.playing{background:rgba(10,6,6,0.85);box-shadow:inset 0 0 0 1px rgba(227,28,18,0.55),0 6px 22px rgba(0,0,0,0.4)}
+    #audio-play-label{line-height:1;padding-top:1px}
+    #audio-timeline{position:relative;width:min(580px,88%);height:16px}
+    #audio-segments{position:absolute;inset:0;display:flex;gap:5px}
+    .audio-seg{
+      flex-basis:0;height:100%;border-radius:5px;
+      background:rgba(255,255,255,0.06);
+      transition:background .3s ease,box-shadow .3s ease,flex-grow .3s ease;
+    }
+    .audio-seg.unlocked{background:rgba(255,255,255,0.2)}
+    .audio-seg.current{background:rgba(227,28,18,0.5);box-shadow:0 0 12px rgba(227,28,18,0.25)}
+    #audio-playhead{
+      position:absolute;top:-3px;bottom:-3px;width:5px;border-radius:3px;
+      background:#fff;left:0;transform:translateX(-50%);
+      box-shadow:0 0 10px rgba(255,255,255,0.7),0 0 20px var(--red-glow);
+      transition:left .1s linear;pointer-events:none;
+    }
+    #audio-snippet-label{
+      font-family:var(--mono);font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;
+      color:var(--text);font-variant-numeric:tabular-nums;
+    }
+
     /* ─── CONTROLS ──────────────────────────────────────── */
     #controls{width:100%;display:flex;flex-direction:column;align-items:center;gap:10px}
-    .input-row{position:relative;width:100%;display:flex;gap:0}
+    /* The row is one unified surface; input + reveal live inside it flush,
+       so the "+ dźwięk" action reads as part of the field, not a bolted-on box. */
+    .input-row{
+      position:relative;width:100%;display:flex;gap:0;
+      background:rgba(6,4,4,0.88);
+      border:1px solid rgba(255,255,255,0.1);
+      border-left:3px solid var(--red);
+      backdrop-filter:blur(10px);
+      transition:background .2s ease,border-color .2s ease,box-shadow .2s ease;
+    }
+    .input-row:focus-within{
+      background:rgba(10,6,6,0.97);
+      border-top-color:rgba(255,255,255,0.22);
+      border-right-color:rgba(255,255,255,0.22);
+      border-bottom-color:rgba(255,255,255,0.22);
+      box-shadow:inset 0 0 0 1px rgba(227,28,18,0.08),-4px 0 24px rgba(227,28,18,0.08);
+    }
 
     #song-input{
       flex:1;min-width:0;
-      background:rgba(6,4,4,0.88);
-      border:1px solid rgba(255,255,255,0.1);
-      border-right:none;
-      border-left:3px solid var(--red);
+      background:transparent;border:none;
       padding:14px 18px;
       font-family:var(--mono);font-size:.88rem;letter-spacing:.04em;
       color:var(--text);outline:none;
-      backdrop-filter:blur(10px);
-      transition:background .15s,border-color .15s,box-shadow .15s;
     }
     #song-input::placeholder{color:var(--sub);text-transform:uppercase;font-size:.65rem;letter-spacing:.14em}
-    #song-input:focus{
-      background:rgba(10,6,6,0.97);
-      border-top-color:rgba(255,255,255,0.22);
-      border-bottom-color:rgba(255,255,255,0.22);
-      box-shadow:inset 0 0 0 1px rgba(227,28,18,0.08),-4px 0 24px rgba(227,28,18,0.08);
-      outline:none;
-    }
 
     #reveal-btn{
       flex-shrink:0;
-      background:rgba(6,4,4,0.88);
-      border:1px solid rgba(255,255,255,0.1);
-      border-left:1px solid rgba(255,255,255,0.06);
-      padding:14px 16px;
+      background:transparent;border:none;
+      border-left:1px solid rgba(255,255,255,0.08);
+      padding:14px 18px;
       font-family:var(--mono);font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;
       color:var(--sub);cursor:pointer;white-space:nowrap;
-      backdrop-filter:blur(10px);
-      transition:color .12s,background .12s,border-color .12s;
+      transition:color .2s ease,background .2s ease;
     }
-    #reveal-btn:hover{color:var(--text);background:rgba(227,28,18,0.12);border-color:rgba(227,28,18,0.25)}
+    #reveal-btn:hover{color:var(--red);background:rgba(227,28,18,0.1)}
+    #reveal-btn:active{background:rgba(227,28,18,0.16)}
     #reveal-btn:disabled{opacity:.3;cursor:not-allowed;pointer-events:none}
 
     /* ─── AUTOCOMPLETE ──────────────────────────────────── */
@@ -1138,6 +1214,42 @@
     }
     .du-btn-secondary:hover{color:var(--text);border-color:rgba(255,255,255,0.25)}
 
+    /* ─── ERROR SCREEN ───────────────────────────────────── */
+    #error{
+      display:none;flex-direction:column;align-items:center;justify-content:center;
+      text-align:center;width:100%;max-width:480px;
+      animation:correctPop .3s cubic-bezier(0.15,0,0,1.1) forwards;
+    }
+    #error.show{display:flex}
+    .err-icon{
+      color:rgba(227,28,18,0.45);
+      margin-bottom:20px;
+    }
+    .err-title{
+      font-family:var(--display);font-size:2rem;letter-spacing:.1em;
+      text-transform:uppercase;color:var(--text);margin-bottom:8px;
+    }
+    .err-title span{color:var(--red)}
+    .err-card{
+      width:100%;padding:20px 24px;
+      background:rgba(10,6,6,0.85);
+      border:1px solid rgba(255,255,255,0.06);
+      border-left:3px solid var(--red);
+      display:flex;flex-direction:column;gap:10px;
+      margin-bottom:28px;
+    }
+    .err-msg{
+      font-family:var(--mono);font-size:.78rem;letter-spacing:.04em;
+      color:var(--sub);line-height:1.65;
+    }
+    .err-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+    .err-btn-primary{
+      font-family:var(--display);font-size:.85rem;letter-spacing:.12em;text-transform:uppercase;
+      background:var(--red);border:none;padding:9px 26px 8px;
+      color:#fff;cursor:pointer;transition:opacity .12s;
+    }
+    .err-btn-primary:hover{opacity:.85}
+
     /* ─── SHAKE ─────────────────────────────────────────── */
     @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}60%{transform:translateX(5px)}80%{transform:translateX(-3px)}}
     .shake{animation:shake .25s ease}
@@ -1263,6 +1375,107 @@
     }
     .re-play-again:hover{opacity:.85}
 
+    /* ─── ANNOUNCEMENT TOAST ───────────────────────────── */
+    #announcement-toast{
+      position:fixed;top:18px;left:50%;transform:translateX(-50%) translateY(-160%);
+      z-index:400;max-width:min(92vw,420px);width:max-content;
+      background:rgba(10,6,6,0.96);
+      border:1px solid rgba(227,28,18,0.45);
+      border-left:4px solid var(--red);
+      border-radius:6px;
+      box-shadow:0 12px 40px rgba(0,0,0,0.55),0 0 24px rgba(227,28,18,0.12);
+      padding:14px 18px;
+      display:flex;align-items:center;gap:14px;
+      font-family:var(--cond);
+      color:var(--text);
+      opacity:0;
+      transition:transform .45s cubic-bezier(.22,1,.36,1),opacity .35s ease;
+      pointer-events:none;
+    }
+    #announcement-toast.show{
+      transform:translateX(-50%) translateY(0);
+      opacity:1;
+      pointer-events:auto;
+    }
+    #announcement-toast .toast-icon{
+      width:34px;height:34px;border-radius:50%;
+      background:rgba(227,28,18,0.18);
+      display:flex;align-items:center;justify-content:center;
+      font-size:1.1rem;flex-shrink:0;
+    }
+    #announcement-toast .toast-body{flex:1;min-width:0}
+    #announcement-toast .toast-title{
+      font-family:var(--display);font-size:1.05rem;letter-spacing:.04em;
+      text-transform:uppercase;line-height:1.1;margin-bottom:3px;
+    }
+    #announcement-toast .toast-sub{
+      font-size:.82rem;color:var(--sub);line-height:1.25;
+    }
+    #announcement-toast .toast-close{
+      background:none;border:none;color:var(--sub);font-size:1.1rem;
+      cursor:pointer;padding:4px;line-height:1;transition:color .12s;
+      flex-shrink:0;
+    }
+    #announcement-toast .toast-close:hover{color:var(--text)}
+    @media (max-width:640px){
+      #announcement-toast{top:12px;padding:12px 14px;gap:10px}
+      #announcement-toast .toast-icon{width:28px;height:28px;font-size:.95rem}
+      #announcement-toast .toast-title{font-size:.95rem}
+      #announcement-toast .toast-sub{font-size:.76rem}
+    }
+
+    /* ─── RANKED SUB-MODE PICKER ─────────────────────── */
+    #ranked-select{
+      display:none;position:fixed;inset:0;z-index:200;
+      background:rgba(6,4,4,0.97);
+      flex-direction:column;align-items:center;justify-content:center;padding:32px;
+    }
+    #ranked-select.show{display:flex}
+    .rs-card{
+      background:rgba(10,6,6,0.98);
+      border:1px solid rgba(255,255,255,0.08);
+      border-top:3px solid var(--red);
+      width:100%;max-width:460px;overflow:hidden;
+    }
+    .rs-header{padding:22px 28px 16px;border-bottom:1px solid rgba(255,255,255,0.06)}
+    .rs-eyebrow{font-family:var(--mono);font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;color:var(--sub);margin-bottom:6px}
+    .rs-title{font-family:var(--display);font-size:2rem;letter-spacing:.04em;line-height:1;color:var(--text)}
+    .rs-modes{padding:8px 0}
+    .rs-mode{
+      width:100%;text-align:left;background:none;border:none;cursor:pointer;
+      display:flex;align-items:center;gap:14px;padding:14px 28px;
+      border-left:3px solid transparent;transition:background .1s,border-color .1s;
+    }
+    .rs-mode:hover{background:rgba(227,28,18,0.08);border-left-color:var(--red)}
+    .rs-mode-clock{
+      flex-shrink:0;width:44px;height:44px;border:1px solid rgba(255,255,255,0.12);
+      display:flex;align-items:center;justify-content:center;
+      font-family:var(--display);font-size:.82rem;letter-spacing:.02em;color:var(--red);
+    }
+    .rs-mode-body{display:flex;flex-direction:column;gap:3px;min-width:0}
+    .rs-mode-name{font-family:var(--display);font-size:1.05rem;letter-spacing:.06em;text-transform:uppercase;color:var(--text)}
+    .rs-mode-desc{font-family:var(--mono);font-size:.66rem;letter-spacing:.03em;color:var(--sub);line-height:1.5}
+    .rs-mode-arrow{margin-left:auto;flex-shrink:0;font-family:var(--mono);color:var(--sub2);transition:transform .1s,color .1s}
+    .rs-mode:hover .rs-mode-arrow{transform:translateX(4px);color:var(--red)}
+    .rs-actions{padding:14px 28px;display:flex}
+    .rs-cancel{
+      flex:1;background:none;border:1px solid rgba(255,255,255,0.12);padding:9px;
+      font-family:var(--mono);font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;
+      color:var(--sub);cursor:pointer;transition:color .12s,border-color .12s;
+    }
+    .rs-cancel:hover{color:var(--text);border-color:rgba(255,255,255,0.25)}
+
+    /* ─── SPLASH LEADERBOARD MODE TABS ───────────────── */
+    .slb-tabs{display:flex;gap:0;margin:2px 0 8px;border:1px solid rgba(255,255,255,0.08)}
+    .slb-tab{
+      flex:1;background:none;border:none;border-right:1px solid rgba(255,255,255,0.08);
+      padding:7px 4px;font-family:var(--mono);font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;
+      color:var(--sub2);cursor:pointer;transition:color .12s,background .12s;
+    }
+    .slb-tab:last-child{border-right:none}
+    .slb-tab:hover{color:var(--text)}
+    .slb-tab.active{background:var(--red);color:#fff}
+
     /* ─── SPLASH PERSONAL STATS ──────────────────────── */
     #splash-stats{
       margin-top:36px;
@@ -1323,6 +1536,15 @@
       transition:width .6s cubic-bezier(0.15,0,0,1);
     }
     .ss-dist-count{font-family:var(--mono);font-size:.56rem;color:var(--sub2);text-align:right}
+    .ss-cat-tabs{display:flex;gap:6px;margin-bottom:12px}
+    .ss-cat-tab{
+      flex:1;
+      background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);
+      color:var(--sub2);font-family:var(--mono);font-size:.52rem;letter-spacing:.14em;text-transform:uppercase;
+      padding:8px 0;cursor:pointer;transition:all .15s;
+    }
+    .ss-cat-tab:hover{background:rgba(255,255,255,0.06);color:var(--text)}
+    .ss-cat-tab.active{background:var(--red);border-color:var(--red);color:#fff}
     @media(max-width:520px){
       #splash-stats{margin-top:24px}
       .ss-kpis{grid-template-columns:repeat(2,1fr)}
@@ -1562,6 +1784,15 @@
 </head>
 <body>
 
+<div id="announcement-toast" role="status" aria-live="polite" aria-atomic="true" style="display:none">
+  <div class="toast-icon" aria-hidden="true">🔊</div>
+  <div class="toast-body">
+    <div class="toast-title">Nowy tryb audio jest dodany!</div>
+    <div class="toast-sub">Sprawdź, czy rozpoznasz utwór Otsochodzi po dźwięku.</div>
+  </div>
+  <button class="toast-close" aria-label="Zamknij ogłoszenie">&#10005;</button>
+</div>
+
 <div id="bg-photo"></div>
 <div id="bg-noise"></div>
 <div id="bg-scan"></div>
@@ -1586,6 +1817,11 @@
     </button>
   </div>
 </nav>
+
+<div id="type-switch" role="tablist" aria-label="Rodzaj gry">
+  <button data-type="lyrics">Tekst</button>
+  <button data-type="audio" class="active">Audio</button>
+</div>
 
 <div id="mode-bar">
   <button class="mode-bar-btn" data-mode="endless">
@@ -1615,28 +1851,35 @@
         <div class="qs-step">
           <div class="qs-num">1</div>
           <div class="qs-step-body">
-            <span class="qs-step-title">Jedno słowo z tekstu</span>
-            <span class="qs-step-desc">Na ekranie pojawia się <b>jedno losowe słowo</b> z tekstu piosenki Otsochodzi. Na tej podstawie próbujesz odgadnąć tytuł.</span>
+            <span class="qs-step-title">Wybierz tryb: Tekst lub Audio</span>
+            <span class="qs-step-desc">W trybie <b>Tekst</b> zgadujesz po słowach z tekstu piosenki. W trybie <b>Audio</b> słyszysz fragment utworu z YouTube i musisz rozpoznać tytuł po dźwięku.</span>
           </div>
         </div>
         <div class="qs-step">
           <div class="qs-num">2</div>
+          <div class="qs-step-body">
+            <span class="qs-step-title">Jedno słowo lub krótki fragment</span>
+            <span class="qs-step-desc">W tekście pojawia się <b>jedno losowe słowo</b>. W audio odtwarzany jest krótki fragment &mdash; z każdym podpowiedzią fragment się wydłuża.</span>
+          </div>
+        </div>
+        <div class="qs-step">
+          <div class="qs-num">3</div>
           <div class="qs-step-body">
             <span class="qs-step-title">Wpisz tytuł piosenki</span>
             <span class="qs-step-desc">Zacznij pisać w polu i wybierz piosenkę z podpowiedzi. Autocomplete zawiera <b>całą dyskografię</b> &mdash; nie musisz wpisywać dokładnie.</span>
           </div>
         </div>
         <div class="qs-step">
-          <div class="qs-num">3</div>
+          <div class="qs-num">4</div>
           <div class="qs-step-body">
-            <span class="qs-step-title">Odkrywaj więcej słów</span>
-            <span class="qs-step-desc">Nie wiesz? Kliknij <b>+1 słowo</b>, żeby zobaczyć kolejne słowo z tekstu. Im więcej słów potrzebujesz, tym trudniejsza zagadka &mdash; spróbuj zgadnąć na jak najmniejszej liczbie słów.</span>
+            <span class="qs-step-title">Odkrywaj więcej</span>
+            <span class="qs-step-desc">Nie wiesz? Kliknij <b>+1 słowo</b> lub odtwórz kolejny fragment. Im mniej podpowiedzi potrzebujesz, tym lepiej &mdash; spróbuj zgadnąć jak najszybciej.</span>
           </div>
         </div>
         <div class="qs-step">
-          <div class="qs-num">4</div>
+          <div class="qs-num">5</div>
           <div class="qs-step-body">
-            <span class="qs-step-title">Podaj się lub zdobądź punkt</span>
+            <span class="qs-step-title">Poddaj się lub zdobądź punkt</span>
             <span class="qs-step-desc">Trafisz? Wygrywasz rundę i możesz grać dalej. Nie dajesz rady? Kliknij <b>poddaj się</b>, żeby ujawnić odpowiedź.</span>
           </div>
         </div>
@@ -1664,7 +1907,14 @@
           <span class="qs-mode-icon"><svg width="18" height="18" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="12" r="8"/><line x1="11" y1="12" x2="11" y2="7"/><line x1="11" y1="12" x2="15" y2="14"/><line x1="8" y1="2" x2="14" y2="2"/></svg></span>
           <div class="qs-mode-body">
             <span class="qs-mode-name">Rankingowy</span>
-            <span class="qs-mode-desc"><b>60 sekund</b> na zgadnięcie jak największej liczby piosenek. Zdobyte punkty możesz zapisać na liście najlepszych wyników.</span>
+            <span class="qs-mode-desc">Trzy tryby z osobnymi rankingami: <b>1 minuta</b>, <b>3 minuty</b> oraz <b>survival</b> (jeden błąd i koniec). Zapisz wynik na liście najlepszych.</span>
+          </div>
+        </div>
+        <div class="qs-mode-row">
+          <span class="qs-mode-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></span>
+          <div class="qs-mode-body">
+            <span class="qs-mode-name">Audio</span>
+            <span class="qs-mode-desc">Zgaduj piosenkę po dźwięku. Dostępny w trybach <b>Bez końca</b>, <b>Dziennym</b> i <b>Rankingowym</b>. Przełączasz go przełącznikiem Tekst / Audio nad trybami gry.</span>
           </div>
         </div>
       </div>
@@ -1675,7 +1925,8 @@
       <div style="font-family:var(--mono);font-size:.72rem;letter-spacing:.04em;color:var(--sub);line-height:1.7">
         &#9632;&nbsp; W ustawieniach możesz zmienić ile słów odkrywa się naraz (+1, +2 lub +3).<br>
         &#9632;&nbsp; Hinty (album, rok) odblokowują się po odkryciu 5 słów &mdash; kliknij by je zobaczyć. Niedostępne w rankingowym.<br>
-        &#9632;&nbsp; W trybie rankingowym pomiń piosenkę przyciskiem <b>pomiń</b> &mdash; czas leci!
+        &#9632;&nbsp; W trybie rankingowym pomiń piosenkę przyciskiem <b>pomiń</b> &mdash; czas leci!<br>
+        &#9632;&nbsp; Statystyki osobiste są rozdzielone na tryb <b>tekst</b> i <b>audio</b> &mdash; przełączasz je w swoich statystykach.
       </div>
     </div>
     <button class="qs-start-btn" id="qs-play-btn">zagraj teraz &#8594;</button>
@@ -1772,6 +2023,7 @@
 </div>
 
 <div id="ranked-bar">
+  <div id="ranked-mode-lbl">1 min</div>
   <div id="ranked-timer">1:00</div>
   <div id="ranked-score-disp">wynik&nbsp;&nbsp;<span id="ranked-score-val">0</span></div>
 </div>
@@ -1803,7 +2055,7 @@
       <button class="mode-card" data-mode="ranked">
         <span class="mc-icon"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="12" r="8"/><line x1="11" y1="12" x2="11" y2="7"/><line x1="11" y1="12" x2="15" y2="14"/><line x1="8" y1="2" x2="14" y2="2"/></svg></span>
         <span class="mc-name">Rankingowy</span>
-        <span class="mc-desc">60 sekund &mdash; zgadnij<br>ile tylko możesz</span>
+        <span class="mc-desc">3 tryby &mdash; 1 min,<br>3 min i survival</span>
         <span class="mc-arrow">zagraj &#8594;</span>
       </button>
     </div>
@@ -1812,6 +2064,11 @@
       <div class="slb-header">
         <span class="slb-title">&#9632;&nbsp; top 10 &mdash; rankingowy</span>
         <span class="slb-subtitle">najlepsze wyniki</span>
+      </div>
+      <div class="slb-tabs" id="slb-tabs">
+        <button class="slb-tab active" data-mode="sprint60">1 min</button>
+        <button class="slb-tab" data-mode="sprint180">3 min</button>
+        <button class="slb-tab" data-mode="survival">survival</button>
       </div>
       <div class="slb-divider"></div>
       <div class="slb-rows" id="slb-rows"><div class="slb-empty">ładowanie&#8230;</div></div>
@@ -1842,6 +2099,22 @@
       <button class="du-btn-secondary" id="du-prev-day-btn">&#8592; poprzedni dzień</button>
     </div>
   </div>
+  <div id="error">
+    <div class="err-icon">
+      <svg width="52" height="52" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
+        <circle cx="11" cy="11" r="9"/>
+        <line x1="11" y1="7" x2="11" y2="12"/>
+        <line x1="11" y1="15" x2="11.01" y2="15"/>
+      </svg>
+    </div>
+    <div class="err-title">Błąd <span>ładowania</span></div>
+    <div class="err-card">
+      <div class="err-msg" id="err-msg">Nie udało się załadować gry. Spróbuj ponownie za chwilę.</div>
+    </div>
+    <div class="err-actions">
+      <button class="err-btn-primary" id="err-retry-btn">spróbuj ponownie &#8594;</button>
+    </div>
+  </div>
   <div id="game">
     <div id="hints">
       <span id="hint-lock"></span>
@@ -1853,6 +2126,17 @@
     <div id="lyric-block">
       <div id="word-history"></div>
       <div id="current-word"></div>
+    </div>
+    <div id="audio-block" class="hidden">
+      <button id="audio-play-btn" type="button" aria-label="odtwórz fragment">
+        <svg id="audio-play-icon" width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        <span id="audio-play-label">Zagraj</span>
+      </button>
+      <div id="audio-timeline">
+        <div id="audio-segments"></div>
+        <div id="audio-playhead"></div>
+      </div>
+      <div id="audio-snippet-label">0.0 sekundy</div>
     </div>
     <div id="controls">
       <div class="input-row">
@@ -1906,10 +2190,24 @@
 </footer>
 
 <canvas id="confetti-canvas"></canvas>
+<!-- Hidden YouTube player — drives the audio-guess mode via the IFrame API -->
+<div id="sc-holder" aria-hidden="true"><div id="yt-player"></div></div>
+<div id="ranked-select">
+  <div class="rs-card">
+    <div class="rs-header">
+      <div class="rs-eyebrow">rankingowy &#183; wybierz tryb</div>
+      <div class="rs-title">Tryb rankingowy</div>
+    </div>
+    <div class="rs-modes" id="rs-modes"></div>
+    <div class="rs-actions">
+      <button class="rs-cancel" id="rs-cancel">anuluj</button>
+    </div>
+  </div>
+</div>
 <div id="ranked-end">
   <div class="re-card">
     <div class="re-header">
-      <div class="re-eyebrow">rankingowy &#183; koniec czasu</div>
+      <div class="re-eyebrow" id="re-eyebrow">rankingowy &#183; koniec czasu</div>
       <div class="re-big-score" id="re-final-score">0<span>piosenek</span></div>
     </div>
     <div class="re-name-row">
@@ -1923,6 +2221,7 @@
   </div>
 </div>
 
+<script src="https://www.youtube.com/iframe_api"></script>
 <script>
   let songId=null,wordIndex=0,revealedWords=[],solved=false,dailyDate=new Date(),acFocused=-1,activeMode='endless',revealCount=0,songTitle=null,hintsUnlocked=false
   let songCover=null,songArtists=[],songFeatured=[],lyricWords=null
@@ -1930,13 +2229,32 @@
   try{const s=JSON.parse(localStorage.getItem('settings'));if(s){settings.wordsPerReveal=s.wordsPerReveal||1;settings.startMode=s.startMode||'random';settings.albumMode=s.albumMode||'all';settings.selectedAlbums=Array.isArray(s.selectedAlbums)?s.selectedAlbums:[]}}catch(e){}
   function saveSettings(){try{localStorage.setItem('settings',JSON.stringify(settings))}catch(e){}}
   let rankedActive=false,rankedScore=0,rankedTimer=null,rankedSecondsLeft=60,rankedSessionId=null
+  // ─── RANKED SUB-MODES ───────────────────────────────────────
+  // Each sub-mode has its own leaderboard on the server. sprint* run a single
+  // whole-game clock; survival runs a per-song clock that resets each song and
+  // ends the run the moment it hits zero.
+  let rankedMode='sprint60'
+  const RANKED_META={
+    sprint60: {kind:'sprint',   label:'1 minuta',  short:'1 min',  durationS:60,  desc:'60 sekund &mdash; zgadnij ile możesz'},
+    sprint180:{kind:'sprint',   label:'3 minuty',  short:'3 min',  durationS:180, desc:'180 sekund &mdash; wersja na wytrzymałość'},
+    survival: {kind:'survival', label:'Survival',  short:'survival',perSongS:30,  desc:'30s na piosenkę &mdash; jeden błąd i koniec'},
+  }
+  const RANKED_ORDER=['sprint60','sprint180','survival']
+  function rankedScoreNoun(n){return n===1?'piosenka':(n%10>=2&&n%10<=4&&(n%100<10||n%100>=20))?'piosenki':'piosenek'}
+  // ─── AUDIO MODE STATE ───────────────────────────────────────
+  // gameType toggles between the classic lyrics game and the YouTube audio game.
+  // The snippet grows with each reveal (ms), mirroring the word-by-word reveal.
+  let gameType='audio',currentIsAudio=false
+  let ytPlayer=null,ytLoadedId=null,audioPollTimer=null,audioSnippetIdx=0,audioLimitMs=0
+  const AUDIO_SNIPPETS=[500,1000,2000,4000,8000,16000]  // ms unlocked per reveal step (geometric: 0.5s → 16s)
+  const AUDIO_FULL_MS=10*60*1000                            // effectively "whole track" after solve
   let userId=localStorage.getItem('czs_userId')
   if(!userId){
     if(typeof crypto!=='undefined'&&typeof crypto.randomUUID==='function'){userId=crypto.randomUUID()}
     else{userId='usr_'+Math.random().toString(36).slice(2,11)+'_'+Date.now().toString(36)}
     try{localStorage.setItem('czs_userId',userId)}catch(e){}
   }
-  const splash=document.getElementById('splash'),loading=document.getElementById('loading'),game=document.getElementById('game'),dailyUnavailable=document.getElementById('daily-unavailable')
+  const splash=document.getElementById('splash'),loading=document.getElementById('loading'),game=document.getElementById('game'),dailyUnavailable=document.getElementById('daily-unavailable'),errorScreen=document.getElementById('error')
   const dateBar=document.getElementById('date-bar'),dateLabel=document.getElementById('date-label')
   const historyEl=document.getElementById('word-history'),currentEl=document.getElementById('current-word')
   const input=document.getElementById('song-input'),acList=document.getElementById('ac-list')
@@ -1947,6 +2265,8 @@
   const rankedScoreVal=document.getElementById('ranked-score-val'),rankedEnd=document.getElementById('ranked-end')
   const reFinalScore=document.getElementById('re-final-score'),reBoard=document.getElementById('re-board')
   const reNameInput=document.getElementById('re-name-input'),reSubmitBtn=document.getElementById('re-submit-btn')
+  const reEyebrow=document.getElementById('re-eyebrow'),rankedModeLbl=document.getElementById('ranked-mode-lbl')
+  const rankedSelect=document.getElementById('ranked-select')
 
   const settingsOverlay=document.getElementById('settings-overlay')
   function openSettings(){
@@ -2047,9 +2367,15 @@
     loading.classList.toggle('show',s==='loading')
     game.classList.toggle('show',s==='game')
     dailyUnavailable.classList.toggle('show',s==='daily-unavailable')
+    errorScreen.classList.toggle('show',s==='error')
     if(s==='splash')renderStats()
   }
   function setFeedback(text,type){feedback.textContent=text;feedback.className=type||''}
+  function showError(message){
+    const msgEl=document.getElementById('err-msg')
+    if(msgEl)msgEl.textContent=message||'Nie udało się załadować gry. Spróbuj ponownie za chwilę.'
+    showState('error')
+  }
 
   // ─── CONFETTI ────────────────────────────────────────────
   (function(){
@@ -2136,6 +2462,7 @@
     songArtists=data.artists||[];songFeatured=data.featured||[]
     lyricWords=Array.isArray(data.words)?data.words:null
     revealedWords=[];solved=false;revealCount=0
+    currentIsAudio=gameType==='audio'
     if(activeMode==='endless'&&settings.startMode==='random'&&data.wordCount>1){
       wordIndex=Math.floor(Math.random()*Math.max(1,data.wordCount-20))
     }else{
@@ -2147,7 +2474,7 @@
     revealBtn.textContent=wLabel
     document.getElementById('next-btn').classList.remove('show')
     giveupBtn.classList.add('show')
-    giveupBtn.textContent=activeMode==='ranked'?'pomiń':'poddaj się'
+    giveupBtn.textContent=activeMode==='ranked'?(RANKED_META[rankedMode].kind==='survival'?'poddaj się':'pomiń'):'poddaj się'
     answerReveal.classList.remove('show');answerReveal.innerHTML=''
     const _ds=document.getElementById('daily-stats');if(_ds){_ds.classList.remove('show');_ds.innerHTML=''}
     const _ss=document.getElementById('share-section');if(_ss)_ss.style.display='none'
@@ -2158,8 +2485,17 @@
     document.getElementById('hint-release').textContent=data.hints&&data.hints.releaseDate?data.hints.releaseDate:''
     document.getElementById('hint-tags').classList.add('hidden')
     updateHintLock()
+    if(currentIsAudio){
+      document.getElementById('lyric-block').classList.add('hidden')
+      document.getElementById('audio-block').classList.remove('hidden')
+      await setupAudioRound(data.youtube)
+      showState('game');input.focus()
+      return
+    }
+    document.getElementById('lyric-block').classList.remove('hidden')
+    document.getElementById('audio-block').classList.add('hidden')
     const w=await fetchWord()
-    if(w===null){setFeedback('brak tekstu','info');showState('splash');return}
+    if(w===null){showError('Brak tekstu dla tej piosenki. Spróbuj ponownie.');return}
     revealedWords.push(w);wordIndex++
     renderWords();showState('game');input.focus()
   }
@@ -2170,11 +2506,146 @@
       endlessUrl+='?albums='+encodeURIComponent(settings.selectedAlbums.join(','))
     }
     const r=await fetch(endlessUrl),d=await r.json()
-    if(d.error){setFeedback(d.error,'info');showState('splash');return}
+    if(d.error){showError(d.error);return}
+    await startGame(d)
+  }
+  // ─── AUDIO MODE ───────────────────────────────────────────────
+  // Waits until the YouTube IFrame API has loaded (window.YT.Player).
+  function ensureYT(){
+    if(window.YT&&window.YT.Player)return Promise.resolve(true)
+    return new Promise(res=>{
+      let tries=0
+      const t=setInterval(()=>{
+        if(window.YT&&window.YT.Player){clearInterval(t);res(true)}
+        else if(++tries>80){clearInterval(t);res(false)}   // ~8s ceiling
+      },100)
+    })
+  }
+  const AUDIO_TOTAL_MS=AUDIO_SNIPPETS[AUDIO_SNIPPETS.length-1]
+  function setAudioPlayingUI(playing){
+    const btn=document.getElementById('audio-play-btn')
+    const icon=document.getElementById('audio-play-icon')
+    const label=document.getElementById('audio-play-label')
+    if(!btn)return
+    btn.classList.toggle('playing',playing)
+    btn.setAttribute('aria-label',playing?'odtwarzanie fragmentu':'odtwórz fragment')
+    if(icon)icon.innerHTML=playing?'<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>':'<path d="M8 5v14l11-7z"/>'
+    if(label)label.textContent=playing?'Gra…':'Zagraj'
+  }
+  // Segmented timeline: one segment per snippet step, width ∝ seconds it adds.
+  function buildAudioSegments(){
+    const wrap=document.getElementById('audio-segments')
+    if(!wrap||wrap.childElementCount)return
+    let prev=0
+    for(const s of AUDIO_SNIPPETS){
+      const seg=document.createElement('div')
+      seg.className='audio-seg'
+      seg.style.flexGrow=String(s-prev)
+      wrap.appendChild(seg);prev=s
+    }
+  }
+  function refreshAudioSegments(){
+    document.querySelectorAll('#audio-segments .audio-seg').forEach((seg,i)=>{
+      seg.classList.toggle('unlocked',i<=audioSnippetIdx)
+      seg.classList.toggle('current',i===audioSnippetIdx&&!solved)
+    })
+  }
+  function setAudioPlayhead(pos){
+    const ph=document.getElementById('audio-playhead')
+    if(!ph)return
+    ph.style.left=Math.min(100,Math.max(0,pos/AUDIO_TOTAL_MS*100))+'%'
+  }
+  function fmtSec(ms){return (ms/1000).toFixed(1)+' sekundy'}
+  // Idle label shows how much is unlocked; while playing it counts up live.
+  function updateAudioLabel(){
+    const el=document.getElementById('audio-snippet-label')
+    if(el)el.textContent=fmtSec(solved?AUDIO_TOTAL_MS:AUDIO_SNIPPETS[audioSnippetIdx])
+  }
+  function stopYtPoll(){clearInterval(audioPollTimer);audioPollTimer=null}
+  function startYtPoll(){
+    stopYtPoll()
+    const el=document.getElementById('audio-snippet-label')
+    audioPollTimer=setInterval(()=>{
+      if(!ytPlayer||typeof ytPlayer.getCurrentTime!=='function')return
+      const pos=ytPlayer.getCurrentTime()*1000
+      if(audioLimitMs>0&&pos>=audioLimitMs){
+        ytPlayer.pauseVideo();ytPlayer.seekTo(0,true)
+        setAudioPlayhead(audioLimitMs);stopYtPoll();setAudioPlayingUI(false);updateAudioLabel()
+      }else{
+        setAudioPlayhead(pos)
+        if(el)el.textContent=fmtSec(Math.min(pos,audioLimitMs))
+      }
+    },100)
+  }
+  function onYtState(e){
+    // 1 = playing, 2 = paused, 0 = ended
+    if(e.data===1){setAudioPlayingUI(true);startYtPoll()}
+    else{setAudioPlayingUI(false);stopYtPoll()}
+  }
+  function createYtPlayer(id){
+    return new Promise(res=>{
+      ytPlayer=new YT.Player('yt-player',{
+        height:'1',width:'1',videoId:id,
+        playerVars:{controls:0,disablekb:1,modestbranding:1,rel:0,playsinline:1,fs:0},
+        events:{onReady:()=>res(true),onStateChange:onYtState}
+      })
+    })
+  }
+  async function setupAudioRound(id){
+    audioSnippetIdx=0;audioLimitMs=AUDIO_SNIPPETS[0]
+    stopYtPoll()
+    buildAudioSegments();refreshAudioSegments()
+    updateAudioLabel();setAudioPlayhead(0);setAudioPlayingUI(false)
+    revealBtn.textContent='+ dźwięk'
+    const btn=document.getElementById('audio-play-btn')
+    if(btn)btn.disabled=true
+    if(!id){setFeedback('audio niedostępne','info');return}
+    const ok=await ensureYT()
+    if(!ok){setFeedback('nie udało się załadować odtwarzacza','info');return}
+    try{
+      if(!ytPlayer){await createYtPlayer(id)}
+      else{ytPlayer.cueVideoById(id)}
+      ytLoadedId=id
+    }catch(e){setFeedback('błąd audio','info');return}
+    if(btn)btn.disabled=false
+  }
+  function playAudioSnippet(){
+    if(!ytPlayer||typeof ytPlayer.playVideo!=='function')return
+    audioLimitMs=solved?AUDIO_FULL_MS:AUDIO_SNIPPETS[audioSnippetIdx]
+    setAudioPlayhead(0)
+    ytPlayer.seekTo(0,true)
+    ytPlayer.playVideo()
+  }
+  function extendAudioSnippet(){
+    if(solved)return
+    if(audioSnippetIdx>=AUDIO_SNIPPETS.length-1){
+      setFeedback('to już cały dostępny fragment','info')
+      playAudioSnippet()
+      return
+    }
+    audioSnippetIdx++;revealCount++
+    audioLimitMs=AUDIO_SNIPPETS[audioSnippetIdx]
+    refreshAudioSegments();updateAudioLabel();updateHintLock()
+    revealBtn.textContent='+ dźwięk'+(revealCount>0?' · '+revealCount:'')
+    saveDailyProgress('in-progress')  // no-op outside daily mode
+    playAudioSnippet()
+  }
+  function stopAudio(){stopYtPoll();if(ytPlayer&&typeof ytPlayer.pauseVideo==='function'){try{ytPlayer.pauseVideo()}catch(e){}}setAudioPlayingUI(false)}
+  async function loadAudioEndless(){
+    stopAudio()
+    showState('loading');setFeedback('')
+    let url='/api/game/audio/endless'
+    if(settings.albumMode==='albums'&&settings.selectedAlbums.length){
+      url+='?albums='+encodeURIComponent(settings.selectedAlbums.join(','))
+    }
+    let r,d
+    try{r=await fetch(url,{headers:{'X-User-Id':userId||''}});d=await r.json()}
+    catch(e){showError('Błąd serwera. Spróbuj ponownie.');return}
+    if(!r.ok||d.error){showError(d.error||'Brak piosenek z audio. Spróbuj ponownie.');return}
     await startGame(d)
   }
   // ─── DAILY PERSISTENCE ────────────────────────────────────────
-  function dailyKey(d){return 'daily_'+fmtISO(d)}
+  function dailyKey(d){return 'daily_'+(gameType==='audio'?'audio_':'')+fmtISO(d)}
   function saveDailyProgress(outcome,statsSubmitted){
     if(activeMode!=='daily')return
     try{
@@ -2237,8 +2708,11 @@
       })
     }catch(e){el.innerHTML=''}
   }
-  function restoreDailyProgress(saved,hints){
-    songId=saved.songId;wordIndex=saved.wordIndex;revealedWords=saved.revealedWords
+  async function restoreDailyProgress(saved,d){
+    const hints=d.hints
+    currentIsAudio=gameType==='audio'
+    const finished=saved.outcome==='correct'||saved.outcome==='giveup'
+    songId=saved.songId;wordIndex=saved.wordIndex;revealedWords=saved.revealedWords||[]
     revealCount=saved.revealCount;solved=saved.solved
     songTitle=saved.songTitle;songCover=saved.songCover||null
     songArtists=saved.songArtists||[];songFeatured=saved.songFeatured||[]
@@ -2250,12 +2724,24 @@
     document.getElementById('next-btn').classList.remove('show')
     answerReveal.classList.remove('show');answerReveal.innerHTML=''
     setFeedback('')
-    hintsUnlocked=saved.outcome==='correct'||saved.outcome==='giveup'
+    hintsUnlocked=finished
     document.getElementById('hint-album').textContent=hints&&hints.album?hints.album:''
     document.getElementById('hint-release').textContent=hints&&hints.releaseDate?hints.releaseDate:''
     document.getElementById('hint-tags').classList.toggle('hidden',!hintsUnlocked)
     updateHintLock()
-    renderWords()
+    if(currentIsAudio){
+      document.getElementById('lyric-block').classList.add('hidden')
+      document.getElementById('audio-block').classList.remove('hidden')
+      await setupAudioRound(d.youtube)
+      audioSnippetIdx=finished?AUDIO_SNIPPETS.length-1:Math.min(revealCount,AUDIO_SNIPPETS.length-1)
+      audioLimitMs=AUDIO_SNIPPETS[audioSnippetIdx]
+      refreshAudioSegments();updateAudioLabel()
+      revealBtn.textContent='+ dźwięk'+(revealCount>0?' · '+revealCount:'')
+    }else{
+      document.getElementById('lyric-block').classList.remove('hidden')
+      document.getElementById('audio-block').classList.add('hidden')
+      renderWords()
+    }
     if(saved.outcome==='correct'){
       input.disabled=true;revealBtn.disabled=true
       giveupBtn.classList.remove('show')
@@ -2291,11 +2777,16 @@
       }
       showState('daily-unavailable');return
     }
+    if(gameType==='audio'&&!d.youtube){
+      document.getElementById('du-date-label').textContent=fmtLabel(dailyDate)
+      document.getElementById('du-msg').innerHTML='Piosenka dzienna nie ma dostępnego audio.<br>Zagraj w trybie tekstowym lub wybierz inny dzień.'
+      showState('daily-unavailable');return
+    }
     try{
       const raw=localStorage.getItem(dailyKey(dailyDate))
       if(raw){
         const saved=JSON.parse(raw)
-        if(String(saved.songId)===String(d.songId)){restoreDailyProgress(saved,d.hints);return}
+        if(String(saved.songId)===String(d.songId)){await restoreDailyProgress(saved,d);return}
       }
     }catch(e){}
     await startGame(d)
@@ -2305,13 +2796,51 @@
     document.querySelectorAll('.mode-card,.mode-bar-btn').forEach(c=>c.classList.toggle('active',c.dataset.mode===mode))
   }
   function startMode(mode){
+    stopAudio()
     setActiveMode(mode)
     if(mode==='daily'){stopRankedTimer();dateBar.classList.add('show');dateLabel.textContent=fmtLabel(dailyDate);loadDaily()}
-    else if(mode==='ranked'){dateBar.classList.remove('show');loadRanked()}
-    else{stopRankedTimer();dateBar.classList.remove('show');loadEndless()}
+    else if(mode==='ranked'){stopRankedTimer();dateBar.classList.remove('show');openRankedSelect()}
+    else{stopRankedTimer();dateBar.classList.remove('show');gameType==='audio'?loadAudioEndless():loadEndless()}
   }
+  // ─── RANKED SUB-MODE PICKER ─────────────────────────────────
+  function openRankedSelect(){
+    const wrap=document.getElementById('rs-modes')
+    wrap.innerHTML=RANKED_ORDER.map(m=>{
+      const meta=RANKED_META[m]
+      const clock=meta.kind==='survival'?'∞':meta.short
+      return '<button class="rs-mode" data-mode="'+m+'">'
+        +'<span class="rs-mode-clock">'+clock+'</span>'
+        +'<span class="rs-mode-body"><span class="rs-mode-name">'+meta.label+'</span>'
+        +'<span class="rs-mode-desc">'+meta.desc+'</span></span>'
+        +'<span class="rs-mode-arrow">&#8594;</span>'
+        +'</button>'
+    }).join('')
+    wrap.querySelectorAll('.rs-mode').forEach(b=>{
+      b.addEventListener('click',()=>{closeRankedSelect();loadRanked(b.dataset.mode)})
+    })
+    rankedSelect.classList.add('show')
+  }
+  function closeRankedSelect(){rankedSelect.classList.remove('show')}
+  document.getElementById('rs-cancel').addEventListener('click',()=>{
+    closeRankedSelect()
+    document.querySelectorAll('.mode-card,.mode-bar-btn').forEach(c=>c.classList.remove('active'))
+    activeMode='endless';showState('splash')
+  })
   document.querySelectorAll('.mode-card,.mode-bar-btn').forEach(btn=>{
     btn.addEventListener('click',()=>startMode(btn.dataset.mode))
+  })
+  // ─── GAME TYPE SWITCH (Tekst / Audio) ────────────────────────
+  function setGameType(t){
+    gameType=t
+    stopAudio();stopRankedTimer();dateBar.classList.remove('show')
+    document.querySelectorAll('#type-switch button').forEach(b=>b.classList.toggle('active',b.dataset.type===t))
+    // Audio now supports every mode (Endless / Daily / Ranked) — show the full bar.
+    document.querySelectorAll('.mode-bar-btn').forEach(b=>b.classList.remove('hidden'))
+    document.querySelectorAll('.mode-card,.mode-bar-btn').forEach(c=>c.classList.remove('active'))
+    showState('splash')
+  }
+  document.querySelectorAll('#type-switch button').forEach(btn=>{
+    btn.addEventListener('click',()=>setGameType(btn.dataset.type))
   })
   document.getElementById('prev-day').addEventListener('click',()=>{dailyDate.setDate(dailyDate.getDate()-1);dateLabel.textContent=fmtLabel(dailyDate);loadDaily()})
   document.getElementById('du-prev-day-btn').addEventListener('click',()=>{dailyDate.setDate(dailyDate.getDate()-1);dateLabel.textContent=fmtLabel(dailyDate);loadDaily()})
@@ -2345,6 +2874,7 @@
   })
   revealBtn.addEventListener('click',async()=>{
     if(solved)return
+    if(currentIsAudio){extendAudioSnippet();return}
     let added=0
     while(added<settings.wordsPerReveal){
       const w=await fetchWord()
@@ -2448,6 +2978,7 @@
   function endGame(type){
     solved=true;input.disabled=true;revealBtn.disabled=true
     giveupBtn.classList.remove('show')
+    if(currentIsAudio){audioSnippetIdx=AUDIO_SNIPPETS.length-1;refreshAudioSegments();updateAudioLabel()}
     if(activeMode!=='ranked'){hintsUnlocked=true;document.getElementById('hint-tags').classList.remove('hidden');document.getElementById('hint-lock').textContent='';document.getElementById('hint-lock').classList.remove('ready')}
     if(type==='correct'){
       setFeedback('trafiłeś ✓','correct')
@@ -2459,11 +2990,15 @@
             .then(r=>r.ok?r.json():null).then(d=>{if(d&&typeof d.score==='number'){rankedScore=d.score;rankedScoreVal.textContent=rankedScore}}).catch(()=>{})
         }
         rankedScore++;rankedScoreVal.textContent=rankedScore
+        // Survival: freeze the per-song clock the instant they solve, so the
+        // ~600ms transition can't wrongly time them out mid-fetch.
+        if(RANKED_META[rankedMode].kind==='survival')clearInterval(rankedTimer)
         setTimeout(async()=>{
           if(!rankedActive)return
-          const r=await fetch('/api/game/endless?sessionId='+encodeURIComponent(rankedSessionId),{headers:{'X-User-Id':userId||''}}),d=await r.json()
+          const r=await fetch(rankedSongUrl(rankedSessionId),{headers:{'X-User-Id':userId||''}}),d=await r.json()
           if(d.error||!rankedActive)return
           await startGame(d)
+          if(RANKED_META[rankedMode].kind==='survival')startSurvivalSongTimer()
         },600)
         return
       }
@@ -2479,7 +3014,7 @@
     }else if(type==='skip'){
       setTimeout(async()=>{
         if(!rankedActive)return
-        const r=await fetch('/api/game/endless?sessionId='+encodeURIComponent(rankedSessionId),{headers:{'X-User-Id':userId||''}}),d=await r.json()
+        const r=await fetch(rankedSongUrl(rankedSessionId),{headers:{'X-User-Id':userId||''}}),d=await r.json()
         if(d.error||!rankedActive)return
         await startGame(d)
       },0)
@@ -2500,32 +3035,55 @@
   }
   function fmtTimer(s){return Math.floor(s/60)+':'+(s%60<10?'0':'')+s%60}
   function startRankedTimer(){
-    rankedSecondsLeft=60;rankedActive=true;rankedScore=0
+    const meta=RANKED_META[rankedMode]
+    rankedActive=true;rankedScore=0
     rankedScoreVal.textContent='0'
-    rankedTimerEl.textContent=fmtTimer(60)
+    rankedModeLbl.textContent=meta.short
     rankedTimerEl.classList.remove('warn')
     rankedBar.classList.add('show')
+    if(meta.kind==='survival'){startSurvivalSongTimer()}
+    else{
+      rankedSecondsLeft=meta.durationS
+      rankedTimerEl.textContent=fmtTimer(rankedSecondsLeft)
+      clearInterval(rankedTimer)
+      rankedTimer=setInterval(()=>{
+        rankedSecondsLeft--
+        rankedTimerEl.textContent=fmtTimer(rankedSecondsLeft)
+        if(rankedSecondsLeft<=10)rankedTimerEl.classList.add('warn')
+        if(rankedSecondsLeft<=0){clearInterval(rankedTimer);endRankedRound()}
+      },1000)
+    }
+  }
+  // Survival: a fresh per-song countdown; hitting zero ends the run.
+  function startSurvivalSongTimer(){
+    if(!rankedActive)return
     clearInterval(rankedTimer)
+    rankedSecondsLeft=RANKED_META.survival.perSongS
+    rankedTimerEl.textContent=fmtTimer(rankedSecondsLeft)
+    rankedTimerEl.classList.remove('warn')
     rankedTimer=setInterval(()=>{
       rankedSecondsLeft--
       rankedTimerEl.textContent=fmtTimer(rankedSecondsLeft)
-      if(rankedSecondsLeft<=10)rankedTimerEl.classList.add('warn')
+      if(rankedSecondsLeft<=5)rankedTimerEl.classList.add('warn')
       if(rankedSecondsLeft<=0){clearInterval(rankedTimer);endRankedRound()}
     },1000)
   }
   function stopRankedTimer(){clearInterval(rankedTimer);rankedActive=false;rankedBar.classList.remove('show')}
   async function endRankedRound(){
-    rankedActive=false;rankedBar.classList.remove('show')
-    reFinalScore.innerHTML=rankedScore+'<span>'+(rankedScore===1?'piosenka':rankedScore<5?'piosenki':'piosenek')+'</span>'
+    rankedActive=false;clearInterval(rankedTimer);rankedBar.classList.remove('show')
+    const meta=RANKED_META[rankedMode]
+    reEyebrow.textContent='rankingowy · '+meta.label+' · '+(meta.kind==='survival'?'koniec gry':'koniec czasu')
+    reFinalScore.innerHTML=rankedScore+'<span>'+rankedScoreNoun(rankedScore)+'</span>'
     reNameInput.value=localStorage.getItem('czs_last_username')||'';reSubmitBtn.disabled=false
-    await loadLeaderboard()
+    await loadLeaderboard(0,rankedMode)
     rankedEnd.classList.add('show')
     reNameInput.focus()
     showState('splash')
   }
-  async function loadLeaderboard(highlightScore){
+  async function loadLeaderboard(highlightScore,mode){
+    const m=mode||rankedMode
     try{
-      const r=await fetch('/api/leaderboard'),board=await r.json()
+      const r=await fetch('/api/leaderboard?mode='+encodeURIComponent(m)+'&limit=20'),board=await r.json()
       if(!board.length){reBoard.innerHTML='<div class="re-empty">brak wyników</div>';return}
       reBoard.innerHTML=board.map((e,i)=>{
         const hl=highlightScore&&e.score===highlightScore?'highlight':''
@@ -2550,32 +3108,55 @@
   document.getElementById('re-play-again').addEventListener('click',()=>{
     rankedEnd.classList.remove('show');loadRanked()
   })
-  async function loadRanked(){
+  // Ranked reuses the endless endpoint with the session; audio mode adds &audio=1
+  // so the server restricts the pool to songs with a YouTube snippet.
+  function rankedSongUrl(id){return '/api/game/endless?sessionId='+encodeURIComponent(id)+(gameType==='audio'?'&audio=1':'')}
+  async function loadRanked(mode){
+    if(mode&&RANKED_META[mode])rankedMode=mode
+    setActiveMode('ranked')
     stopRankedTimer()
     rankedSessionId=null
     showState('loading');setFeedback('')
     // Start server-side session first, then fetch first song
     let sid=null
     try{
-      const sr=await fetch('/api/ranked/start',{method:'POST',headers:{'Content-Type':'application/json','X-User-Id':userId||''},body:'{}'})
+      const sr=await fetch('/api/ranked/start',{method:'POST',headers:{'Content-Type':'application/json','X-User-Id':userId||''},body:JSON.stringify({mode:rankedMode})})
       const sd=await sr.json()
       if(sd.sessionId)sid=sd.sessionId
-    }catch(e){setFeedback('błąd serwera','info');showState('splash');return}
-    if(!sid){setFeedback('błąd serwera','info');showState('splash');return}
-    const r=await fetch('/api/game/endless?sessionId='+encodeURIComponent(sid),{headers:{'X-User-Id':userId||''}}),d=await r.json()
-    if(d.error){setFeedback(d.error,'info');showState('splash');return}
+    }catch(e){showError('Błąd serwera. Spróbuj ponownie.');return}
+    if(!sid){showError('Błąd serwera. Spróbuj ponownie.');return}
+    const r=await fetch(rankedSongUrl(sid),{headers:{'X-User-Id':userId||''}}),d=await r.json()
+    if(d.error){showError(d.error);return}
     rankedSessionId=sid
     await startGame(d)
     startRankedTimer()
   }
-  giveupBtn.addEventListener('click',()=>{if(!solved)endGame(activeMode==='ranked'?'skip':'giveup')})
-  document.getElementById('next-btn').addEventListener('click',()=>{loadEndless()})
+  giveupBtn.addEventListener('click',()=>{
+    if(solved)return
+    if(activeMode==='ranked'){
+      // Survival has no "skip" — bailing out ends the run.
+      if(RANKED_META[rankedMode].kind==='survival'){endRankedRound();return}
+      endGame('skip');return
+    }
+    endGame('giveup')
+  })
+  document.getElementById('next-btn').addEventListener('click',()=>{gameType==='audio'?loadAudioEndless():loadEndless()})
+  document.getElementById('audio-play-btn').addEventListener('click',()=>{playAudioSnippet()})
   document.getElementById('home-link').addEventListener('click',e=>{
     e.preventDefault()
     stopRankedTimer()
+    stopAudio()
+    gameType='audio'
+    document.querySelectorAll('.mode-bar-btn').forEach(b=>b.classList.remove('hidden'))
+    document.querySelectorAll('#type-switch button').forEach(b=>b.classList.toggle('active',b.dataset.type==='audio'))
     dateBar.classList.remove('show')
     document.querySelectorAll('.mode-card,.mode-bar-btn').forEach(c=>c.classList.remove('active'))
     showState('splash')
+  })
+  document.getElementById('err-retry-btn').addEventListener('click',()=>{
+    if(activeMode==='daily')loadDaily()
+    else if(activeMode==='ranked')loadRanked()
+    else gameType==='audio'?loadAudioEndless():loadEndless()
   })
   showState('splash')
 
@@ -2609,11 +3190,14 @@
   }
 
   // ─── SPLASH LEADERBOARD ───────────────────────────────────
-  async function loadSplashLeaderboard(){
+  let splashLbMode='sprint60'
+  async function loadSplashLeaderboard(mode){
+    if(mode&&RANKED_META[mode])splashLbMode=mode
     const el=document.getElementById('slb-rows')
     if(!el)return
+    el.innerHTML='<div class="slb-empty">ładowanie…</div>'
     try{
-      const r=await fetch('/api/leaderboard')
+      const r=await fetch('/api/leaderboard?mode='+encodeURIComponent(splashLbMode)+'&limit=10')
       const board=await r.json()
       if(!Array.isArray(board)||!board.length){
         el.innerHTML='<div class="slb-empty">brak wyników &mdash; bądź pierwszy!</div>'
@@ -2633,21 +3217,50 @@
       el.innerHTML='<div class="slb-empty">błąd ładowania</div>'
     }
   }
+  document.querySelectorAll('#slb-tabs .slb-tab').forEach(tab=>{
+    tab.addEventListener('click',()=>{
+      document.querySelectorAll('#slb-tabs .slb-tab').forEach(t=>t.classList.toggle('active',t===tab))
+      loadSplashLeaderboard(tab.dataset.mode)
+    })
+  })
   loadSplashLeaderboard()
 
   // ─── PLAYER STATS ─────────────────────────────────────
+  // Stats are kept per game category: "lyrics" (tekst) and "audio".
   const STATS_KEY='czs_stats'
-  function getStats(){
+  let statsCategory='lyrics' // 'lyrics' | 'audio'
+  function migrateLegacyStats(){
+    try{
+      const raw=localStorage.getItem(STATS_KEY)
+      if(!raw)return
+      const parsed=JSON.parse(raw)
+      if(parsed&&typeof parsed==='object'&&!parsed.lyrics&&!parsed.audio&&typeof parsed.gamesPlayed==='number'){
+        localStorage.setItem(STATS_KEY,JSON.stringify({lyrics:parsed,audio:emptyStats()}))
+      }
+    }catch(e){}
+  }
+  function emptyStats(){return{gamesPlayed:0,gamesWon:0,gamesGivenUp:0,currentStreak:0,maxStreak:0,lastWinDate:null,totalWordsToWin:0,dist:{}}}
+  function getStats(category){
+    migrateLegacyStats()
     try{
       const s=JSON.parse(localStorage.getItem(STATS_KEY))
-      if(s&&typeof s==='object')return{gamesPlayed:s.gamesPlayed||0,gamesWon:s.gamesWon||0,gamesGivenUp:s.gamesGivenUp||0,currentStreak:s.currentStreak||0,maxStreak:s.maxStreak||0,lastWinDate:s.lastWinDate||null,totalWordsToWin:s.totalWordsToWin||0,dist:s.dist||{}}
+      if(s&&typeof s==='object'){
+        const cat=s[category]
+        if(cat&&typeof cat==='object')return{...emptyStats(),...cat}
+      }
     }catch(e){}
-    return{gamesPlayed:0,gamesWon:0,gamesGivenUp:0,currentStreak:0,maxStreak:0,lastWinDate:null,totalWordsToWin:0,dist:{}}
+    return emptyStats()
   }
-  function saveStats(s){try{localStorage.setItem(STATS_KEY,JSON.stringify(s))}catch(e){}}
+  function saveStats(category,s){try{const all=getAllStats();all[category]=s;localStorage.setItem(STATS_KEY,JSON.stringify(all))}catch(e){}}
+  function getAllStats(){
+    migrateLegacyStats()
+    try{const s=JSON.parse(localStorage.getItem(STATS_KEY));if(s&&typeof s==='object')return{lyrics:emptyStats(),audio:emptyStats(),...s}}catch(e){}
+    return{lyrics:emptyStats(),audio:emptyStats()}
+  }
   function recordGameResult(outcome,wordsRevealed){
     if(activeMode==='ranked')return
-    const st=getStats(),today=fmtISO(new Date()),yesterday=fmtISO(new Date(Date.now()-86400000))
+    const category=currentIsAudio?'audio':'lyrics'
+    const st=getStats(category),today=fmtISO(new Date()),yesterday=fmtISO(new Date(Date.now()-86400000))
     st.gamesPlayed++
     if(outcome==='correct'){
       st.gamesWon++
@@ -2663,14 +3276,16 @@
     }else{
       st.gamesGivenUp++
     }
-    saveStats(st)
+    saveStats(category,st)
   }
   function renderStats(){
     const panel=document.getElementById('splash-stats')
     if(!panel)return
-    const st=getStats()
-    if(st.gamesPlayed===0){panel.innerHTML='';return}
-    const winRate=Math.round(st.gamesWon/st.gamesPlayed*100)
+    const all=getAllStats()
+    const hasAny=all.lyrics.gamesPlayed+all.audio.gamesPlayed
+    if(!hasAny){panel.innerHTML='';return}
+    const st=getStats(statsCategory)
+    const winRate=st.gamesPlayed?Math.round(st.gamesWon/st.gamesPlayed*100):0
     const avgWords=st.gamesWon>0?(st.totalWordsToWin/st.gamesWon).toFixed(1):'—'
     const allKeys=[]
     for(let i=1;i<=14;i++){if(st.dist[String(i)])allKeys.push(String(i))}
@@ -2688,6 +3303,10 @@
         +'<span class="ss-title">&#9632;&nbsp; twoje statystyki</span>'
         +'<button id="stats-reset-btn" class="ss-reset-btn">usuń</button>'
       +'</div>'
+      +'<div class="ss-cat-tabs" role="tablist" aria-label="Kategoria statystyk">'
+        +'<button class="ss-cat-tab'+(statsCategory==='lyrics'?' active':'')+'" data-cat="lyrics">tekst</button>'
+        +'<button class="ss-cat-tab'+(statsCategory==='audio'?' active':'')+'" data-cat="audio">audio</button>'
+      +'</div>'
       +'<div class="slb-divider"></div>'
       +'<div class="ss-kpis">'
         +'<div class="ss-kpi"><div class="ss-kpi-val accent">'+winRate+'%</div><div class="ss-kpi-lbl">winrate</div></div>'
@@ -2699,7 +3318,7 @@
     requestAnimationFrame(()=>panel.querySelectorAll('.ss-dist-fill').forEach(b=>b.style.width=b.dataset.w+'%'))
     document.getElementById('stats-reset-btn').addEventListener('click',function(){
       if(this.dataset.confirm==='1'){
-        localStorage.removeItem(STATS_KEY)
+        const all=getAllStats();all[statsCategory]=emptyStats();localStorage.setItem(STATS_KEY,JSON.stringify(all))
         renderStats()
       }else{
         this.dataset.confirm='1'
@@ -2707,6 +3326,12 @@
         const self=this
         setTimeout(()=>{if(self.dataset.confirm==='1'){self.dataset.confirm='';self.textContent='usuń'}},3000)
       }
+    })
+    panel.querySelectorAll('.ss-cat-tab').forEach(tab=>{
+      tab.addEventListener('click',()=>{
+        statsCategory=tab.dataset.cat
+        renderStats()
+      })
     })
   }
 
@@ -3012,6 +3637,8 @@
   }
 
   function showShareSection(){
+    // Sharing / saving image disabled for now
+    return
     if(activeMode==='ranked')return
     const section=document.getElementById('share-section')
     if(!section)return
@@ -3082,6 +3709,37 @@
       if(copied){copied.textContent='Błąd generowania obrazka';setTimeout(()=>{copied.textContent=''},2200)}
     }
   })
+
+  // ─── ANNOUNCEMENT TOAST ─────────────────────────────────
+  (function initAnnouncementToast(){
+    const toast=document.getElementById('announcement-toast')
+    if(!toast){console.warn('[toast] element not found');return}
+    const closeBtn=toast.querySelector('.toast-close')
+    if(!closeBtn){console.warn('[toast] close button not found');return}
+    let hideTimer
+    function hideToast(){
+      toast.classList.remove('show')
+      setTimeout(()=>{if(!toast.classList.contains('show'))toast.style.display='none'},350)
+    }
+    function showToast(){
+      toast.style.display='flex'
+      requestAnimationFrame(()=>toast.classList.add('show'))
+      hideTimer=setTimeout(hideToast,6500)
+    }
+    closeBtn.addEventListener('click',()=>{
+      clearTimeout(hideTimer)
+      hideToast()
+    })
+    // Show once per user; bump the key when the announcement changes.
+    const ANNOUNCEMENT_KEY='announcement-audio-mode-v2'
+    if(!localStorage.getItem(ANNOUNCEMENT_KEY)){
+      localStorage.setItem(ANNOUNCEMENT_KEY,'1')
+      setTimeout(showToast,900)
+      console.log('[toast] showing audio mode announcement')
+    }else{
+      console.log('[toast] already seen')
+    }
+  })()
 </script>
 </body>
 </html>

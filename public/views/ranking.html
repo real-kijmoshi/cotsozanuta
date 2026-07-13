@@ -269,6 +269,18 @@
       .td-date{display:none}
       main{padding:28px 12px 48px}
     }
+    .rank-mode-tabs{
+      display:flex;gap:0;max-width:420px;margin:0 auto 32px;
+      border:1px solid rgba(255,255,255,0.1);
+    }
+    .rank-mode-tab{
+      flex:1;background:none;border:none;border-right:1px solid rgba(255,255,255,0.1);
+      padding:11px 6px;font-family:var(--mono);font-size:.6rem;letter-spacing:.12em;
+      text-transform:uppercase;color:var(--sub);cursor:pointer;transition:color .12s,background .12s;
+    }
+    .rank-mode-tab:last-child{border-right:none}
+    .rank-mode-tab:hover{color:var(--text)}
+    .rank-mode-tab.active{background:var(--red);color:#fff}
   </style>
 </head>
 <body>
@@ -291,6 +303,11 @@
 </div>
 
 <main>
+  <div class="rank-mode-tabs" id="rank-mode-tabs">
+    <button class="rank-mode-tab active" data-mode="sprint60">1 minuta</button>
+    <button class="rank-mode-tab" data-mode="sprint180">3 minuty</button>
+    <button class="rank-mode-tab" data-mode="survival">survival</button>
+  </div>
   <div id="rank-loading">
     <div class="spinner"></div>
     <div class="load-msg">ładowanie rankingu&#8230;</div>
@@ -343,34 +360,56 @@
     return months[parseInt(parts[1])-1]+' '+parts[0];
   }
 
-  async function load() {
+  const MODE_LABELS = { sprint60:'1 minuta', sprint180:'3 minuty', survival:'survival (jeden błąd i koniec)' };
+  let currentMode = 'sprint60';
+
+  async function load(mode) {
+    if (mode && MODE_LABELS[mode]) currentMode = mode;
+    const loadingEl = document.getElementById('rank-loading');
+    const contentEl = document.getElementById('rank-content');
+    loadingEl.style.display = 'block';
+    loadingEl.innerHTML = '<div class="spinner"></div><div class="load-msg">ładowanie rankingu…</div>';
+    contentEl.style.display = 'none';
     try {
+      const q = 'mode=' + encodeURIComponent(currentMode);
       const [lbRes, monthlyRes] = await Promise.all([
-        fetch('/api/leaderboard?limit=100'),
-        fetch('/api/leaderboard/monthly'),
+        fetch('/api/leaderboard?limit=100&' + q),
+        fetch('/api/leaderboard/monthly?' + q),
       ]);
       const board   = await lbRes.json();
       const monthly = await monthlyRes.json();
 
-      document.getElementById('rank-loading').style.display = 'none';
-      document.getElementById('rank-content').style.display = 'block';
+      loadingEl.style.display = 'none';
+      contentEl.style.display = 'block';
 
       const total = Array.isArray(board) ? board.length : 0;
       document.getElementById('rank-subtitle').textContent =
-        total + ' ' + (total===1?'wynik':total<5?'wyniki':'wyników') + ' · tryb rankingowy · 60 sekund';
+        total + ' ' + (total===1?'wynik':total<5?'wyniki':'wyników') + ' · tryb rankingowy · ' + MODE_LABELS[currentMode];
 
       renderPodium(board);
       renderTable(board);
       renderMonthly(monthly);
     } catch(e) {
-      document.getElementById('rank-loading').innerHTML =
+      loadingEl.innerHTML =
         '<div style="font-family:var(--mono);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:rgba(227,28,18,0.7);text-align:center;padding:60px 0">Błąd ładowania rankingu</div>';
     }
   }
 
+  document.querySelectorAll('#rank-mode-tabs .rank-mode-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      if (tab.classList.contains('active')) return;
+      document.querySelectorAll('#rank-mode-tabs .rank-mode-tab').forEach(t => t.classList.toggle('active', t === tab));
+      load(tab.dataset.mode);
+    });
+  });
+
   function renderPodium(board) {
-    if (!board || board.length < 1) return;
     const section = document.getElementById('podium-section');
+    if (!board || board.length < 1) {
+      section.style.display = 'none';
+      document.getElementById('podium-row').innerHTML = '';
+      return;
+    }
     section.style.display = 'block';
     const medals = ['🥇','🥈','🥉'];
     const slots  = [
@@ -423,8 +462,10 @@
     const grid = document.getElementById('monthly-grid');
     if (!monthly || !monthly.length) {
       document.getElementById('monthly-section').style.display = 'none';
+      grid.innerHTML = '';
       return;
     }
+    document.getElementById('monthly-section').style.display = 'block';
     const sorted = monthly.slice().sort((a,b) => b.month.localeCompare(a.month));
     grid.innerHTML = sorted.map(r => {
       return '<div class="monthly-row">' +

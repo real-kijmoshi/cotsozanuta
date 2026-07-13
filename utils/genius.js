@@ -96,6 +96,14 @@ const getArtistIdByName = async (artistName) => {
   }
 };
 
+// Pulls the 11-char video id out of any YouTube URL shape Genius may store
+// (watch?v=, youtu.be/, embed/, v/). Returns null if none match.
+const extractYouTubeId = (url) => {
+  if (!url) return null;
+  const m = String(url).match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|v\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+  return m ? m[1] : null;
+};
+
 const cleanLyrics = (raw) => {
   return raw
     .replace(/^\d+\s*Contributors?.*?Lyrics/s, '')  // strip "X Contributors...Lyrics" prefix
@@ -260,7 +268,13 @@ const matchSingleWithAlbum = async (song) => {
 
 const getSongById = async (songId) => {
   const cacheKey = String(songId);
-  if (songCache.has(cacheKey)) return songCache.get(cacheKey);
+  if (songCache.has(cacheKey)) {
+    const cached = songCache.get(cacheKey);
+    // Self-heal entries cached before audio-media support: the `youtube`
+    // property is absent on old entries — re-fetch once to populate it.
+    if (cached && cached.youtube !== undefined) return cached;
+    songCache.delete(cacheKey);
+  }
 
   // If another caller is already fetching this song, share that promise.
   if (inFlightSongs.has(cacheKey)) return inFlightSongs.get(cacheKey);
@@ -273,6 +287,17 @@ const getSongById = async (songId) => {
       const feats = song.featured_artists && song.featured_artists.length > 0
         ? song.featured_artists.map(a => ({ id: a.id, name: a.name }))
         : [];
+
+      // Genius stores external media links (youtube/spotify/soundcloud) per song.
+      // The audio-guess mode plays a snippet via the YouTube IFrame API, so we
+      // extract the YouTube video id. YouTube covers the whole catalog (incl.
+      // major albums), whereas SoundCloud links only exist for obscure early
+      // tracks. `soundcloud` is kept too but is not used for the game.
+      const media = Array.isArray(song.media) ? song.media : [];
+      const ytMedia = media.find(m => m && m.provider === "youtube" && m.url);
+      const youtube = ytMedia ? extractYouTubeId(ytMedia.url) : null;
+      const scMedia = media.find(m => m && m.provider === "soundcloud" && m.url);
+      const soundcloud = scMedia ? scMedia.url : null;
 
       let lyrics = lyricsCache.get(song.id) ?? null;
       if (lyrics === null) {
@@ -291,6 +316,8 @@ const getSongById = async (songId) => {
         album: song.album ? { id: song.album.id, name: song.album.name } : null,
         releaseDate: song.release_date_for_display || null,
         featured: feats,
+        youtube,
+        soundcloud,
         lyrics,
       };
 

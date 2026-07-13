@@ -8,3 +8,6 @@ db/daily-stats.json
 db/app.db
 db/app.db-shm
 db/app.db-wal
+
+
+.claude/
