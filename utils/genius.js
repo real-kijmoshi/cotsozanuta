@@ -13,6 +13,15 @@ const api = axios.create({
   timeout: 10000,
 });
 
+// Deezer's public search API needs no auth/key and returns a `preview` field —
+// a 30s MP3 on their CDN that we play directly in a plain <audio> element.
+// This is what drives the audio-guess mode (replaces YouTube, which forbids
+// audio-only/hidden playback under its API Services Terms).
+const deezerApi = axios.create({
+  baseURL: "https://api.deezer.com",
+  timeout: 10000,
+});
+
 // ── LRU cache helper ────────────────────────────────────────
 class LRU {
   constructor(maxSize = 10000) {
@@ -132,6 +141,110 @@ const getArtistIdByName = async (artistName) => {
 const extractYouTubeId = (url) => {
   if (!url) return null;
   const m = String(url).match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|v\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+  return m ? m[1] : null;
+};
+
+// Normalise a title for fuzzy comparison: drop bracketed noise (feat/remix),
+// trailing "feat."/"prod." tails and punctuation. Keeps PL diacritics.
+const stripNoise = (s) =>
+  String(s || "")
+    .toLowerCase()
+    .replace(/\([^)]*\)/g, " ")
+    .replace(/\[[^\]]*\]/g, " ")
+    .replace(/\b(feat|ft|prod|w\/)\.?\b.*$/i, " ")
+    .replace(/[^a-z0-9ąćęłńóśźż ]/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+// Match a song against Deezer and return its numeric track id, or null if no
+// confident match. Tries a strict artist+track query first, then a loose one;
+// accepts a hit whose (noise-stripped) title equals or contains ours.
+// The id is stable and cached long-term — unlike the `preview` MP3 URL Deezer
+// returns alongside it, which is Akamai-signed and expires after ~24h (see
+// resolveDeezerPreview, which re-fetches a fresh URL from the id at serve time).
+const matchDeezerTrackId = async (title, artistName) => {
+  const want = stripNoise(title);
+  if (!want) return null;
+  const queries = [
+    `artist:"${artistName}" track:"${title}"`,
+    `${artistName} ${title}`,
+  ];
+  for (const q of queries) {
+    try {
+      const r = await deezerApi.get("/search", { params: { q, limit: 5 } });
+      const items = (r.data && r.data.data) || [];
+      const hit = items.find((it) => {
+        if (!it || !it.preview) return false;
+        const got = stripNoise(it.title);
+        return got === want || got.includes(want) || want.includes(got);
+      });
+      if (hit) return hit.id;
+    } catch (error) {
+      console.error("Error matching Deezer track:", error.message);
+      return null;
+    }
+  }
+  return null;
+};
+
+// Self-heal a song cached before Deezer support: match against Deezer without
+// a full Genius refetch, patch the cache entry in place.
+const ensureDeezer = async (entry) => {
+  const cacheKey = String(entry.id);
+  if (inFlightSongs.has(cacheKey)) return inFlightSongs.get(cacheKey);
+
+  const promise = (async () => {
+    try {
+      entry.deezerId = await matchDeezerTrackId(entry.title, entry.artists?.[0]?.name || "");
+    } catch (_) {
+      entry.deezerId = null;
+    }
+    songCache.set(cacheKey, entry);
+    saveSongCache();
+    inFlightSongs.delete(cacheKey);
+    return entry;
+  })();
+
+  inFlightSongs.set(cacheKey, promise);
+  return promise;
+};
+
+// Deezer's `preview` URL is Akamai-signed with a short expiry (`exp=` query
+// param, ~24h out) — caching it long-term means it silently 403s once stale.
+// Instead we cache only the (permanent) track id and resolve a fresh preview
+// URL here at serve time, keeping a short in-memory cache (not persisted —
+// there's no point outliving the URL's own expiry) keyed by the parsed `exp`.
+const previewUrlCache = new Map(); // deezerId -> { url, exp }
+const PREVIEW_SAFETY_MARGIN_S = 300; // refresh if <5 min of validity left
+const parseExp = (url) => {
+  const m = String(url).match(/exp=(\d+)/);
+  return m ? parseInt(m[1], 10) : 0;
+};
+const resolveDeezerPreview = async (deezerId) => {
+  if (!deezerId) return null;
+  const now = Math.floor(Date.now() / 1000);
+  const cached = previewUrlCache.get(deezerId);
+  if (cached && cached.exp - now > PREVIEW_SAFETY_MARGIN_S) return cached.url;
+  try {
+    const r = await deezerApi.get(`/track/${deezerId}`);
+    const url = r.data && r.data.preview;
+    if (!url) return null;
+    previewUrlCache.set(deezerId, { url, exp: parseExp(url) });
+    return url;
+  } catch (error) {
+    console.error("Error resolving Deezer preview:", error.message);
+    return null;
+  }
+};
+
+// Pulls the numeric track id out of a Deezer track URL (any locale prefix,
+// e.g. /track/123, /en/track/123), or returns the input if it's already a
+// bare numeric id. Used by the admin manual-override endpoint.
+const extractDeezerTrackId = (input) => {
+  if (!input) return null;
+  const s = String(input).trim();
+  if (/^\d+$/.test(s)) return s;
+  const m = s.match(/deezer\.com\/(?:[a-z]{2}\/)?track\/(\d+)/i);
   return m ? m[1] : null;
 };
 
@@ -301,9 +414,10 @@ const getSongById = async (songId) => {
   const cacheKey = String(songId);
   if (songCache.has(cacheKey)) {
     const cached = songCache.get(cacheKey);
-    // Self-heal entries cached before audio-media support: the `youtube`
-    // property is absent on old entries — re-fetch once to populate it.
-    if (cached && cached.youtube !== undefined) return cached;
+    if (cached && cached.deezerId !== undefined) return cached;
+    // Self-heal entries cached before Deezer support: match against Deezer
+    // without a full Genius refetch instead of dropping the whole entry.
+    if (cached && cached.title) return ensureDeezer(cached);
     songCache.delete(cacheKey);
   }
 
@@ -320,10 +434,9 @@ const getSongById = async (songId) => {
         : [];
 
       // Genius stores external media links (youtube/spotify/soundcloud) per song.
-      // The audio-guess mode plays a snippet via the YouTube IFrame API, so we
-      // extract the YouTube video id. YouTube covers the whole catalog (incl.
-      // major albums), whereas SoundCloud links only exist for obscure early
-      // tracks. `soundcloud` is kept too but is not used for the game.
+      // These are kept for reference/admin visibility but are NOT used for the
+      // audio-guess mode — that plays a Deezer 30s preview instead (see below),
+      // since a hidden/audio-only YouTube player violates its API Services Terms.
       const media = Array.isArray(song.media) ? song.media : [];
       const ytMedia = media.find(m => m && m.provider === "youtube" && m.url);
       const youtube = ytMedia ? extractYouTubeId(ytMedia.url) : null;
@@ -359,6 +472,8 @@ const getSongById = async (songId) => {
           result.cover = albumInfo.albumCover;
         }
       }
+
+      result.deezerId = await matchDeezerTrackId(result.title, result.artists[0]?.name || "");
 
       songCache.set(cacheKey, result);
       saveSongCache();
@@ -412,9 +527,24 @@ const setYoutubeId = (songId, youtubeId) => {
   let entry = songCache.get(key);
   if (!entry) {
     // Create a minimal placeholder so the ID is stored
-    entry = { id: Number(songId), title: null, cover: null, artists: [], album: null, releaseDate: null, featured: [], youtube: null, soundcloud: null, lyrics: null };
+    entry = { id: Number(songId), title: null, cover: null, artists: [], album: null, releaseDate: null, featured: [], youtube: null, soundcloud: null, deezerId: null, lyrics: null };
   }
   entry.youtube = youtubeId;
+  songCache.set(key, entry);
+  saveSongCache();
+  return entry;
+};
+
+// Manual admin override for a song's Deezer track id, for cases the
+// auto-matcher misses (remixes, obscure titles, etc). Stores the stable id,
+// not a preview URL — resolveDeezerPreview() fetches a fresh URL at serve time.
+const setDeezerTrackId = (songId, deezerId) => {
+  const key = String(songId);
+  let entry = songCache.get(key);
+  if (!entry) {
+    entry = { id: Number(songId), title: null, cover: null, artists: [], album: null, releaseDate: null, featured: [], youtube: null, soundcloud: null, deezerId: null, lyrics: null };
+  }
+  entry.deezerId = deezerId;
   songCache.set(key, entry);
   saveSongCache();
   return entry;
@@ -434,4 +564,8 @@ module.exports = {
   flushSongCache,
   setYoutubeId,
   extractYouTubeId,
+  matchDeezerTrackId,
+  resolveDeezerPreview,
+  extractDeezerTrackId,
+  setDeezerTrackId,
 };

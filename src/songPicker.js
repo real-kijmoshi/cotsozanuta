@@ -103,19 +103,19 @@ async function autoPickDaily(artistId, date, db) {
 // Returns { song, moreSongInfo } or null if no suitable song found.
 // albumsParam: comma-separated album IDs/names for pool filtering (endless only)
 // usedSongs:   Set of already-played songIds to exclude (ranked only)
-// requireAudio: only pick songs that have a YouTube video (audio mode)
+// requireAudio: only pick songs that have a Deezer preview (audio mode)
 async function pickSong(artistId, { albumsParam = '', usedSongs = null, requireAudio = false } = {}) {
     const allSongs = await genius.getAllSongs(artistId);
     if (!allSongs.length) return null;
     let filtered = allSongs.filter(s => !SKIP_PATTERNS.test(s.title));
 
-    // Audio mode: restrict the pool to songs known to have a YouTube video.
-    // Uncached songs (youtube unknown) are kept as candidates and verified
+    // Audio mode: restrict the pool to songs known to have a Deezer preview.
+    // Uncached songs (deezer unknown) are kept as candidates and verified
     // after fetch in the pick loop below.
     if (requireAudio) {
         filtered = filtered.filter(s => {
             const cached = genius.getSongCacheEntry(s.id);
-            return !cached || cached.youtube === undefined || cached.youtube;
+            return !cached || cached.deezerId === undefined || cached.deezerId;
         });
         if (!filtered.length) return null;
     }
@@ -161,7 +161,7 @@ async function pickSong(artistId, { albumsParam = '', usedSongs = null, requireA
         seen.add(candidate.id);
         const info = await genius.getSongById(candidate.id);
         if (!info?.lyrics) continue;
-        if (requireAudio && !info.youtube) continue;
+        if (requireAudio && !info.deezerId) continue;
         return { song: candidate, moreSongInfo: info };
     }
     return null;

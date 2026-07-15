@@ -506,7 +506,7 @@ router.get("/song-health", adminAuth, (req, res) => {
         const failed = [];
         for (const [id, h] of allSongs) {
             const record = { id, ...h };
-            if (h.hasLyrics && h.hasYoutube) ok.push(record);
+            if (h.hasLyrics && h.hasDeezer) ok.push(record);
             else failed.push(record);
         }
         res.json({ total, ok: ok.length, failed: failed.length, songs: [...failed, ...ok] });
@@ -551,7 +551,7 @@ router.get("/recheck", adminAuth, async (req, res) => {
           title: s.title,
           cover: s.cover || null,
           hasLyrics: !!(info && info.lyrics),
-          hasYoutube: !!(info && info.youtube),
+          hasDeezer: !!(info && info.deezerId),
           hasAlbum: !!(info && info.album),
           lastError: errMsg,
           checkedAt: new Date().toISOString(),
@@ -569,31 +569,34 @@ router.get("/recheck", adminAuth, async (req, res) => {
   if (!closed) res.end();
 })
 
-// ── SET YOUTUBE URL FOR A SONG ───────────────────────────────
-router.post("/set-youtube", adminAuth, async (req, res) => {
-  const { songId, youtubeUrl } = req.body;
+// ── SET DEEZER TRACK FOR A SONG ───────────────────────────────
+// Manual override for songs the auto-matcher misses (remixes, obscure titles).
+// Takes a Deezer track URL (or bare numeric id) — NOT a preview URL, which
+// expires; we store the permanent track id and resolve a fresh preview at
+// serve time (see genius.resolveDeezerPreview).
+router.post("/set-deezer", adminAuth, async (req, res) => {
+  const { songId, deezerUrl } = req.body;
   const songIdInt = parseInt(songId, 10);
   if (!Number.isInteger(songIdInt) || songIdInt <= 0) return res.status(400).json({ error: "Invalid songId" });
-  if (!youtubeUrl || typeof youtubeUrl !== "string") return res.status(400).json({ error: "Missing youtubeUrl" });
+  if (!deezerUrl || typeof deezerUrl !== "string") return res.status(400).json({ error: "Missing deezerUrl" });
 
-  const ytId = genius.extractYouTubeId ? genius.extractYouTubeId(youtubeUrl) : null;
-  if (!ytId) return res.status(400).json({ error: "Could not extract YouTube ID from URL" });
+  const deezerId = genius.extractDeezerTrackId(deezerUrl);
+  if (!deezerId) return res.status(400).json({ error: "Could not extract a Deezer track id from URL" });
+
+  const preview = await genius.resolveDeezerPreview(deezerId);
+  if (!preview) return res.status(400).json({ error: "That Deezer track has no preview available" });
 
   // Store in Genius cache
-  genius.setYoutubeId(songIdInt, ytId);
+  genius.setDeezerTrackId(songIdInt, deezerId);
 
   // Update songHealth
-  const prev = state.songHealth.get(songIdInt) || { title: `#${songIdInt}`, cover: null, hasLyrics: false, hasYoutube: false, hasAlbum: false, lastError: null, checkedAt: null };
-  prev.hasYoutube = true;
+  const prev = state.songHealth.get(songIdInt) || { title: `#${songIdInt}`, cover: null, hasLyrics: false, hasDeezer: false, hasAlbum: false, lastError: null, checkedAt: null };
+  prev.hasDeezer = true;
   prev.lastError = null;
   prev.checkedAt = new Date().toISOString();
   state.songHealth.set(songIdInt, prev);
 
-  // Delete any cached audio so it re-downloads from the new URL
-  const audio = require("../../utils/audio");
-  audio.clearFailure(ytId);
-
-  res.json({ ok: true, ytId });
+  res.json({ ok: true, deezerId, previewUrl: preview });
 })
 
 // ── Toasts CRUD ──────────────────────────────────────────────

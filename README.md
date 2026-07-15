@@ -9,7 +9,7 @@ A lyrics-based word-guessing game built around [Otsochodzi](https://genius.com/a
 | **Daily** | One fixed song per day, shared by all players. Come back tomorrow for a new challenge. |
 | **Endless** | Random song each round. Play as many times as you want, optionally filtered by album. |
 | **Ranked** | 60-second timed blitz — guess as many songs as possible, then post your score to the leaderboard. |
-| **Audio** | Guess the song from a YouTube snippet instead of lyrics. Available in endless and daily modes. |
+| **Audio** | Guess the song from a Deezer preview snippet instead of lyrics. Available in endless and daily modes. |
 
 Ranked sub-modes: **Sprint 60s**, **Sprint 180s**, **Survival** (per-song timer).
 
@@ -19,7 +19,7 @@ Ranked sub-modes: **Sprint 60s**, **Sprint 180s**, **Survival** (per-song timer)
 - **Server:** Express 5 with Helmet (CSP), compression, and per-route rate limiting
 - **Database:** SQLite via `better-sqlite3` (daily schedule, stats, leaderboard, game plays, toasts)
 - **Lyrics:** Genius API with disk-based caching (`db/cache/`)
-- **Audio:** yt-dlp for YouTube snippet downloads with disk caching
+- **Audio:** Deezer's public search API for 30s preview MP3s, played directly from Deezer's CDN (no server-side download/caching)
 - **Frontend:** Vanilla HTML/CSS/JS (no build step)
 
 ## Setup
@@ -28,8 +28,6 @@ Ranked sub-modes: **Sprint 60s**, **Sprint 180s**, **Survival** (per-song timer)
 
 - Node.js ≥ 18
 - A [Genius API](https://genius.com/api-clients) access token
-- yt-dlp (for audio mode, optional)
-- ffmpeg (for audio mode, optional)
 
 ### Installation
 
@@ -94,12 +92,6 @@ The server warms up (fetches song metadata, caches audio) then starts on `http:/
 | `GET` | `/api/leaderboard` | Ranked scores. Optional `?mode=sprint60\|sprint180\|survival`. |
 | `POST` | `/api/leaderboard` | Submit a score `{ name, sessionId }` → `{ rank }`. |
 
-### Audio
-
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | `/api/audio/:ytId` | Stream audio snippet for a YouTube video. |
-
 ### Admin
 
 Admin routes require a JWT bearer token in the `Authorization: Bearer <token>` header. For convenience the legacy `x-admin-password` header is still accepted.
@@ -160,11 +152,9 @@ src/
     content.js              # Lyrics, autocomplete, discography, albums, toasts
     stats.js                # Public daily stats API
     leaderboard.js          # Public leaderboard API
-    audio.js                # Audio snippet serving
 utils/
-  genius.js                 # Genius API client with disk caching
+  genius.js                 # Genius API client with disk caching (incl. Deezer preview matching)
   db.js                     # SQLite database, schema, migrations, prepared statements
-  audio.js                  # yt-dlp audio download
 db/
   app.db                    # SQLite database file
   cache/                    # Auto-generated Genius API + audio cache (gitignored)

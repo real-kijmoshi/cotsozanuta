@@ -807,7 +807,7 @@
       shData = d.songs || []
 
       const noLyrics = shData.filter(s => !s.hasLyrics).length
-      const noAudio  = shData.filter(s => s.hasLyrics && !s.hasYoutube).length
+      const noAudio  = shData.filter(s => s.hasLyrics && !s.hasDeezer).length
 
       document.getElementById('sh-total').textContent   = d.total
       document.getElementById('sh-ok').textContent      = d.ok
@@ -827,29 +827,29 @@
 
   function renderShTable(filter) {
     let songs = shData
-    if (filter === 'ok') songs = shData.filter(s => s.hasLyrics && s.hasYoutube && !s.lastError)
+    if (filter === 'ok') songs = shData.filter(s => s.hasLyrics && s.hasDeezer && !s.lastError)
     else if (filter === 'no-lyrics') songs = shData.filter(s => !s.hasLyrics)
-    else if (filter === 'no-audio') songs = shData.filter(s => s.hasLyrics && !s.hasYoutube)
+    else if (filter === 'no-audio') songs = shData.filter(s => s.hasLyrics && !s.hasDeezer)
     else if (filter === 'errors') songs = shData.filter(s => s.lastError)
 
     const rows = songs.map(s => {
       let statusCls, statusText
-      if (s.hasLyrics && s.hasYoutube && !s.lastError) { statusCls = 'ok'; statusText = 'OK' }
+      if (s.hasLyrics && s.hasDeezer && !s.lastError) { statusCls = 'ok'; statusText = 'OK' }
       else if (s.lastError) { statusCls = 'err'; statusText = 'BŁĄD' }
       else if (!s.hasLyrics) { statusCls = 'err'; statusText = 'BRAK TEKSTU' }
       else { statusCls = 'warn'; statusText = 'BRAK AUDIO' }
 
       const issues = []
       if (!s.hasLyrics) issues.push('tekst')
-      if (s.hasLyrics && !s.hasYoutube) issues.push('audio')
+      if (s.hasLyrics && !s.hasDeezer) issues.push('audio')
       if (s.lastError) issues.push(esc(s.lastError))
 
-      const ytInput = (!s.hasYoutube && s.hasLyrics)
+      const dzInput = (!s.hasDeezer && s.hasLyrics)
         ? `<div style="display:flex;gap:4px;align-items:center">
-             <input type="text" class="sh-yt-input" data-id="${s.id}" placeholder="YouTube URL" style="flex:1;min-width:120px;font-size:.55rem;padding:4px 6px">
-             <button class="btn sh-yt-save" data-id="${s.id}" style="font-size:.5rem;padding:4px 8px">zapisz</button>
+             <input type="text" class="sh-dz-input" data-id="${s.id}" placeholder="Deezer track URL or id" style="flex:1;min-width:120px;font-size:.55rem;padding:4px 6px">
+             <button class="btn sh-dz-save" data-id="${s.id}" style="font-size:.5rem;padding:4px 8px">zapisz</button>
            </div>`
-        : (s.hasYoutube ? '<span style="color:var(--ok);font-size:.55rem">✓</span>' : '—')
+        : (s.hasDeezer ? '<span style="color:var(--ok);font-size:.55rem">✓</span>' : '—')
 
       return `<tr>
         <td>${s.cover ? `<img class="tbl-cover" src="${esc(s.cover)}" alt="" onerror="this.style.display='none'">` : `<span class="tbl-cover-ph">♪</span>`}</td>
@@ -857,29 +857,29 @@
         <td style="color:var(--sub)">#${s.id}</td>
         <td><span class="sh-status ${statusCls}">${statusText}</span></td>
         <td style="color:var(--sub)">${s.hasLyrics ? '✓' : '✗'} tekst</td>
-        <td style="color:var(--sub)">${s.hasYoutube ? '✓' : '✗'} audio</td>
+        <td style="color:var(--sub)">${s.hasDeezer ? '✓' : '✗'} audio</td>
         <td class="sh-err">${issues.length ? issues.join(', ') : '—'}</td>
-        <td>${ytInput}</td>
+        <td>${dzInput}</td>
       </tr>`
     }).join('')
 
     const wrap = document.getElementById('sh-table-wrap')
     if (songs.length) {
       wrap.innerHTML = `<div class="sh-scroll"><table class="sh-table">
-        <thead><tr><th></th><th>piosenka</th><th>id</th><th>status</th><th>tekst</th><th>audio</th><th>problemy</th><th>youtube</th></tr></thead>
+        <thead><tr><th></th><th>piosenka</th><th>id</th><th>status</th><th>tekst</th><th>audio</th><th>problemy</th><th>deezer</th></tr></thead>
         <tbody>${rows}</tbody>
       </table></div>`
 
-      // Wire up set-youtube buttons
-      wrap.querySelectorAll('.sh-yt-save').forEach(btn => {
+      // Wire up set-deezer buttons
+      wrap.querySelectorAll('.sh-dz-save').forEach(btn => {
         btn.addEventListener('click', async () => {
           const songId = btn.dataset.id
-          const input = wrap.querySelector(`.sh-yt-input[data-id="${songId}"]`)
+          const input = wrap.querySelector(`.sh-dz-input[data-id="${songId}"]`)
           const url = (input?.value || '').trim()
           if (!url) { toast('wpisz URL', 'err'); return }
           btn.disabled = true
           btn.textContent = '...'
-          const r = await API('/api/admin/set-youtube', { method: 'POST', body: JSON.stringify({ songId: Number(songId), youtubeUrl: url }) })
+          const r = await API('/api/admin/set-deezer', { method: 'POST', body: JSON.stringify({ songId: Number(songId), deezerUrl: url }) })
           const d = await r.json()
           btn.disabled = false
           btn.textContent = 'zapisz'
@@ -887,7 +887,7 @@
             toast('zapisano ✓')
             // Update local data
             const song = shData.find(s => String(s.id) === songId)
-            if (song) { song.hasYoutube = true; song.lastError = null }
+            if (song) { song.hasDeezer = true; song.lastError = null }
             renderShTable(document.getElementById('sh-filter').value)
           } else {
             toast(d.error || 'błąd', 'err')

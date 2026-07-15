@@ -1853,7 +1853,7 @@
           <div class="qs-num">1</div>
           <div class="qs-step-body">
             <span class="qs-step-title">Wybierz tryb: Tekst lub Audio</span>
-            <span class="qs-step-desc">W trybie <b>Tekst</b> zgadujesz po słowach z tekstu piosenki. W trybie <b>Audio</b> słyszysz fragment utworu z YouTube i musisz rozpoznać tytuł po dźwięku.</span>
+            <span class="qs-step-desc">W trybie <b>Tekst</b> zgadujesz po słowach z tekstu piosenki. W trybie <b>Audio</b> słyszysz fragment utworu i musisz rozpoznać tytuł po dźwięku.</span>
           </div>
         </div>
         <div class="qs-step">
@@ -2195,7 +2195,7 @@
 </footer>
 
 <canvas id="confetti-canvas"></canvas>
-<!-- Hidden YouTube player — drives the audio-guess mode via the IFrame API -->
+<!-- Drives the audio-guess mode — src is set to a Deezer 30s preview MP3 URL -->
 <audio id="audio-player" preload="auto"></audio>
 <div id="ranked-select">
   <div class="rs-card">
@@ -2248,18 +2248,27 @@
   const RANKED_ORDER=['sprint60','sprint180','survival']
   function rankedScoreNoun(n){return n===1?'piosenka':(n%10>=2&&n%10<=4&&(n%100<10||n%100>=20))?'piosenki':'piosenek'}
   // ─── AUDIO MODE STATE ───────────────────────────────────────
-  // gameType toggles between the classic lyrics game and the YouTube audio game.
+  // gameType toggles between the classic lyrics game and the Deezer-preview audio game.
   // The snippet grows with each reveal (ms), mirroring the word-by-word reveal.
   let gameType='audio',currentIsAudio=false
   let audioPollTimer=null,audioSnippetIdx=0,audioLimitMs=0,audioPrevLimit=0,audioContinueFromPrev=false
-  const AUDIO_SNIPPETS=[500,1000,2000,4000,8000,16000]  // ms unlocked per reveal step (geometric: 0.5s → 16s)
-  const AUDIO_FULL_MS=10*60*1000                            // effectively "whole track" after solve
+  // ms unlocked per reveal step. Tapering ratio (~x2 early, ~x1.4 late) instead of a
+  // flat doubling: 0.5s was too short to carry any signal, and stopping at 16s left
+  // nearly half of the 30s preview (see AUDIO_FULL_MS) never reachable via hints.
+  const AUDIO_SNIPPETS=[1000,2000,3500,6000,10000,16000,24000]
+  const AUDIO_FULL_MS=30*1000                                // Deezer previews are 30s — that's the whole track available
   let userId=localStorage.getItem('czs_userId')
   if(!userId){
     if(typeof crypto!=='undefined'&&typeof crypto.randomUUID==='function'){userId=crypto.randomUUID()}
     else{userId='usr_'+Math.random().toString(36).slice(2,11)+'_'+Date.now().toString(36)}
     try{localStorage.setItem('czs_userId',userId)}catch(e){console.warn('[userId] save failed',e)}
   }
+  // Declared here (not down by the rest of the stats code) because showState('splash')
+  // runs during initial script execution and calls renderStats() -> getAllStats(),
+  // which needs STATS_KEY already initialized — a `const` declared later in the
+  // script is in the temporal dead zone until its own statement runs.
+  const STATS_KEY='czs_stats'
+  let statsCategory='lyrics' // 'lyrics' | 'audio'
   const splash=document.getElementById('splash'),loading=document.getElementById('loading'),game=document.getElementById('game'),dailyUnavailable=document.getElementById('daily-unavailable'),errorScreen=document.getElementById('error')
   const dateBar=document.getElementById('date-bar'),dateLabel=document.getElementById('date-label')
   const historyEl=document.getElementById('word-history'),currentEl=document.getElementById('current-word')
@@ -2494,7 +2503,7 @@
     if(currentIsAudio){
       document.getElementById('lyric-block').classList.add('hidden')
       document.getElementById('audio-block').classList.remove('hidden')
-      await setupAudioRound(data.youtube)
+      await setupAudioRound(data.deezer)
       showState('game');input.focus()
       return
     }
@@ -2575,15 +2584,15 @@
   function stopAudioPoll(){clearInterval(_audioPoll);_audioPoll=null}
   audioEl.addEventListener('ended',()=>{stopAudioPoll();setAudioPlayingUI(false)})
   audioEl.addEventListener('error',()=>{setFeedback('błąd audio','info');setAudioPlayingUI(false)})
-  async function setupAudioRound(ytId){
+  async function setupAudioRound(previewUrl){
     audioSnippetIdx=0;audioLimitMs=AUDIO_SNIPPETS[0]
     stopAudioPoll()
     buildAudioSegments();refreshAudioSegments()
     updateAudioLabel();setAudioPlayhead(0);setAudioPlayingUI(false)
     revealBtn.textContent='+ dźwięk'
     _audioReady=false
-    if(!ytId){setFeedback('audio niedostępne','info');return}
-    audioEl.src='/api/audio/'+encodeURIComponent(ytId)
+    if(!previewUrl){setFeedback('audio niedostępne','info');return}
+    audioEl.src=previewUrl
     audioEl.load()
     _audioReady=true
   }
@@ -2604,17 +2613,22 @@
     if(audioSnippetIdx>=AUDIO_SNIPPETS.length-1){
       setFeedback('to już cały dostępny fragment','info')
       audioContinueFromPrev=false
-      playAudioSnippet()
+      if(audioEl.paused)playAudioSnippet()
       return
     }
     audioPrevLimit=AUDIO_SNIPPETS[audioSnippetIdx]
     audioSnippetIdx++;revealCount++
     audioLimitMs=AUDIO_SNIPPETS[audioSnippetIdx]
-    audioContinueFromPrev=true
     refreshAudioSegments();updateAudioLabel();updateHintLock()
     revealBtn.textContent='+ dźwięk'+(revealCount>0?' · '+revealCount:'')
     saveDailyProgress('in-progress')
-    playAudioSnippet()
+    // Already playing: just raising audioLimitMs is enough — the poll loop
+    // (startAudioPoll) reads it live each tick, so playback keeps going
+    // uninterrupted instead of jumping/restarting at the old cutoff.
+    if(audioEl.paused){
+      audioContinueFromPrev=true
+      playAudioSnippet()
+    }
   }
   function stopAudio(){stopAudioPoll();audioEl.pause();audioEl.currentTime=0;setAudioPlayingUI(false)}
   async function loadAudioEndless(){
@@ -2718,7 +2732,7 @@
     if(currentIsAudio){
       document.getElementById('lyric-block').classList.add('hidden')
       document.getElementById('audio-block').classList.remove('hidden')
-      await setupAudioRound(d.youtube)
+      await setupAudioRound(d.deezer)
       audioSnippetIdx=finished?AUDIO_SNIPPETS.length-1:Math.min(revealCount,AUDIO_SNIPPETS.length-1)
       audioLimitMs=AUDIO_SNIPPETS[audioSnippetIdx]
       refreshAudioSegments();updateAudioLabel()
@@ -2763,7 +2777,7 @@
       }
       showState('daily-unavailable');return
     }
-    if(gameType==='audio'&&!d.youtube){
+    if(gameType==='audio'&&!d.deezer){
       document.getElementById('du-date-label').textContent=fmtLabel(dailyDate)
       document.getElementById('du-msg').innerHTML='Piosenka dzienna nie ma dostępnego audio.<br>Zagraj w trybie tekstowym lub wybierz inny dzień.'
       showState('daily-unavailable');return
@@ -3101,7 +3115,7 @@
     rankedEnd.classList.remove('show');loadRanked()
   })
   // Ranked reuses the endless endpoint with the session; audio mode adds &audio=1
-  // so the server restricts the pool to songs with a YouTube snippet.
+  // so the server restricts the pool to songs with a Deezer preview.
   function rankedSongUrl(id){return '/api/game/endless?sessionId='+encodeURIComponent(id)+(gameType==='audio'?'&audio=1':'')}
   async function loadRanked(mode){
     if(mode&&RANKED_META[mode])rankedMode=mode
@@ -3134,7 +3148,11 @@
   })
   document.getElementById('next-btn').addEventListener('click',()=>{gameType==='audio'?loadAudioEndless():loadEndless()})
   document.getElementById('audio-play-btn').addEventListener('click',()=>{
-    playAudioSnippet()
+    if(_audioReady&&audioEl.src&&!audioEl.paused){
+      audioEl.pause();stopAudioPoll();setAudioPlayingUI(false)
+    }else{
+      playAudioSnippet()
+    }
   })
   document.getElementById('home-link').addEventListener('click',e=>{
     e.preventDefault()
@@ -3229,8 +3247,7 @@
 
   // ─── PLAYER STATS ─────────────────────────────────────
   // Stats are kept per game category: "lyrics" (tekst) and "audio".
-  const STATS_KEY='czs_stats'
-  let statsCategory='lyrics' // 'lyrics' | 'audio'
+  // (STATS_KEY / statsCategory declared earlier — see comment near userId.)
   function migrateLegacyStats(){
     try{
       const raw=localStorage.getItem(STATS_KEY)

@@ -20,7 +20,6 @@ const contentRouter     = require("./src/routes/content");
 const statsRouter       = require("./src/routes/stats");
 const rankedRouter      = require("./src/routes/ranked");
 const leaderboardRouter = require("./src/routes/leaderboard");
-const audioRouter       = require("./src/routes/audio");
 
 function createApp() {
   const app = express();
@@ -42,6 +41,7 @@ function createApp() {
         styleSrc:      ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
         fontSrc:       ["'self'", "https://fonts.gstatic.com"],
         imgSrc:        ["'self'", "data:", "https:"],
+        mediaSrc:      ["'self'", "https://*.dzcdn.net"],  // Deezer preview MP3s for audio-guess mode
         connectSrc:    ["'self'"],
         frameSrc:      ["'none'"],
         objectSrc:     ["'none'"],
@@ -90,7 +90,6 @@ function createApp() {
   app.use("/api/ranked", rankedRouter);
   app.use("/api/leaderboard", leaderboardRouter);
   app.use("/api", contentRouter);
-  app.use("/api/audio", audioRouter);
 
   app.use((req, res) => { res.status(404).sendFile("404.html", { root: VIEWS_DIR }); });
 

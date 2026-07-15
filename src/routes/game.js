@@ -16,9 +16,9 @@ router.get("/endless", rankedSongLimiter, async (req, res) => {
 
     const { sessionId } = req.query;
     const rankedSession = sessionId ? rankedSessions.get(String(sessionId)) : null;
-    // audio=1 drives the round with a YouTube snippet instead of lyrics; the pool
-    // is restricted to songs that carry a YouTube link. Works for plain rounds and
-    // ranked sessions alike (Endless / Daily audio use their own dedicated routes).
+    // audio=1 drives the round with a Deezer preview snippet instead of lyrics; the
+    // pool is restricted to songs that carry a Deezer preview. Works for plain rounds
+    // and ranked sessions alike (Endless / Daily audio use their own dedicated routes).
     const wantAudio = req.query.audio === '1';
 
     try {
@@ -39,7 +39,7 @@ router.get("/endless", rankedSongLimiter, async (req, res) => {
             featured:  moreSongInfo.featured || [],
         };
         if (wantAudio) {
-            response.youtube = moreSongInfo.youtube;
+            response.deezer = await genius.resolveDeezerPreview(moreSongInfo.deezerId);
         } else {
             const words = await genius.getWordArray(song.id);
             response.wordCount = words.length;
@@ -63,10 +63,9 @@ router.get("/endless", rankedSongLimiter, async (req, res) => {
 });
 
 // ── Audio mode: endless ──────────────────────────────────────
-// Same idea as /api/game/endless but the guess is driven by a YouTube snippet
-// instead of lyrics: no words are sent, only the YouTube video id. The pool is
-// restricted to songs that carry a YouTube link on Genius (i.e. the full
-// catalog, including major albums).
+// Same idea as /api/game/endless but the guess is driven by a Deezer preview
+// snippet instead of lyrics: no words are sent, only the Deezer preview URL.
+// The pool is restricted to songs with a matched Deezer preview.
 router.get("/audio/endless", rankedSongLimiter, async (req, res) => {
     if (!state.otsochodziId) return res.status(503).json({ error: "Server is initializing, try again shortly" });
     try {
@@ -84,7 +83,7 @@ router.get("/audio/endless", rankedSongLimiter, async (req, res) => {
             cover:    moreSongInfo.cover || song.cover || null,
             artists:  moreSongInfo.artists || song.artists || [],
             featured: moreSongInfo.featured || [],
-            youtube:  moreSongInfo.youtube,
+            deezer:   await genius.resolveDeezerPreview(moreSongInfo.deezerId),
             hints:    { album: moreSongInfo.album?.name, releaseDate: moreSongInfo.releaseDate },
         });
     } catch (error) {
@@ -144,7 +143,7 @@ router.get("/daily/:date", publicGetLimiter, async (req, res) => {
             cover: moreSongInfo.cover || null,
             artists: moreSongInfo.artists || [],
             featured: moreSongInfo.featured || [],
-            youtube: moreSongInfo.youtube || null,
+            deezer: await genius.resolveDeezerPreview(moreSongInfo.deezerId),
             hints: { album: moreSongInfo.album?.name, releaseDate: moreSongInfo.releaseDate },
             wordIndex,
             words

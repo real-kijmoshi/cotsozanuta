@@ -1,5 +1,4 @@
 const genius = require("../utils/genius");
-const audio = require("../utils/audio");
 const db = require("../utils/db");
 const state = require("./state");
 const { SKIP_PATTERNS } = require("./config");
@@ -30,7 +29,7 @@ async function runWarmup(onProgress) {
         if (!words) {
           const prev = state.songHealth.get(entry.songID);
           if (prev) prev.hasLyrics = false;
-          else state.songHealth.set(entry.songID, { title: `#${entry.songID}`, cover: null, hasLyrics: false, hasYoutube: false, hasAlbum: false, lastError: "no lyrics for daily", checkedAt: new Date().toISOString() });
+          else state.songHealth.set(entry.songID, { title: `#${entry.songID}`, cover: null, hasLyrics: false, hasDeezer: false, hasAlbum: false, lastError: "no lyrics for daily", checkedAt: new Date().toISOString() });
         }
         emit({ phase: "lyrics", current: i + 1, total: dailyEntries.length, message: `Tekst: ${entry.date}` });
       } catch (e) {
@@ -56,7 +55,7 @@ async function runWarmup(onProgress) {
           title: s.title,
           cover: s.cover || null,
           hasLyrics: !!(info && info.lyrics),
-          hasYoutube: !!(info && info.youtube),
+          hasDeezer: !!(info && info.deezerId),
           hasAlbum: !!(info && info.album),
           lastError: errMsg,
           checkedAt: new Date().toISOString(),
@@ -67,32 +66,9 @@ async function runWarmup(onProgress) {
       if (i + BATCH < eligible.length) await new Promise(r => setTimeout(r, DELAY));
     }
 
-    // ── Phase 4: collect YouTube IDs ────────────────────────────
-    const toDownload = [];
-    for (const s of eligible) {
-      const info = genius.getSongCacheEntry(s.id);
-      if (info && info.youtube && !audio.exists(info.youtube) && !audio.isFailed(info.youtube)) {
-        toDownload.push({ id: s.id, title: s.title, ytId: info.youtube });
-      }
-    }
-    const alreadyCached = eligible.length - toDownload.length;
-
-    // ── Phase 5: download ALL audio (blocking) ──────────────────
-    const CONCURRENCY = 4;
-    const DL_DELAY = 500;
-    emit({ phase: "audio", current: 0, total: toDownload.length, message: "Pobieranie audio..." });
-    for (let i = 0; i < toDownload.length; i += CONCURRENCY) {
-      await Promise.all(
-        toDownload.slice(i, i + CONCURRENCY).map(s =>
-          audio.download(s.ytId).catch(e => {
-            console.error(`[WARM] Audio failed: ${s.title} (${s.ytId}):`, e.message);
-          })
-        )
-      );
-      const done = Math.min(i + CONCURRENCY, toDownload.length);
-      emit({ phase: "audio", current: done, total: toDownload.length, message: `Audio: ${done}/${toDownload.length}` });
-      if (i + CONCURRENCY < toDownload.length) await new Promise(r => setTimeout(r, DL_DELAY));
-    }
+    // Deezer previews are matched inline during the metadata fetch above (see
+    // genius.getSongById) and served straight from Deezer's CDN — no local
+    // download/caching step needed here.
 
     // ── Ready! Return so server can swap ────────────────────────
     state.otsochodziId = artistId;
