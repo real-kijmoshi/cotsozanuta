@@ -2951,16 +2951,40 @@
   input.addEventListener('blur',()=>setTimeout(()=>acList.classList.remove('show'),150))
   input.addEventListener('focus',()=>{if(acList.children.length)acList.classList.add('show')})
   function selectSong(id,title){input.value=title;acList.classList.remove('show');acList.innerHTML='';acFocused=-1;checkGuess(id)}
-  function checkGuess(id){
-    if(solved)return
-    if(String(id)===String(songId)){endGame('correct')}
-    else{
-      setFeedback('nie to \u2014 spróbuj ponownie','wrong')
-      input.value='';input.classList.add('shake')
-      setTimeout(()=>input.classList.remove('shake'),280)
-      setTimeout(()=>input.focus(),50)
-      if(currentIsAudio)extendAudioSnippet()
+  function wrongGuess(msg){
+    setFeedback(msg||'nie to \u2014 spróbuj ponownie','wrong')
+    input.value='';input.classList.add('shake')
+    setTimeout(()=>input.classList.remove('shake'),280)
+    setTimeout(()=>input.focus(),50)
+    if(currentIsAudio)extendAudioSnippet()
+  }
+  let guessPending=false
+  async function checkGuess(id){
+    if(solved||guessPending)return
+    if(activeMode==='ranked'){
+      // Ranked: the client never knows the answer — the server verifies the guess.
+      if(!rankedSessionId)return
+      guessPending=true
+      let d=null
+      try{
+        const r=await fetch('/api/ranked/correct',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:rankedSessionId,guessId:id})})
+        d=await r.json()
+      }catch(e){console.warn('[ranked] guess POST failed',e)}
+      finally{guessPending=false}
+      if(!rankedActive||solved)return
+      if(!d){wrongGuess('błąd serwera \u2014 spróbuj ponownie');return}
+      if(d.expired){endRankedRound();return}
+      if(typeof d.score==='number'){rankedScore=d.score;rankedScoreVal.textContent=rankedScore}
+      if(d.correct){endGame('correct');return}
+      if(d.correct===false&&d.attemptsLeft===0){
+        if(RANKED_META[rankedMode].kind==='survival'){endRankedRound();return}
+        setFeedback('koniec prób \u2014 następna','wrong');endGame('skip');return
+      }
+      wrongGuess(d.error?d.error:undefined)
+      return
     }
+    if(String(id)===String(songId)){endGame('correct')}
+    else wrongGuess()
   }
   function buildRevealCard(label){
     const artistNames=songArtists.map(a=>esc(a.name)).join(', ')
@@ -2986,12 +3010,7 @@
       setFeedback('trafiłeś ✓','correct')
       launchConfetti()
       if(activeMode==='ranked'){
-        // Notify server about the correct guess (server tracks score authoritatively)
-        if(rankedSessionId){
-          fetch('/api/ranked/correct',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:rankedSessionId,songId})})
-            .then(r=>r.ok?r.json():null).then(d=>{if(d&&typeof d.score==='number'){rankedScore=d.score;rankedScoreVal.textContent=rankedScore}}).catch(e=>console.warn('[ranked] correct POST failed',e))
-        }
-        rankedScore++;rankedScoreVal.textContent=rankedScore
+        // Score was already updated from the server's verdict in checkGuess.
         recordGameResult('correct',revealCount)
         // Survival: freeze the per-song clock the instant they solve, so the
         // ~600ms transition can't wrongly time them out mid-fetch.

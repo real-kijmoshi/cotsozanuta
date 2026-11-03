@@ -31,7 +31,9 @@ router.get("/endless", rankedSongLimiter, async (req, res) => {
         if (!picked) return res.status(wantAudio ? 404 : 500).json({ error: wantAudio ? "Brak piosenek z audio" : "Could not find a song with lyrics" });
         const { song, moreSongInfo } = picked;
 
-        const response = {
+        // Ranked: never send the answer (id / title / cover / artists) to the
+        // client — the guess is verified server-side in /api/ranked/correct.
+        const response = rankedSession ? {} : {
             songId:    song.id,
             title:     song.title,
             cover:     moreSongInfo.cover || song.cover || null,
@@ -54,6 +56,7 @@ router.get("/endless", rankedSongLimiter, async (req, res) => {
             rankedSession.pendingId = song.id;
             rankedSession.issuedAt  = Date.now(); // starts the per-song timer (survival)
             rankedSession.lastActivity = rankedSession.issuedAt;
+            rankedSession.wrongGuesses = 0;
         }
         res.json(response);
     } catch (error) {
