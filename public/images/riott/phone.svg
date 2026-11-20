@@ -1,0 +1,12 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 380'>
+<defs><clipPath id='s'><rect x='14' y='16' width='172' height='348' rx='20'/></clipPath>
+<linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#2a2a2a'/><stop offset='.5' stop-color='#111'/><stop offset='1' stop-color='#1d1d1d'/></linearGradient></defs>
+<rect x='2' y='2' width='196' height='376' rx='30' fill='#0a0a0a'/>
+<rect x='8' y='8' width='184' height='364' rx='25' fill='none' stroke='#3a3a3a' stroke-width='1.5'/>
+<rect x='14' y='16' width='172' height='348' rx='20' fill='url(#g)'/>
+<g clip-path='url(#s)' fill='none' stroke='#fff' stroke-opacity='.75' stroke-width='1.1' stroke-linejoin='round'><path d='M148 109 L162 105 L176 104 L190 102 L203 104'/><path d='M176 103 L190 103 L203 100 L216 94 L229 90'/><path d='M257 88 L265 99 L277 107 L285 118 L288 132 L296 144'/><path d='M120 108 L148 109 L176 103 L201 91 L229 86 L257 88'/><path d='M120 108 L140 126 L159 144 L171 168'/><path d='M140 192 L132 205 L123 216 L115 228'/><path d='M120 108 L127 136 L132 165 L140 192'/><path d='M110 131 L112 143 L114 155 L113 168 L112 180'/><path d='M120 108 L110 131 L108 156 L108 181 L114 205 L121 229'/><path d='M105 118 L102 126 L100 135 L97 143 L97 152'/><path d='M90 128 L85 135 L77 140 L71 146 L63 150'/><path d='M120 108 L105 118 L90 128 L76 138 L65 152 L57 168'/><path d='M38 100 L18 106 L-1 111 L-18 124 L-32 139'/><path d='M-38 70 L-56 60 L-75 53 L-93 43 L-112 34'/><path d='M120 108 L79 104 L38 100 L-1 87 L-38 70'/><path d='M21 8 L4 6 L-13 12 L-26 23 L-40 34'/><path d='M120 108 L98 81 L71 58 L44 35 L21 8'/><path d='M120 108 L119 86 L127 65 L137 45'/><path d='M226 46 L241 32 L252 15 L266 -1 L275 -20 L276 -40'/><path d='M120 108 L150 79 L187 62 L226 46'/></g>
+<rect x='76' y='24' width='48' height='13' rx='6.5' fill='#000'/>
+<text x='-60' y='40' transform='rotate(-90)' font-family='Arial,Helvetica,sans-serif' font-weight='700' font-size='15' fill='#fff' text-anchor='end'>HOW TO GO OFFLINE IN 2026?</text>
+<text x='150' y='344' font-family='Times New Roman,Times,serif' font-weight='700' font-size='26' fill='#fff'>T</text>
+<text x='165' y='356' font-family='Times New Roman,Times,serif' font-weight='700' font-size='26' fill='#fff'>T</text>
+</svg>

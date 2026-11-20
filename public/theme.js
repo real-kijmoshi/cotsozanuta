@@ -1,8 +1,9 @@
 // Album color themes. Loaded in <head> (blocking, tiny) so the saved theme is
 // applied before first paint — no flash of the default palette.
 //   grind – TTHE GRIND (default): blood red on burnt black
-//   riott – RIOTT: after the album's promo cards and clips — white sheet,
-//            Times/Arial bold, tracklist mode menu, CCTV-feed game screen
+//   riott – RIOTT: redesign after the album's promo cards and clips —
+//            serif stepped-letter logo, tracklist mode menu, CCTV-feed game
+//            screen, white sheet with black type
 (function () {
   var KEY = 'czs_theme';
   var THEMES = {
@@ -20,13 +21,10 @@
   // RIOTT swaps a few bits of markup (logo lettering, camera overlay). The
   // HTML below is static and defined here, never user input. The original
   // markup is kept on the element so switching back restores it exactly.
-  var LOGO = 'COTSOZANUTA';
-  // Camera overlay copied from the clip: grey "TT … CCTV Systems" header,
-  // a translucent date / "Area 32_Cam 22" bar under it, REC bottom right.
+  var LOGO = 'COTSOZANU<span class="rl-d1">T</span><span class="rl-d2">A</span>';
   var CAM = '<div class="cam-hud" aria-hidden="true">' +
-    '<div class="cam-top"><span class="tt-mark">T<span>T</span></span><span class="cam-sys">CCTV Systems</span></div>' +
-    '<div class="cam-sub"><span class="rh-time"></span><span>Area 32_Cam 22</span></div>' +
-    '<div class="cam-rec"><i></i>REC</div>' +
+    '<div class="cam-row"><span class="rh-time"></span><span>Area 32_Cam 22</span></div>' +
+    '<div class="cam-row"><span class="cam-brand"><span class="tt-mark">T<span>T</span></span>CCTV Systems</span><span class="cam-rec"><i></i>REC</span></div>' +
     '</div>';
 
   function swap(el, html) {
@@ -63,7 +61,7 @@
     apply(name);
   }
 
-  // CCTV timestamp inside the RIOTT camera feed: 20.11.2026  21:04:33
+  // CCTV-style timestamp in the RIOTT strip: 20.11.2026  21:04:33
   function pad(n) { return (n < 10 ? '0' : '') + n; }
   function tick() {
     var els = document.querySelectorAll('.rh-time');
