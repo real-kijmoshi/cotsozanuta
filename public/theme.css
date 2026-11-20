@@ -1,67 +1,190 @@
 /* ─── RIOTT THEME ─────────────────────────────────────────────
-   Siren blue on cold concrete. Every page colour is driven by the
-   --*-rgb tokens, so swapping them here re-skins the whole site.
-   The default (TTHE GRIND) palette lives in each page's :root. */
-:root[data-theme="riott"]{
-  --accent-rgb:47,107,255;
-  --bg-rgb:5,7,11;
-  --text-rgb:230,236,243;
-  --panel-rgb:8,11,17;
-  --siren-rgb:255,46,74;
-  --bg:#05070b;
-  --text:#e6ecf3;
-  --red:#2f6bff;
-  --line:rgba(170,195,255,0.08);
-  --line2:rgba(170,195,255,0.15);
-}
+   Photocopied zine: off-white xerox paper, black ink, grainy B&W,
+   serif RIOT/T logo with the dropped second T, thin hand-drawn tag
+   scribbles, boxed "ZTM sign" panels and a single red stamp colour.
+   The default (TTHE GRIND) palette lives in each page's :root;
+   pages read every colour through the --*-rgb tokens below. */
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Archivo+Black&family=Archivo+Narrow:wght@400;600;700&family=Courier+Prime:wght@400;700&family=UnifrakturMaguntia&display=swap');
 
-/* cold smoke instead of the warm ember glow */
+:root[data-theme="riott"]{
+  --accent-rgb:17,17,17;
+  --fg-rgb:17,17,17;
+  --bg-rgb:236,234,228;
+  --text-rgb:17,17,17;
+  --panel-rgb:244,243,238;
+  --stamp:#d3241b;
+  --bg:#eceae4;
+  --text:#111111;
+  --red:#111111;
+  --sub:rgba(17,17,17,0.58);
+  --sub2:rgba(17,17,17,0.34);
+  --line:rgba(17,17,17,0.14);
+  --line2:rgba(17,17,17,0.26);
+  --display:'DM Serif Display',Georgia,'Times New Roman',serif;
+  --cond:'Archivo Narrow','Arial Narrow',Arial,sans-serif;
+  --mono:'Courier Prime','Courier New',monospace;
+  --worn:'Courier Prime','Courier New',monospace;
+  --heavy:'Archivo Black','Arial Black',Arial,sans-serif;
+  --gothic:'UnifrakturMaguntia',serif;
+  color-scheme:light;
+}
+:root[data-theme="riott"] ::selection{background:#111;color:#eceae4}
+
+/* paper + photocopier toner: uneven grey edges, grain that darkens */
 :root[data-theme="riott"] #bg-photo{
   background:
-    radial-gradient(ellipse 90% 60% at 15% 0%, rgba(47,107,255,0.16) 0%, transparent 60%),
-    radial-gradient(ellipse 70% 50% at 95% 10%, rgba(255,46,74,0.07) 0%, transparent 60%),
-    radial-gradient(ellipse 140% 80% at 50% 40%, rgba(16,22,34,0.7) 0%, transparent 75%),
+    radial-gradient(ellipse 120% 90% at 50% 45%, transparent 55%, rgba(17,17,17,0.13) 100%),
+    linear-gradient(180deg, rgba(17,17,17,0.04) 0%, transparent 18%, transparent 82%, rgba(17,17,17,0.05) 100%),
     var(--bg);
 }
-
-/* police-light strip under the nav: blue / red, slowly pulsing */
-:root[data-theme="riott"] nav::after{
-  height:2px;
-  background:linear-gradient(90deg,
-    transparent 0%,
-    rgba(var(--accent-rgb),0.85) 18%, rgba(var(--accent-rgb),0.85) 48%,
-    rgba(var(--siren-rgb),0.75) 52%, rgba(var(--siren-rgb),0.75) 82%,
-    transparent 100%);
-  animation:riottSiren 2.4s ease-in-out infinite;
-}
-@keyframes riottSiren{
-  0%,100%{opacity:.9}
-  50%{filter:brightness(1.35);opacity:.55}
+:root[data-theme="riott"] #bg-noise{opacity:.32;mix-blend-mode:multiply}
+:root[data-theme="riott"] #bg-scan{opacity:.35}
+:root[data-theme="riott"] #bg-vignette{
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 380'%3E%3Cg fill='none' stroke='%23111' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M46 266 Q50 246 45 253 Q40 260 49 172 Q59 84 56 122 Q53 160 54 164 Q54 168 68 151 Q82 134 76 97 Q71 59 73 73 Q76 87 84 151 L92 214'/%3E%3Cpath d='M39 273 Q44 250 52 202 Q60 154 71 134 Q81 114 82 102 L83 90'/%3E%3Cpath d='M83 111 Q93 268 93 256 Q92 244 102 255 Q112 267 113 259 Q114 252 118 162 Q122 72 135 82 Q148 92 150 179 Q153 267 163 196 Q174 125 180 186 L186 248'/%3E%3Cpath d='M114 245 Q149 238 168 177 Q186 116 189 187 Q191 257 202 258 Q213 259 219 237 L224 215'/%3E%3Cpath d='M214 162 L207 158 L238 120 L225 105 L271 82 L260 254 L299 247 L284 105 L319 239'/%3E%3Cpath d='M208 166 Q247 138 259 100 Q271 61 287 165 Q302 269 314 264 L325 259'/%3E%3Cpath d='M288 64 Q284 77 294 171 Q304 266 298 180 Q292 94 305 166 Q319 239 324 229 Q330 219 338 160 Q346 100 349 96 Q352 91 359 94 Q366 98 365 181 L363 265'/%3E%3Cpath d='M334 256 Q366 219 381 170 Q396 122 397 129 Q399 135 407 125 Q414 114 431 116 L448 118'/%3E%3Cpath d='M326 271 Q402 138 412 119 L421 101'/%3E%3Cpath d='M427 260 Q425 76 433 166 Q442 257 445 241 Q448 226 463 235 Q479 243 481 230 Q483 217 492 169 Q502 121 495 125 Q489 130 507 173 L525 215'/%3E%3Cpath d='M418 281 Q435 244 452 253 Q469 262 489 185 Q510 109 522 151 L534 193'/%3E%3Cpath d='M471 182 Q467 194 462 196 Q457 197 453 193 Q449 189 449 182 Q449 176 453 172 Q457 168 462 169 Q467 171 469 177 Q471 183 469 189 L467 194'/%3E%3Cpath d='M515 248 Q523 228 523 145 Q523 61 543 161 Q562 261 566 247 Q569 232 581 160 Q593 88 591 90 Q589 93 594 175 L599 257'/%3E%3Cpath d='M582 59 Q592 165 605 216 Q617 267 619 211 Q621 155 629 119 Q637 84 647 152 Q657 220 652 231 Q646 241 662 249 L677 256'/%3E%3Cpath d='M583 55 Q626 249 633 156 Q639 63 640 141 L640 218'/%3E%3Cpath d='M667 228 Q682 61 685 156 Q689 250 703 257 Q717 263 716 265 Q715 266 719 248 Q723 230 729 164 Q736 99 749 91 L763 82'/%3E%3Cpath d='M669 211 Q697 272 709 278 Q721 283 731 198 L740 114'/%3E%3Cpath d='M711 215 Q741 260 741 212 Q741 164 739 216 Q737 267 748 267 Q759 267 750 197 Q741 126 753 107 Q764 88 770 79 Q776 70 773 112 Q770 154 775 201 Q780 247 792 256 L804 265'/%3E%3Cpath d='M782 110 Q777 240 794 225 Q811 209 806 177 Q801 145 802 181 Q802 217 821 145 Q840 73 839 87 Q839 101 841 85 Q844 69 839 164 Q833 259 848 182 Q862 105 855 159 L848 214'/%3E%3Cpath d='M787 96 Q808 209 803 223 Q798 237 821 178 Q843 119 837 181 Q831 243 843 221 L855 200'/%3E%3Cpath d='M848 222 Q847 253 852 205 Q858 156 861 190 Q865 225 876 179 Q887 133 886 179 Q884 225 898 229 Q912 233 918 178 Q923 124 921 181 L919 239'/%3E%3Cpath d='M911 67 Q934 108 931 103 Q927 98 935 168 Q943 238 957 201 Q971 165 964 120 Q957 75 962 111 Q968 146 977 123 Q985 100 984 171 L982 241'/%3E%3Cpath d='M907 53 Q927 103 945 129 Q964 155 967 156 Q970 157 978 200 L985 244'/%3E%3Cpath d='M953 160 Q950 168 947 169 Q944 170 941 167 Q938 164 938 160 Q938 155 941 152 Q944 150 947 151 Q950 152 952 156 Q953 160 952 164 L950 168'/%3E%3Cpath d='M987 131 Q999 72 1010 93 Q1021 115 1013 170 Q1005 224 1025 182 Q1045 139 1054 142 Q1062 145 1055 153 Q1047 162 1066 206 Q1085 250 1093 183 L1100 116'/%3E%3Cpath d='M988 122 Q1017 107 1028 135 Q1039 163 1047 154 Q1055 146 1075 142 L1095 138'/%3E%3Cpath d='M1077 211 Q1067 75 1072 75 Q1077 74 1096 146 Q1115 217 1121 224 Q1126 231 1133 242 L1140 253'/%3E%3Cpath d='M1108 261 Q1103 79 1104 165 Q1104 251 1107 172 Q1110 93 1124 163 Q1138 234 1139 250 Q1139 266 1136 264 Q1133 262 1133 248 Q1132 233 1149 173 Q1167 113 1162 122 Q1157 130 1167 194 L1176 258'/%3E%3Cpath d='M1108 279 Q1096 259 1114 255 Q1132 251 1130 261 Q1128 270 1147 189 Q1167 107 1172 192 L1177 277'/%3E%3Cpath d='M10 340 Q 420.0 375 660.0 325 T 1190 300'/%3E%3Cpath d='M1110 270 L1160 298 L1105 318'/%3E%3C/g%3E%3C/svg%3E") no-repeat;
+  background-size:min(980px,120vw) auto;
+  background-position:right -10vw top 56vh;
+  opacity:.42;
+  transform:rotate(-5deg);
 }
 
-/* ghosted graffiti tag: hazard-tape stencil instead of spray paint */
+/* ghosted logo + "2026 2020" signature */
 :root[data-theme="riott"] #bg-tag{
-  color:transparent;
-  -webkit-text-stroke:2px rgba(var(--accent-rgb),0.09);
-  letter-spacing:.02em;
-  transform:rotate(-6deg);
+  font-family:var(--display);
+  color:rgba(17,17,17,0.05);
+  letter-spacing:-.01em;
+  transform:rotate(0deg);
+  bottom:-4vw;
 }
+:root[data-theme="riott"] #bg-tag .riott-drop{display:inline-block;transform:translateY(.42em)}
 :root[data-theme="riott"] #bg-year{
-  color:rgba(var(--siren-rgb),0.035);
+  font-family:var(--heavy);
+  font-size:clamp(1rem,2.4vw,2rem);
+  top:auto;bottom:72px;right:2.4vw;
+  transform:none;
+  color:rgba(17,17,17,0.32);
+  letter-spacing:.02em;
+}
+:root[data-theme="riott"] .splash-bg-word{display:none}
+
+/* nav: clean black rule like the printed zine header */
+:root[data-theme="riott"] nav{
+  background:rgba(236,234,228,0.94);
+  border-bottom:2px solid #111;
+  backdrop-filter:none;
+}
+:root[data-theme="riott"] nav::after{display:none}
+:root[data-theme="riott"] .wordmark{font-family:var(--display);letter-spacing:.02em;text-transform:none}
+:root[data-theme="riott"] .wordmark:hover{letter-spacing:.03em}
+:root[data-theme="riott"] .wm-hl,
+:root[data-theme="riott"] .wordmark:hover .wm-hl{color:#111;text-shadow:none;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px}
+
+/* splash title set like the cover: serif, mixed case, dropped T */
+:root[data-theme="riott"] #splash h1{
+  font-family:var(--display);
+  letter-spacing:-.01em;
+  line-height:.92;
+}
+:root[data-theme="riott"] #splash h1 em{color:#111;text-shadow:none}
+:root[data-theme="riott"] .splash-pill{
+  font-family:var(--heavy);
+  background:var(--stamp);color:#fff;
+  letter-spacing:.12em;
+  transform:rotate(-2deg);
+  box-shadow:2px 2px 0 #111;
 }
 
-/* the revealed word gets a split blue/red siren shadow */
+/* everything boxy and inked: hard black borders, no glow, flat shadows */
+:root[data-theme="riott"] .mode-card,
+:root[data-theme="riott"] .mode-card.active{
+  background:#f4f3ee;
+  border:2px solid #111;
+  backdrop-filter:none;-webkit-backdrop-filter:none;
+  box-shadow:none;
+}
+:root[data-theme="riott"] .mode-card::before{display:none}
+:root[data-theme="riott"] .mode-card:hover{
+  background:#fff;
+  border-color:#111;
+  box-shadow:6px 6px 0 #111;
+  transform:translate(-3px,-3px);
+}
+:root[data-theme="riott"] .mode-card .mc-icon{color:#111}
+:root[data-theme="riott"] .mode-card[data-mode="ranked"] .mc-icon{color:var(--stamp)}
+:root[data-theme="riott"] .mc-name{font-family:var(--heavy);letter-spacing:.01em;font-size:clamp(1rem,2.2vw,1.3rem)}
+:root[data-theme="riott"] .mc-arrow{color:#111 !important}
+
+:root[data-theme="riott"] #type-switch,
+:root[data-theme="riott"] #mode-bar{background:rgba(236,234,228,0.94);border-bottom:1px solid #111;backdrop-filter:none}
+:root[data-theme="riott"] .mode-bar-btn,
+:root[data-theme="riott"] #type-switch button{border-right-color:rgba(17,17,17,0.25)}
+:root[data-theme="riott"] .mode-bar-btn.active,
+:root[data-theme="riott"] #type-switch button.active{background:#111;color:#eceae4}
+:root[data-theme="riott"] .mode-bar-btn.active svg{color:#eceae4}
+:root[data-theme="riott"] .mode-bar-btn::after,
+:root[data-theme="riott"] #type-switch button::after{display:none}
+
+:root[data-theme="riott"] #cal-btn,
+:root[data-theme="riott"] #howto-btn,
+:root[data-theme="riott"] #settings-btn,
+:root[data-theme="riott"] .nav-link{border-color:#111;color:#111;background:transparent}
+:root[data-theme="riott"] #cal-btn:hover,
+:root[data-theme="riott"] #howto-btn:hover,
+:root[data-theme="riott"] #settings-btn:hover,
+:root[data-theme="riott"] .nav-link:hover{background:#111;color:#eceae4}
+:root[data-theme="riott"] .nav-link.active{background:#111;color:#eceae4}
+
+:root[data-theme="riott"] .seg-ctrl{border:1.5px solid #111}
+:root[data-theme="riott"] .seg-ctrl button{border-right-color:#111;color:#111}
+:root[data-theme="riott"] .seg-ctrl button.active{background:#111;color:#eceae4}
+
+/* drawers + modals become sheets of paper */
+:root[data-theme="riott"] #settings-panel,
+:root[data-theme="riott"] #qs-panel{
+  background:#f4f3ee;
+  border-color:#111;
+  box-shadow:8px 8px 0 rgba(17,17,17,0.9);
+  backdrop-filter:none;-webkit-backdrop-filter:none;
+}
+:root[data-theme="riott"] #settings-overlay,
+:root[data-theme="riott"] #qs-overlay{background:rgba(236,234,228,0.6);backdrop-filter:grayscale(1) blur(2px)}
+
+/* the revealed word: printed, slightly over-inked */
 :root[data-theme="riott"] #current-word{
-  text-shadow:
-    -3px 0 0 rgba(var(--accent-rgb),0.35),
-    3px 0 0 rgba(var(--siren-rgb),0.22),
-    0 0 80px rgba(var(--accent-rgb),0.12);
+  font-family:var(--display);
+  text-transform:none;
+  letter-spacing:0;
+  text-shadow:1px 1px 0 rgba(17,17,17,0.25);
 }
 
-:root[data-theme="riott"] .wm-hl{
-  text-shadow:0 0 24px rgba(var(--accent-rgb),0.55), 2px 2px 0 rgba(0,0,0,0.5);
+/* inputs: black-ruled boxes */
+:root[data-theme="riott"] input[type="text"],
+:root[data-theme="riott"] input[type="search"],
+:root[data-theme="riott"] input:not([type]){
+  background:#fff;color:#111;border-color:#111;
 }
+:root[data-theme="riott"] input::placeholder{color:rgba(17,17,17,0.45)}
 
-@media (prefers-reduced-motion: reduce){
-  :root[data-theme="riott"] nav::after{animation:none}
+/* leaderboard / misc white-on-dark leftovers */
+:root[data-theme="riott"] .slb-row.gold .slb-name{color:#111}
+:root[data-theme="riott"] .slb-row.gold{border-left-color:var(--stamp)}
+
+/* black & white everywhere: covers and photos go grayscale + contrasty */
+:root[data-theme="riott"] img:not([src*="favicon"]){filter:grayscale(1) contrast(1.15)}
+
+:root[data-theme="riott"] ::-webkit-scrollbar-track{background:#e2e0d9}
+:root[data-theme="riott"] ::-webkit-scrollbar-thumb{background:#111;border-radius:0}
+
+/* the tagline "TT" signature (added by theme.js) */
+.riott-sig{display:none}
+:root[data-theme="riott"] .riott-sig{
+  display:block;
+  font-family:var(--mono);font-size:.62rem;letter-spacing:.06em;
+  color:rgba(17,17,17,0.7);margin-top:18px;line-height:1.5;
+}
+:root[data-theme="riott"] .riott-sig b{font-family:var(--display);font-size:1.4rem;font-weight:400;color:#111;letter-spacing:-.02em;margin-right:10px;vertical-align:-2px}
+:root[data-theme="riott"] .riott-sig b span{display:inline-block;transform:translateY(.32em)}
+
+/* splash "otso": underlined in ink like the scribbled-over cover text */
+:root[data-theme="riott"] #splash h1 em{
+  background:linear-gradient(transparent 82%, var(--stamp) 82%, var(--stamp) 90%, transparent 90%);
 }
