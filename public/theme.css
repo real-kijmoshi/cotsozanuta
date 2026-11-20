@@ -9,7 +9,7 @@
    The default (TTHE GRIND) look lives in each page; everything here is
    scoped to :root[data-theme="riott"] except the RIOTT-only elements,
    which are hidden by default. theme.js swaps in the logo + camera HUD. */
-@import url('https://fonts.googleapis.com/css2?family=Tinos:wght@700&family=Courier+Prime:wght@400;700&family=Arimo:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Tinos:wght@700&family=Arimo:wght@400;700&family=VT323&family=Reenie+Beanie&family=UnifrakturCook:wght@700&display=swap');
 
 /* RIOTT-only elements: hidden in other themes */
 .riott-hud,.riott-legal,.cam-hud{display:none}
@@ -33,8 +33,11 @@
   --grot:'Arimo','Helvetica Neue',Helvetica,Arial,sans-serif;
   /* --display stays Anton: the heavy condensed face of the '13.07.2026' cards */
   --cond:var(--grot);
-  --mono:'Courier Prime','Courier New',monospace;
-  --worn:var(--mono);
+  --mono:var(--grot);                                   /* small labels: Arial bold, like the cards */
+  --worn:var(--grot);
+  --pixel:'VT323','Lucida Console',monospace;            /* CCTV overlay: "Kamera offline" */
+  --hand:'Reenie Beanie','Segoe Print',cursive;          /* scrawl: "prod. lohleq", "(2:30)" */
+  --goth:'UnifrakturCook','Old English Text MT',serif;   /* GOTTYK merch */
   --serif:'Tinos','Times New Roman',Times,serif;
   --rec:#ff2a1f;
   --feed:#0b0c0d;
@@ -133,14 +136,23 @@
 :root[data-theme="riott"] .mode-bar-btn:hover,
 :root[data-theme="riott"] .mode-bar-btn.active{color:#0a0a0a;background:transparent}
 
+@media (min-width:1100px){
+  :root[data-theme="riott"] #mode-bar{height:52px;align-items:stretch}
+  :root[data-theme="riott"] #type-switch{
+    position:absolute;top:74px;left:24px;z-index:97;padding:0;background:none;
+    width:auto;justify-content:flex-start;
+  }
+  :root[data-theme="riott"] #type-switch button{min-width:0;padding:6px 16px}
+}
+
 /* ─── CCTV strip under the header ─── */
 :root[data-theme="riott"] .riott-hud{
   display:flex;justify-content:space-between;align-items:center;
   padding:6px 24px;
-  font-family:var(--mono);font-weight:700;font-size:.68rem;letter-spacing:.03em;
+  font-family:var(--pixel);font-weight:400;font-size:1.12rem;letter-spacing:.04em;line-height:1;
   color:#fff;background:#0a0a0a;position:relative;z-index:94;
 }
-:root[data-theme="riott"] .riott-hud b{font-weight:700}
+:root[data-theme="riott"] .riott-hud b{font-weight:400}
 :root[data-theme="riott"] .riott-hud i,
 :root[data-theme="riott"] .cam-rec i{
   display:inline-block;width:7px;height:7px;border-radius:50%;
@@ -153,10 +165,10 @@
 :root[data-theme="riott"] #splash{max-width:680px}
 :root[data-theme="riott"] .splash-pill{
   background:transparent;color:#0a0a0a;padding:0;margin-bottom:22px;
-  font-family:var(--mono);font-weight:700;font-size:.74rem;letter-spacing:.04em;
-  transform:none;animation:none;box-shadow:none;
+  font-family:var(--hand);font-weight:400;font-size:1.9rem;letter-spacing:.02em;line-height:1;
+  text-transform:uppercase;transform:rotate(-2deg);animation:none;box-shadow:none;
 }
-:root[data-theme="riott"] .splash-pill::before{content:'prod. ';opacity:.55;font-weight:400}
+:root[data-theme="riott"] .splash-pill::before{content:'prod. '}
 :root[data-theme="riott"] #splash h1{
   font-size:clamp(2.6rem,8.6vw,5.6rem);letter-spacing:0;line-height:1;
   margin:0 auto 6px;text-transform:none;color:#0a0a0a;
@@ -190,15 +202,15 @@
   letter-spacing:-.02em;line-height:1.05;color:#0a0a0a;text-transform:uppercase;
 }
 :root[data-theme="riott"] .mc-name::after{
-  font-family:var(--mono);font-weight:400;font-size:.62em;letter-spacing:0;
-  text-transform:none;margin-left:.5em;vertical-align:.1em;
+  font-family:var(--hand);font-weight:400;font-size:1.05em;letter-spacing:0;
+  text-transform:none;margin-left:.35em;vertical-align:-.05em;
 }
 :root[data-theme="riott"] .mode-card[data-mode="endless"] .mc-name::after{content:'(\221E)'}
 :root[data-theme="riott"] .mode-card[data-mode="daily"] .mc-name::after{content:'(1/24h)'}
 :root[data-theme="riott"] .mode-card[data-mode="ranked"] .mc-name::after{content:'(1:00)'}
 :root[data-theme="riott"] .mc-desc{
   grid-column:2;grid-row:2;
-  font-family:var(--mono);font-size:.7rem;letter-spacing:0;line-height:1.4;color:rgba(10,10,10,0.6);
+  font-family:var(--grot);font-size:.82rem;letter-spacing:0;line-height:1.4;color:rgba(10,10,10,0.6);
 }
 :root[data-theme="riott"] .mc-arrow{
   grid-column:3;grid-row:1 / span 2;align-self:center;
@@ -238,6 +250,11 @@
   text-transform:uppercase;color:#0a0a0a;
 }
 :root[data-theme="riott"] .slb-title::before{content:'';display:none}
+:root[data-theme="riott"] .slb-title{font-size:0}
+:root[data-theme="riott"] .slb-title::after{
+  content:'Top 10 \2014  rankingowy';font-family:var(--goth);font-weight:700;
+  font-size:1.9rem;letter-spacing:0;text-transform:none;line-height:1;
+}
 :root[data-theme="riott"] .slb-subtitle{font-family:var(--mono);color:rgba(10,10,10,0.55)}
 :root[data-theme="riott"] .slb-tabs,
 :root[data-theme="riott"] .slb-type-tabs{border:none;gap:18px;justify-content:flex-start;background:none}
@@ -271,7 +288,7 @@
 :root[data-theme="riott"] .slb-name,
 :root[data-theme="riott"] .slb-row.gold .slb-name{font-family:var(--grot);font-weight:700;font-size:.92rem;color:#0a0a0a;letter-spacing:0}
 :root[data-theme="riott"] .slb-score,
-:root[data-theme="riott"] .slb-row.gold .slb-score{font-family:var(--mono);font-weight:700;color:#0a0a0a}
+:root[data-theme="riott"] .slb-row.gold .slb-score{font-family:var(--pixel);font-weight:400;font-size:1.5rem;color:#0a0a0a}
 :root[data-theme="riott"] .slb-score-unit{font-family:var(--mono);color:rgba(10,10,10,0.5)}
 :root[data-theme="riott"] .slb-empty{font-family:var(--mono);color:rgba(10,10,10,0.55)}
 
@@ -282,7 +299,7 @@
 :root[data-theme="riott"] #hint-lock.ready{color:#0a0a0a}
 :root[data-theme="riott"] .tag{
   background:#0a0a0a;color:#fff;border:none;padding:4px 10px;
-  font-family:var(--mono);font-weight:700;font-size:.7rem;letter-spacing:.02em;
+  font-family:var(--pixel);font-weight:400;font-size:1.1rem;letter-spacing:.04em;line-height:1;
 }
 
 /* the monitor */
@@ -313,7 +330,7 @@
 :root[data-theme="riott"] .cam-hud{
   display:flex;flex-direction:column;justify-content:space-between;
   position:absolute;inset:0;padding:14px 16px;pointer-events:none;
-  font-family:var(--mono);font-weight:700;font-size:.7rem;letter-spacing:.02em;color:#fff;
+  font-family:var(--pixel);font-weight:400;font-size:1.2rem;letter-spacing:.04em;line-height:1;color:#fff;
 }
 :root[data-theme="riott"] .cam-row{display:flex;justify-content:space-between;align-items:flex-end}
 :root[data-theme="riott"] .cam-brand{display:flex;align-items:flex-end;gap:8px;font-family:var(--grot);font-weight:700;font-size:.74rem}
@@ -321,7 +338,7 @@
 :root[data-theme="riott"] .cam-rec{display:flex;align-items:center}
 
 :root[data-theme="riott"] #word-history{
-  font-family:var(--mono);font-size:.95rem;letter-spacing:0;word-spacing:4px;
+  font-family:var(--pixel);font-size:1.45rem;letter-spacing:.02em;word-spacing:6px;
   color:rgba(255,255,255,0.55);line-height:1.7;margin:0;
 }
 :root[data-theme="riott"] #word-history span{color:inherit !important;opacity:1 !important}
@@ -343,7 +360,7 @@
 :root[data-theme="riott"] .audio-seg.unlocked{background:rgba(255,255,255,0.4)}
 :root[data-theme="riott"] .audio-seg.current{background:#fff;box-shadow:none}
 :root[data-theme="riott"] #audio-playhead{background:var(--rec)}
-:root[data-theme="riott"] #audio-snippet-label{font-family:var(--mono);font-weight:700;color:rgba(255,255,255,0.75);letter-spacing:.02em}
+:root[data-theme="riott"] #audio-snippet-label{font-family:var(--pixel);font-weight:400;font-size:1.25rem;color:rgba(255,255,255,0.75);letter-spacing:.02em}
 
 /* guess input: one heavy rule, like filling in a form */
 :root[data-theme="riott"] .input-row,
@@ -357,7 +374,7 @@
 :root[data-theme="riott"] #song-input::placeholder{font-family:var(--mono);font-weight:400;font-size:.8rem;letter-spacing:0;text-transform:none;color:rgba(10,10,10,0.4)}
 :root[data-theme="riott"] #reveal-btn{
   background:#0a0a0a;color:#fff;border:none;
-  font-family:var(--mono);font-weight:700;font-size:.72rem;letter-spacing:.02em;
+  font-family:var(--pixel);font-weight:400;font-size:1.2rem;letter-spacing:.04em;
 }
 :root[data-theme="riott"] #reveal-btn:hover{background:#333;color:#fff}
 :root[data-theme="riott"] #ac-list{background:#fff;border:1px solid #0a0a0a;border-left:1px solid #0a0a0a}
@@ -379,8 +396,8 @@
 }
 :root[data-theme="riott"] #giveup-btn{
   background:none;border:none;color:#0a0a0a;
-  font-family:var(--mono);font-weight:700;font-size:.74rem;letter-spacing:0;text-transform:none;
-  text-decoration:underline;text-underline-offset:4px;
+  font-family:var(--hand);font-weight:400;font-size:1.7rem;letter-spacing:0;text-transform:none;
+  text-decoration:underline;text-decoration-thickness:1.5px;text-underline-offset:3px;transform:rotate(-2deg);
 }
 :root[data-theme="riott"] #giveup-btn:hover{border:none;color:#0a0a0a;opacity:.6}
 
@@ -393,7 +410,7 @@
 }
 :root[data-theme="riott"] .ans-cover,
 :root[data-theme="riott"] .ans-cover-placeholder{width:88px;height:88px;border:none}
-:root[data-theme="riott"] .ans-label{font-family:var(--mono);font-weight:700;font-size:.72rem;letter-spacing:0;text-transform:none;color:rgba(10,10,10,0.6)}
+:root[data-theme="riott"] .ans-label{font-family:var(--hand);font-weight:400;font-size:1.6rem;line-height:1;letter-spacing:0;text-transform:none;color:#0a0a0a}
 :root[data-theme="riott"] .ans-song{
   font-family:var(--grot);font-weight:700;font-size:clamp(1.5rem,4.4vw,2.3rem);
   letter-spacing:-.01em;line-height:1;color:#0a0a0a;text-transform:uppercase;
@@ -407,14 +424,24 @@
 
 /* ranked timer bar = feed overlay */
 :root[data-theme="riott"] #ranked-bar{background:#0a0a0a;border:none;color:#fff}
-:root[data-theme="riott"] #ranked-bar *{color:#fff !important;font-family:var(--mono) !important;font-weight:700}
+:root[data-theme="riott"] #ranked-bar *{color:#fff !important;font-family:var(--pixel) !important;font-weight:400;letter-spacing:.04em}
+:root[data-theme="riott"] #ranked-mode-lbl,:root[data-theme="riott"] #ranked-score-disp{font-size:1.1rem !important}
 :root[data-theme="riott"] #date-bar{background:#fff;border-bottom:1px solid rgba(10,10,10,0.15)}
-:root[data-theme="riott"] #date-label{font-family:var(--mono);font-weight:700;color:#0a0a0a}
+:root[data-theme="riott"] #date-label{font-family:var(--pixel);font-weight:400;font-size:1.25rem;color:#0a0a0a}
 
 /* loading / error / empty states */
-:root[data-theme="riott"] .spinner{border-color:rgba(10,10,10,0.12);border-top-color:#0a0a0a}
-:root[data-theme="riott"] #loading p{font-family:var(--mono);font-weight:700;letter-spacing:.02em;text-transform:none;color:#0a0a0a}
-:root[data-theme="riott"] #loading p::before{content:'Kamera offline \2014  ';color:rgba(10,10,10,0.5)}
+:root[data-theme="riott"] #loading{
+  width:min(700px,100%);min-height:300px;padding:40px 44px;
+  background:#000;align-items:flex-start;justify-content:center;
+}
+:root[data-theme="riott"] #loading .spinner{display:none}
+:root[data-theme="riott"] #loading p{font-size:0;letter-spacing:0;text-transform:none;color:#fff}
+:root[data-theme="riott"] #loading p::before{
+  content:'Kamera offline\A Camera offline\A \30AB\30E1\30E9\304C\30AA\30D5\30E9\30A4\30F3\3067\3059\A Kamera offline\A Cam\E9ra hors ligne';
+  white-space:pre;font-family:var(--pixel);font-size:2rem;line-height:1.5;letter-spacing:.02em;
+  animation:riottFlicker 2.4s steps(1) infinite;
+}
+@keyframes riottFlicker{0%,100%{opacity:1}47%{opacity:.75}48%{opacity:1}83%{opacity:.85}}
 :root[data-theme="riott"] .err-title,
 :root[data-theme="riott"] .du-title{font-family:var(--grot);font-weight:700;letter-spacing:-.01em;color:#0a0a0a}
 :root[data-theme="riott"] .err-title span,
@@ -422,7 +449,7 @@
 :root[data-theme="riott"] .err-card,
 :root[data-theme="riott"] .du-card{background:none;border:none;border-top:2px solid #0a0a0a;border-bottom:1px solid #0a0a0a}
 :root[data-theme="riott"] .err-msg,
-:root[data-theme="riott"] .du-msg{font-family:var(--mono);color:#0a0a0a}
+:root[data-theme="riott"] .du-msg{font-family:var(--grot);color:#0a0a0a}
 :root[data-theme="riott"] .err-btn-primary,
 :root[data-theme="riott"] .du-btn-primary{background:#0a0a0a;color:#fff;font-family:var(--grot);font-weight:700;border:none}
 
@@ -474,7 +501,7 @@
 .stk-code i{display:block;height:26px;width:120px;
   background:repeating-linear-gradient(90deg,#0a0a0a 0 2px,transparent 2px 4px,#0a0a0a 4px 7px,transparent 7px 8px,#0a0a0a 8px 9px,transparent 9px 12px)}
 .stk-offline{transform:rotate(-7deg);background:#0a0a0a;color:#fff;font-size:.82rem;padding:10px 12px}
-.stk-tar{transform:rotate(5deg);font-family:var(--mono,'Courier New',monospace);font-size:.74rem;letter-spacing:.06em;border-width:1px}
+.stk-tar{transform:rotate(5deg);font-family:var(--goth,serif);font-size:1.25rem;letter-spacing:0;border-width:1px;padding:6px 12px}
 
 /* narrower screens: phone + stickers sit in a row under the corner stamp */
 @media (max-width:1300px){
@@ -560,7 +587,7 @@
   :root[data-theme="riott"] #settings-btn{font-size:.62rem;padding:6px 4px}
   :root[data-theme="riott"] #type-switch button{min-width:96px}
   :root[data-theme="riott"] .mode-bar-btn{font-size:.7rem;padding:12px 4px 10px}
-  :root[data-theme="riott"] .riott-hud{padding:5px 14px;font-size:.6rem}
+  :root[data-theme="riott"] .riott-hud{padding:5px 14px;font-size:.98rem}
   :root[data-theme="riott"] .mode-card,
   :root[data-theme="riott"] .mode-card.active{grid-template-columns:44px 1fr auto;column-gap:10px;padding:14px 4px 12px}
   :root[data-theme="riott"] .mode-card::before{font-size:1.4rem}
@@ -569,7 +596,10 @@
   :root[data-theme="riott"] .rl-text{font-size:.46rem}
   :root[data-theme="riott"] #lyric-block,
   :root[data-theme="riott"] #audio-block{padding:56px 16px;min-height:240px}
-  :root[data-theme="riott"] .cam-hud{padding:10px 12px;font-size:.58rem}
+  :root[data-theme="riott"] .cam-hud{padding:10px 12px;font-size:1rem}
+  :root[data-theme="riott"] #loading{padding:28px 22px;min-height:240px}
+  :root[data-theme="riott"] #loading p::before{font-size:1.5rem}
+  :root[data-theme="riott"] .splash-pill{font-size:1.6rem}
 }
 @media (prefers-reduced-motion: reduce){
   :root[data-theme="riott"] .riott-hud i,
