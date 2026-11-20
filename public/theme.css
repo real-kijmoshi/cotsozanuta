@@ -1,18 +1,21 @@
 /* ─── RIOTT THEME ─────────────────────────────────────────────
-   A redesign, not a recolour. Built from the album's promo cards and clips:
-   · logo   – serif capitals with stepped-down letters (RIO-T-T → COTSOZANU-T-A)
-   · menu   – game modes laid out as a tracklist: "01. BEZ KOŃCA (∞)"
-   · game   – the word / audio sits in a CCTV feed: timestamp, Area 32_Cam 22,
-              "TT CCTV Systems", blinking REC
-   · page   – clean white sheet, black type, hairlines, legal small print and
-              the "TT 2026 2020" corner stamp
-   The default (TTHE GRIND) look lives in each page; everything here is
-   scoped to :root[data-theme="riott"] except the RIOTT-only elements,
-   which are hidden by default. theme.js swaps in the logo + camera HUD. */
-@import url('https://fonts.googleapis.com/css2?family=Tinos:wght@700&family=Arimo:wght@400;700&family=VT323&family=Reenie+Beanie&family=UnifrakturCook:wght@700&display=swap');
+   Built from the album's own materials, kept as restrained as they are:
+   · type   – Times Bold for the logo, numbers and the TT mark; Arial Bold
+              for everything else; Anton (≈ the "13.07.2026" card) only for
+              the big word; a pixel face only for "Kamera offline"
+   · splash – the promo card: white, logo centred in lots of air, legal
+              small print bottom-left, "TT 2026 2020" bottom-right
+   · menu   – game modes as a tracklist: "01. BEZ KOŃCA (∞)"
+   · game   – the clip's CCTV frame: grey "TT CCTV Systems" bar, date /
+              "Area 32_Cam 22" bar, REC; "Kamera offline" while loading
+   · sign   – the RIOTT TOUR ZTM plate with screws and the crossed phone
+   Default (TTHE GRIND) styling lives in each page; everything here is
+   scoped to :root[data-theme="riott"] and RIOTT-only elements are hidden
+   otherwise. theme.js swaps in the logo text and the camera overlay. */
+@import url('https://fonts.googleapis.com/css2?family=Tinos:wght@400;700&family=Arimo:wght@400;700&family=VT323&display=swap');
 
-/* RIOTT-only elements: hidden in other themes */
-.riott-hud,.riott-legal,.cam-hud{display:none}
+/* RIOTT-only elements */
+.riott-legal,.riott-sign,.cam-hud{display:none}
 
 :root[data-theme="riott"]{
   --accent-rgb:10,10,10;
@@ -26,21 +29,17 @@
   --red-dim:rgba(10,10,10,0.12);
   --red-glow:transparent;
   --sub:rgba(10,10,10,0.55);
-  --sub2:rgba(10,10,10,0.32);
+  --sub2:rgba(10,10,10,0.35);
   --line:rgba(10,10,10,0.12);
   --line2:rgba(10,10,10,0.22);
   --ok:#0a0a0a;
-  --grot:'Arimo','Helvetica Neue',Helvetica,Arial,sans-serif;
-  /* --display stays Anton: the heavy condensed face of the '13.07.2026' cards */
-  --cond:var(--grot);
-  --mono:var(--grot);                                   /* small labels: Arial bold, like the cards */
-  --worn:var(--grot);
-  --pixel:'VT323','Lucida Console',monospace;            /* CCTV overlay: "Kamera offline" */
-  --hand:'Reenie Beanie','Segoe Print',cursive;          /* scrawl: "prod. lohleq", "(2:30)" */
-  --goth:'UnifrakturCook','Old English Text MT',serif;   /* GOTTYK merch */
   --serif:'Tinos','Times New Roman',Times,serif;
+  --grot:'Arimo','Helvetica Neue',Helvetica,Arial,sans-serif;
+  --cond:var(--grot);
+  --mono:var(--grot);
+  --worn:var(--grot);
+  --pixel:'VT323','Lucida Console',monospace;
   --rec:#ff2a1f;
-  --feed:#0b0c0d;
   color-scheme:light;
 }
 :root[data-theme="riott"] ::selection{background:#0a0a0a;color:#fff}
@@ -66,31 +65,26 @@
 :root[data-theme="riott"] #qs-panel,
 :root[data-theme="riott"] #ac-list{backdrop-filter:none;-webkit-backdrop-filter:none;box-shadow:none}
 
-/* ─── logo: serif caps, last two letters step down like RIO-T-T ─── */
-.rl-logo{
-  font-family:var(--serif);font-weight:700;text-transform:uppercase;
-  letter-spacing:-.035em;white-space:nowrap;display:inline-block;
-  padding-bottom:.62em;line-height:1;
+/* logo + TT mark */
+.rl-logo{font-family:var(--serif);font-weight:700;text-transform:uppercase;letter-spacing:-.02em;white-space:nowrap}
+.tt-mark{
+  font-family:var(--serif,'Times New Roman',serif);font-weight:700;
+  font-size:1.5rem;line-height:1;letter-spacing:-.04em;display:inline-block;
 }
-.rl-logo .rl-d1,.rl-logo .rl-d2{display:inline-block;transform-origin:left top}
-.rl-logo .rl-d1{transform:translateY(.16em) scale(1.12);margin-right:.06em}
-.rl-logo .rl-d2{transform:translateY(.6em) scale(1.12)}
+.tt-mark span{display:inline-block;transform:translateY(.42em)}
 
 /* ─── header ─── */
-:root[data-theme="riott"] nav{
-  height:64px;background:#fff;border-bottom:1px solid #0a0a0a;padding:0 24px;
-}
+:root[data-theme="riott"] nav{height:60px;background:#fff;border-bottom:1px solid #0a0a0a;padding:0 24px}
 :root[data-theme="riott"] nav::after{display:none}
-:root[data-theme="riott"] .wordmark{color:#0a0a0a;font-size:1.32rem;letter-spacing:0;padding-top:4px}
-:root[data-theme="riott"] .wordmark:hover{letter-spacing:0;opacity:.75}
-:root[data-theme="riott"] .wordmark .rl-logo{padding-bottom:0}
+:root[data-theme="riott"] .wordmark{color:#0a0a0a;font-size:1.3rem;letter-spacing:0}
+:root[data-theme="riott"] .wordmark:hover{letter-spacing:0;opacity:.7}
 :root[data-theme="riott"] #cal-btn,
 :root[data-theme="riott"] #howto-btn,
 :root[data-theme="riott"] #settings-btn,
 :root[data-theme="riott"] .nav-link{
-  border:none;background:transparent;color:#0a0a0a;
-  font-family:var(--grot);font-weight:700;font-size:.74rem;letter-spacing:.02em;
-  text-transform:uppercase;padding:8px 6px;box-shadow:none;
+  border:none;background:transparent;color:#0a0a0a;box-shadow:none;
+  font-family:var(--grot);font-weight:700;font-size:.74rem;letter-spacing:0;
+  text-transform:uppercase;padding:8px 6px;
 }
 :root[data-theme="riott"] #cal-btn svg,
 :root[data-theme="riott"] #howto-btn svg,
@@ -105,86 +99,69 @@
   text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:5px;
 }
 
-/* ─── TEKST / AUDIO switch: two small black-and-white tabs ─── */
-:root[data-theme="riott"] #type-switch{
-  background:#fff;border-bottom:none;justify-content:center;gap:0;padding:14px 0 0;
-}
+/* ─── TEKST / AUDIO + modes ─── */
+:root[data-theme="riott"] #type-switch{background:#fff;border-bottom:none;justify-content:center;gap:0;padding:14px 0 0}
 :root[data-theme="riott"] #type-switch button{
-  flex:0 0 auto;min-width:120px;padding:7px 20px;
-  border:1px solid #0a0a0a;margin-left:-1px;
-  font-family:var(--grot);font-weight:700;font-size:.72rem;letter-spacing:.06em;color:#0a0a0a;
+  flex:0 0 auto;min-width:110px;padding:6px 18px;border:1px solid #0a0a0a;margin-left:-1px;
+  font-family:var(--grot);font-weight:700;font-size:.72rem;letter-spacing:0;color:#0a0a0a;
 }
 :root[data-theme="riott"] #type-switch button.active{background:#0a0a0a;color:#fff}
 :root[data-theme="riott"] #type-switch button::after{display:none}
-
-/* ─── mode bar: numbered tracklist tabs ─── */
-:root[data-theme="riott"] #mode-bar{
-  background:#fff;border-bottom:1px solid #0a0a0a;counter-reset:rtrack;
-  justify-content:center;padding:0 12px;
-}
+:root[data-theme="riott"] #mode-bar{background:#fff;border-bottom:1px solid #0a0a0a;counter-reset:rtrack;justify-content:center;padding:0 12px}
 :root[data-theme="riott"] .mode-bar-btn{
-  flex:0 1 220px;counter-increment:rtrack;border-right:none;
-  font-family:var(--grot);font-weight:700;font-size:.82rem;letter-spacing:0;
-  color:rgba(10,10,10,0.45);padding:14px 10px 12px;gap:6px;
+  flex:0 1 210px;counter-increment:rtrack;border-right:none;gap:6px;
+  font-family:var(--grot);font-weight:700;font-size:.8rem;letter-spacing:0;
+  color:rgba(10,10,10,0.4);padding:14px 10px 12px;
 }
 :root[data-theme="riott"] .mode-bar-btn svg{display:none}
-:root[data-theme="riott"] .mode-bar-btn::before{
-  content:counter(rtrack,decimal-leading-zero) ".";
-  font-family:var(--serif);font-weight:700;font-size:.9rem;
-}
-:root[data-theme="riott"] .mode-bar-btn::after{height:3px;background:#0a0a0a}
+:root[data-theme="riott"] .mode-bar-btn::before{content:counter(rtrack,decimal-leading-zero) ".";font-family:var(--serif);font-weight:700;font-size:.92rem}
+:root[data-theme="riott"] .mode-bar-btn::after{height:2px;background:#0a0a0a}
 :root[data-theme="riott"] .mode-bar-btn:hover,
 :root[data-theme="riott"] .mode-bar-btn.active{color:#0a0a0a;background:transparent}
-
 @media (min-width:1100px){
-  :root[data-theme="riott"] #mode-bar{height:52px;align-items:stretch}
-  :root[data-theme="riott"] #type-switch{
-    position:absolute;top:74px;left:24px;z-index:97;padding:0;background:none;
-    width:auto;justify-content:flex-start;
-  }
-  :root[data-theme="riott"] #type-switch button{min-width:0;padding:6px 16px}
+  :root[data-theme="riott"] #mode-bar{height:50px;align-items:stretch}
+  :root[data-theme="riott"] #type-switch{position:absolute;top:69px;left:24px;z-index:97;padding:0;background:none;width:auto;justify-content:flex-start}
+  :root[data-theme="riott"] #type-switch button{min-width:0;padding:6px 14px}
 }
 
-/* ─── CCTV strip under the header ─── */
-:root[data-theme="riott"] .riott-hud{
-  display:flex;justify-content:space-between;align-items:center;
-  padding:6px 24px;
-  font-family:var(--pixel);font-weight:400;font-size:1.12rem;letter-spacing:.04em;line-height:1;
-  color:#fff;background:#0a0a0a;position:relative;z-index:94;
-}
-:root[data-theme="riott"] .riott-hud b{font-weight:400}
-:root[data-theme="riott"] .riott-hud i,
-:root[data-theme="riott"] .cam-rec i{
-  display:inline-block;width:7px;height:7px;border-radius:50%;
-  background:var(--rec);margin-right:7px;vertical-align:1px;
-  animation:riottRec 1.2s linear infinite;
-}
-@keyframes riottRec{0%,55%{opacity:1}56%,100%{opacity:0}}
+/* ═══ SPLASH: the promo card, then the tracklist ═══════════════ */
+:root[data-theme="riott"] #splash{max-width:720px;display:flex;flex-direction:column;align-items:stretch}
+:root[data-theme="riott"] .splash-pill{order:1}
+:root[data-theme="riott"] #splash h1{order:2}
+:root[data-theme="riott"] .riott-legal{order:3}
+:root[data-theme="riott"] #mode-cards{order:4}
+:root[data-theme="riott"] .riott-sign{order:5}
+:root[data-theme="riott"] #splash-stats{order:6}
+:root[data-theme="riott"] #splash-leaderboard{order:7}
 
-/* ═══ SPLASH = promo card + tracklist ══════════════════════════ */
-:root[data-theme="riott"] #splash{max-width:680px}
 :root[data-theme="riott"] .splash-pill{
-  background:transparent;color:#0a0a0a;padding:0;margin-bottom:22px;
-  font-family:var(--hand);font-weight:400;font-size:1.9rem;letter-spacing:.02em;line-height:1;
-  text-transform:uppercase;transform:rotate(-2deg);animation:none;box-shadow:none;
+  align-self:center;background:none;color:#0a0a0a;padding:0;margin:clamp(28px,8vh,80px) 0 0;
+  font-family:var(--grot);font-weight:700;font-size:.78rem;letter-spacing:0;text-transform:none;
+  transform:none;animation:none;box-shadow:none;
 }
-:root[data-theme="riott"] .splash-pill::before{content:'prod. '}
 :root[data-theme="riott"] #splash h1{
-  font-size:clamp(2.6rem,8.6vw,5.6rem);letter-spacing:0;line-height:1;
-  margin:0 auto 6px;text-transform:none;color:#0a0a0a;
+  font-size:clamp(2.2rem,6.4vw,4.4rem);line-height:1;letter-spacing:0;text-transform:none;
+  margin:14px 0 clamp(48px,14vh,130px);color:#0a0a0a;
 }
 :root[data-theme="riott"] #splash h1 .rl-logo{animation:titleGlitchDiv .55s cubic-bezier(0.15,0,0,1) both}
-
-/* the three modes as a tracklist: 01. BEZ KOŃCA (∞) */
-:root[data-theme="riott"] #mode-cards{
-  display:block;margin-top:28px;max-width:none;
-  border-top:2px solid #0a0a0a;counter-reset:rtl;
+:root[data-theme="riott"] .riott-legal{
+  display:flex;justify-content:space-between;align-items:flex-end;gap:16px;
+  text-align:left;padding-bottom:18px;
 }
+.rl-text{font-family:var(--grot,'Arial',sans-serif);font-weight:700;font-size:.56rem;line-height:1.3;color:#0a0a0a}
+.rl-stamp{
+  display:flex;flex-direction:column;align-items:flex-end;flex-shrink:0;
+  font-family:var(--grot,'Arial',sans-serif);font-weight:700;font-size:.82rem;color:#0a0a0a;line-height:1;
+}
+.rl-stamp .tt-mark{margin-bottom:8px}
+
+/* tracklist */
+:root[data-theme="riott"] #mode-cards{display:block;margin:0;max-width:none;border-top:2px solid #0a0a0a;counter-reset:rtl}
 :root[data-theme="riott"] .mode-card,
 :root[data-theme="riott"] .mode-card.active{
   counter-increment:rtl;
-  display:grid;grid-template-columns:64px 1fr auto;grid-template-rows:auto auto;
-  column-gap:14px;row-gap:2px;align-items:baseline;
+  display:grid;grid-template-columns:62px 1fr auto;grid-template-rows:auto auto;
+  column-gap:14px;row-gap:3px;align-items:baseline;
   width:100%;padding:18px 10px 16px;
   background:transparent;border:none;border-bottom:1px solid #0a0a0a;
   transform:none;transition:background .12s,color .12s;
@@ -193,247 +170,229 @@
   display:block;position:static;inset:auto;opacity:1;background:none;
   content:counter(rtl,decimal-leading-zero) ".";
   grid-column:1;grid-row:1 / span 2;align-self:center;
-  font-family:var(--serif);font-weight:700;font-size:1.9rem;color:#0a0a0a;letter-spacing:-.02em;
+  font-family:var(--serif);font-weight:700;font-size:1.75rem;color:#0a0a0a;letter-spacing:-.02em;
 }
 :root[data-theme="riott"] .mode-card .mc-icon{display:none}
 :root[data-theme="riott"] .mc-name{
   grid-column:2;grid-row:1;margin:0;
-  font-family:var(--grot);font-weight:700;font-size:clamp(1.2rem,3vw,1.75rem);
-  letter-spacing:-.02em;line-height:1.05;color:#0a0a0a;text-transform:uppercase;
+  font-family:var(--grot);font-weight:700;font-size:clamp(1.15rem,2.8vw,1.6rem);
+  letter-spacing:-.01em;line-height:1.1;color:#0a0a0a;text-transform:uppercase;
 }
-:root[data-theme="riott"] .mc-name::after{
-  font-family:var(--hand);font-weight:400;font-size:1.05em;letter-spacing:0;
-  text-transform:none;margin-left:.35em;vertical-align:-.05em;
-}
+:root[data-theme="riott"] .mc-name::after{font-family:var(--grot);font-weight:400;font-size:.7em;letter-spacing:0;margin-left:.4em;text-transform:none}
 :root[data-theme="riott"] .mode-card[data-mode="endless"] .mc-name::after{content:'(\221E)'}
 :root[data-theme="riott"] .mode-card[data-mode="daily"] .mc-name::after{content:'(1/24h)'}
 :root[data-theme="riott"] .mode-card[data-mode="ranked"] .mc-name::after{content:'(1:00)'}
-:root[data-theme="riott"] .mc-desc{
-  grid-column:2;grid-row:2;
-  font-family:var(--grot);font-size:.82rem;letter-spacing:0;line-height:1.4;color:rgba(10,10,10,0.6);
-}
+:root[data-theme="riott"] .mc-desc{grid-column:2;grid-row:2;font-family:var(--grot);font-size:.8rem;letter-spacing:0;line-height:1.4;color:rgba(10,10,10,0.55)}
 :root[data-theme="riott"] .mc-arrow{
   grid-column:3;grid-row:1 / span 2;align-self:center;
-  font-family:var(--grot);font-weight:700;font-size:.72rem;letter-spacing:.04em;
+  font-family:var(--grot);font-weight:700;font-size:.72rem;letter-spacing:0;
   color:#0a0a0a !important;opacity:1;margin:0;
 }
-:root[data-theme="riott"] .mode-card:hover{
-  background:#0a0a0a;transform:none;box-shadow:none;border-color:#0a0a0a;
-}
+:root[data-theme="riott"] .mode-card:hover{background:#0a0a0a;transform:none;box-shadow:none;border-color:#0a0a0a}
 :root[data-theme="riott"] .mode-card:hover::before,
 :root[data-theme="riott"] .mode-card:hover .mc-name,
 :root[data-theme="riott"] .mode-card:hover .mc-arrow{color:#fff !important}
-:root[data-theme="riott"] .mode-card:hover .mc-desc{color:rgba(255,255,255,0.7)}
+:root[data-theme="riott"] .mode-card:hover .mc-desc{color:rgba(255,255,255,0.65)}
 :root[data-theme="riott"] .mode-card:hover .mc-arrow{transform:translateX(4px)}
 
-/* promo-card corners: legal small print + TT 2026 2020 */
-:root[data-theme="riott"] .riott-legal{
-  display:flex;justify-content:space-between;align-items:flex-end;gap:16px;
-  width:100%;margin:28px auto 0;text-align:left;
+/* the RIOTT TOUR ZTM sign */
+:root[data-theme="riott"] .riott-sign{
+  display:block;position:relative;align-self:center;
+  width:min(560px,100%);margin:64px 0 8px;padding:16px 26px 22px;
+  background:linear-gradient(160deg,#fbfbfa 0%,#f1f1ef 100%);
+  border:1px solid #cfcfcb;border-radius:4px;
+  box-shadow:0 1px 0 #fff inset, 0 10px 24px -14px rgba(0,0,0,0.35);
+  transform:rotate(-.6deg);text-align:left;color:#0a0a0a;
 }
-.rl-text{font-family:var(--grot);font-weight:700;font-size:.56rem;line-height:1.35;color:#0a0a0a}
-.rl-stamp{
-  display:flex;flex-direction:column;align-items:flex-end;flex-shrink:0;
-  font-family:var(--grot);font-weight:700;font-size:.82rem;color:#0a0a0a;line-height:1;
+.sg-screw{
+  position:absolute;width:14px;height:14px;border-radius:50%;
+  background:radial-gradient(circle at 35% 35%,#c9c9c9 0 30%,#7b7b7b 70%,#5a5a5a 100%);
+  box-shadow:0 0 0 2px rgba(0,0,0,0.06);
 }
-.tt-mark{
-  font-family:var(--serif,'Times New Roman',serif);font-weight:700;
-  font-size:1.5rem;line-height:1;margin-bottom:6px;letter-spacing:-.04em;
+.sg-screw::after{content:'';position:absolute;left:3px;right:3px;top:6px;height:2px;background:rgba(0,0,0,0.45);transform:rotate(35deg)}
+.sg-screw:nth-child(1){top:10px;left:10px}
+.sg-screw:nth-child(2){top:10px;right:10px}
+.sg-screw:nth-child(3){bottom:10px;left:10px}
+.sg-screw:nth-child(4){bottom:10px;right:10px}
+.sg-head{
+  font-family:var(--grot,'Arial',sans-serif);font-weight:700;font-size:.62rem;text-transform:uppercase;
+  text-align:center;text-decoration:underline;text-underline-offset:2px;margin:0 0 10px;letter-spacing:.02em;
 }
-.tt-mark span{display:inline-block;transform:translateY(.42em)}
+.sg-plate{border:2px solid #0a0a0a;padding:14px 16px 10px}
+.sg-row{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.sg-logo{
+  font-family:var(--serif,'Times New Roman',serif);font-weight:700;font-size:clamp(1rem,3.4vw,1.5rem);
+  border:2px solid #0a0a0a;padding:14px 14px;letter-spacing:-.02em;
+}
+.sg-title{
+  font-family:var(--grot,'Arial',sans-serif);font-weight:700;font-size:clamp(1.15rem,4vw,1.75rem);
+  line-height:.95;letter-spacing:-.03em;text-transform:uppercase;text-align:left;flex:1;
+  -webkit-text-stroke:.6px #0a0a0a;
+}
+.sg-row-bottom{margin-top:12px;align-items:flex-end}
+.sg-stamp{display:flex;align-items:flex-end;gap:10px;font-family:var(--grot,'Arial',sans-serif);font-weight:700;font-size:1rem}
+.sg-stamp .tt-mark{font-size:1.3rem}
+.sg-note{
+  margin-top:6px;font-family:var(--grot,'Arial',sans-serif);font-weight:700;font-size:.5rem;
+  text-transform:uppercase;line-height:1.35;letter-spacing:.01em;text-align:right;
+}
 
-/* splash leaderboard: a plain printed list */
+/* leaderboard */
 :root[data-theme="riott"] #splash-leaderboard{margin-top:56px;text-align:left}
 :root[data-theme="riott"] .slb-header{border-bottom:2px solid #0a0a0a;padding-bottom:8px;margin-bottom:12px}
-:root[data-theme="riott"] .slb-title{
-  font-family:var(--grot);font-weight:700;font-size:1.1rem;letter-spacing:-.01em;
-  text-transform:uppercase;color:#0a0a0a;
-}
-:root[data-theme="riott"] .slb-title::before{content:'';display:none}
-:root[data-theme="riott"] .slb-title{font-size:0}
-:root[data-theme="riott"] .slb-title::after{
-  content:'Top 10 \2014  rankingowy';font-family:var(--goth);font-weight:700;
-  font-size:1.9rem;letter-spacing:0;text-transform:none;line-height:1;
-}
-:root[data-theme="riott"] .slb-subtitle{font-family:var(--mono);color:rgba(10,10,10,0.55)}
+:root[data-theme="riott"] .slb-title{font-family:var(--grot);font-weight:700;font-size:1.05rem;letter-spacing:-.01em;text-transform:uppercase;color:#0a0a0a}
+:root[data-theme="riott"] .slb-title::before{display:none}
+:root[data-theme="riott"] .slb-subtitle{font-family:var(--grot);font-weight:400;letter-spacing:0;text-transform:none;color:rgba(10,10,10,0.55)}
 :root[data-theme="riott"] .slb-tabs,
 :root[data-theme="riott"] .slb-type-tabs{border:none;gap:18px;justify-content:flex-start;background:none}
 :root[data-theme="riott"] .slb-tab,
 :root[data-theme="riott"] .slb-type-tab{
   flex:0 0 auto;background:none;border:none;padding:4px 0;
-  font-family:var(--grot);font-weight:700;font-size:.74rem;letter-spacing:.02em;color:rgba(10,10,10,0.4);
+  font-family:var(--grot);font-weight:700;font-size:.74rem;letter-spacing:0;color:rgba(10,10,10,0.38);
 }
 :root[data-theme="riott"] .slb-tab.active,
-:root[data-theme="riott"] .slb-type-tab.active{
-  background:none;color:#0a0a0a;
-  text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:5px;
-}
+:root[data-theme="riott"] .slb-type-tab.active{background:none;color:#0a0a0a;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:5px}
 :root[data-theme="riott"] .slb-divider{display:none}
 :root[data-theme="riott"] .slb-rows{gap:0;counter-reset:rlb;margin-top:10px}
 :root[data-theme="riott"] .slb-row,
 :root[data-theme="riott"] .slb-row.gold,
 :root[data-theme="riott"] .slb-row.silver,
-:root[data-theme="riott"] .slb-row.bronze{
-  counter-increment:rlb;background:none;border:none;border-bottom:1px solid rgba(10,10,10,0.15);
-  padding:9px 2px;
-}
+:root[data-theme="riott"] .slb-row.bronze{counter-increment:rlb;background:none;border:none;border-bottom:1px solid rgba(10,10,10,0.14);padding:10px 2px}
 :root[data-theme="riott"] .slb-row::after{display:none}
 :root[data-theme="riott"] .slb-row:hover{background:#0a0a0a}
 :root[data-theme="riott"] .slb-row:hover *{color:#fff !important}
-:root[data-theme="riott"] .slb-rank{font-size:0 !important;min-width:40px}
-:root[data-theme="riott"] .slb-rank::before{
-  content:counter(rlb,decimal-leading-zero) ".";
-  font-family:var(--serif);font-weight:700;font-size:1rem;color:#0a0a0a;
-}
+:root[data-theme="riott"] .slb-rank{font-size:0 !important;min-width:42px}
+:root[data-theme="riott"] .slb-rank::before{content:counter(rlb,decimal-leading-zero) ".";font-family:var(--serif);font-weight:700;font-size:1rem;color:#0a0a0a}
 :root[data-theme="riott"] .slb-name,
 :root[data-theme="riott"] .slb-row.gold .slb-name{font-family:var(--grot);font-weight:700;font-size:.92rem;color:#0a0a0a;letter-spacing:0}
 :root[data-theme="riott"] .slb-score,
-:root[data-theme="riott"] .slb-row.gold .slb-score{font-family:var(--pixel);font-weight:400;font-size:1.5rem;color:#0a0a0a}
-:root[data-theme="riott"] .slb-score-unit{font-family:var(--mono);color:rgba(10,10,10,0.5)}
-:root[data-theme="riott"] .slb-empty{font-family:var(--mono);color:rgba(10,10,10,0.55)}
+:root[data-theme="riott"] .slb-row.gold .slb-score{font-family:var(--grot);font-weight:700;font-size:.95rem;color:#0a0a0a}
+:root[data-theme="riott"] .slb-score-unit{font-family:var(--grot);letter-spacing:0;color:rgba(10,10,10,0.5)}
+:root[data-theme="riott"] .slb-empty{font-family:var(--grot);color:rgba(10,10,10,0.55)}
 
-/* ═══ GAME = CCTV feed ════════════════════════════════════════ */
+/* ═══ GAME: the CCTV frame from the clip ═══════════════════════ */
 :root[data-theme="riott"] #game{max-width:700px}
 :root[data-theme="riott"] #hints{margin-bottom:16px}
-:root[data-theme="riott"] #hint-lock{font-family:var(--mono);font-weight:700;font-size:.7rem;letter-spacing:0;text-transform:none;color:rgba(10,10,10,0.55)}
+:root[data-theme="riott"] #hint-lock{font-family:var(--grot);font-weight:700;font-size:.74rem;letter-spacing:0;text-transform:none;color:rgba(10,10,10,0.5)}
 :root[data-theme="riott"] #hint-lock.ready{color:#0a0a0a}
-:root[data-theme="riott"] .tag{
-  background:#0a0a0a;color:#fff;border:none;padding:4px 10px;
-  font-family:var(--pixel);font-weight:400;font-size:1.1rem;letter-spacing:.04em;line-height:1;
-}
+:root[data-theme="riott"] .tag{background:#0a0a0a;color:#fff;border:none;padding:5px 10px;font-family:var(--grot);font-weight:700;font-size:.72rem;letter-spacing:0}
 
-/* the monitor */
 :root[data-theme="riott"] #lyric-block,
 :root[data-theme="riott"] #audio-block{
-  position:relative;width:100%;min-height:clamp(260px,38vw,340px);
-  margin:0 0 22px;padding:64px 28px 64px;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
+  position:relative;width:100%;min-height:clamp(280px,40vw,360px);
+  margin:0 0 22px;padding:92px 28px 56px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+  /* night footage: cold, murky, a little lighter in the middle */
   background:
-    radial-gradient(ellipse 80% 70% at 50% 45%, rgba(255,255,255,0.07) 0%, transparent 70%),
-    var(--feed);
+    radial-gradient(ellipse 70% 60% at 55% 55%, rgba(120,130,150,0.22) 0%, transparent 70%),
+    linear-gradient(180deg,#1b1e24 0%,#101216 100%);
   color:#fff;overflow:hidden;isolation:isolate;
 }
-/* scanlines + grain inside the feed only */
 :root[data-theme="riott"] #lyric-block::before,
 :root[data-theme="riott"] #audio-block::before{
   content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;
-  background:
-    repeating-linear-gradient(0deg, transparent 0 2px, rgba(255,255,255,0.035) 2px 3px),
-    radial-gradient(ellipse 120% 100% at 50% 50%, transparent 55%, rgba(0,0,0,0.6) 100%);
+  background:radial-gradient(ellipse 120% 100% at 50% 50%, transparent 55%, rgba(0,0,0,0.55) 100%);
 }
 :root[data-theme="riott"] #lyric-block::after,
 :root[data-theme="riott"] #audio-block::after{
-  content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;opacity:.18;mix-blend-mode:screen;
+  content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;opacity:.22;mix-blend-mode:screen;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
   background-size:200px;
 }
-:root[data-theme="riott"] .cam-hud{
-  display:flex;flex-direction:column;justify-content:space-between;
-  position:absolute;inset:0;padding:14px 16px;pointer-events:none;
-  font-family:var(--pixel);font-weight:400;font-size:1.2rem;letter-spacing:.04em;line-height:1;color:#fff;
+:root[data-theme="riott"] .cam-hud{display:block;position:absolute;inset:0;pointer-events:none;color:#fff}
+:root[data-theme="riott"] .cam-top{
+  display:flex;align-items:flex-end;justify-content:space-between;
+  height:46px;padding:0 14px 8px;background:#2e2f31;border-bottom:2px solid #4a4b4d;
 }
-:root[data-theme="riott"] .cam-row{display:flex;justify-content:space-between;align-items:flex-end}
-:root[data-theme="riott"] .cam-brand{display:flex;align-items:flex-end;gap:8px;font-family:var(--grot);font-weight:700;font-size:.74rem}
-:root[data-theme="riott"] .cam-brand .tt-mark{font-size:1.15rem;margin:0 4px 0 0;color:#fff}
-:root[data-theme="riott"] .cam-rec{display:flex;align-items:center}
+:root[data-theme="riott"] .cam-top .tt-mark{font-size:1.35rem;margin-bottom:6px}
+:root[data-theme="riott"] .cam-sys{font-family:var(--grot);font-weight:700;font-size:.88rem;letter-spacing:-.01em}
+:root[data-theme="riott"] .cam-sub{
+  display:flex;justify-content:space-between;align-items:center;
+  margin:8px 10px 0;padding:3px 8px;background:rgba(150,150,150,0.38);
+  font-family:var(--grot);font-weight:700;font-size:.7rem;letter-spacing:.02em;
+}
+:root[data-theme="riott"] .cam-rec{
+  position:absolute;right:14px;bottom:12px;display:flex;align-items:center;
+  font-family:var(--grot);font-weight:700;font-size:.72rem;
+}
+:root[data-theme="riott"] .cam-rec i{
+  display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--rec);margin-right:6px;
+  animation:riottRec 1.2s linear infinite;
+}
+@keyframes riottRec{0%,55%{opacity:1}56%,100%{opacity:0}}
 
 :root[data-theme="riott"] #word-history{
-  font-family:var(--pixel);font-size:1.45rem;letter-spacing:.02em;word-spacing:6px;
-  color:rgba(255,255,255,0.55);line-height:1.7;margin:0;
+  font-family:var(--grot);font-size:.95rem;letter-spacing:0;word-spacing:3px;
+  color:rgba(255,255,255,0.55);line-height:1.6;margin:0;
 }
 :root[data-theme="riott"] #word-history span{color:inherit !important;opacity:1 !important}
 :root[data-theme="riott"] #current-word{
   font-family:var(--display);font-weight:400;color:#fff;text-transform:uppercase;
-  font-size:clamp(3.2rem,11vw,6.6rem);letter-spacing:.01em;line-height:.9;
+  font-size:clamp(3.2rem,10vw,6.2rem);letter-spacing:.01em;line-height:.92;
 }
 
 /* audio inside the feed */
-:root[data-theme="riott"] #audio-play-btn{
-  background:#fff;color:#0a0a0a;border:none;box-shadow:none;
-  font-family:var(--grot);font-weight:700;font-size:.86rem;letter-spacing:.02em;
-}
+:root[data-theme="riott"] #audio-play-btn{background:#fff;color:#0a0a0a;border:none;box-shadow:none;font-family:var(--grot);font-weight:700;font-size:.86rem;letter-spacing:0}
 :root[data-theme="riott"] #audio-play-btn svg{color:#0a0a0a}
 :root[data-theme="riott"] #audio-play-btn:hover{box-shadow:none;transform:none;opacity:.88}
 :root[data-theme="riott"] #audio-play-btn.playing{background:transparent;color:#fff;box-shadow:inset 0 0 0 1px #fff}
 :root[data-theme="riott"] #audio-play-btn.playing svg{color:#fff}
-:root[data-theme="riott"] .audio-seg{background:rgba(255,255,255,0.12)}
-:root[data-theme="riott"] .audio-seg.unlocked{background:rgba(255,255,255,0.4)}
+:root[data-theme="riott"] .audio-seg{background:rgba(255,255,255,0.14);border-radius:0}
+:root[data-theme="riott"] .audio-seg.unlocked{background:rgba(255,255,255,0.42)}
 :root[data-theme="riott"] .audio-seg.current{background:#fff;box-shadow:none}
 :root[data-theme="riott"] #audio-playhead{background:var(--rec)}
-:root[data-theme="riott"] #audio-snippet-label{font-family:var(--pixel);font-weight:400;font-size:1.25rem;color:rgba(255,255,255,0.75);letter-spacing:.02em}
+:root[data-theme="riott"] #audio-snippet-label{font-family:var(--grot);font-weight:700;font-size:.8rem;color:rgba(255,255,255,0.75);letter-spacing:0;text-transform:none}
 
-/* guess input: one heavy rule, like filling in a form */
+/* guess input */
 :root[data-theme="riott"] .input-row,
-:root[data-theme="riott"] .input-row:focus-within{
-  background:#fff;border:none;border-bottom:3px solid #0a0a0a;box-shadow:none;
-}
-:root[data-theme="riott"] #song-input{
-  font-family:var(--grot);font-weight:700;font-size:1.15rem;color:#0a0a0a;background:transparent;
-  padding-left:2px;
-}
-:root[data-theme="riott"] #song-input::placeholder{font-family:var(--mono);font-weight:400;font-size:.8rem;letter-spacing:0;text-transform:none;color:rgba(10,10,10,0.4)}
-:root[data-theme="riott"] #reveal-btn{
-  background:#0a0a0a;color:#fff;border:none;
-  font-family:var(--pixel);font-weight:400;font-size:1.2rem;letter-spacing:.04em;
-}
+:root[data-theme="riott"] .input-row:focus-within{background:#fff;border:none;border-bottom:2px solid #0a0a0a;box-shadow:none}
+:root[data-theme="riott"] #song-input{font-family:var(--grot);font-weight:700;font-size:1.1rem;color:#0a0a0a;background:transparent;padding-left:2px}
+:root[data-theme="riott"] #song-input::placeholder{font-family:var(--grot);font-weight:400;font-size:.85rem;letter-spacing:0;text-transform:none;color:rgba(10,10,10,0.4)}
+:root[data-theme="riott"] #reveal-btn{background:#0a0a0a;color:#fff;border:none;font-family:var(--grot);font-weight:700;font-size:.74rem;letter-spacing:0}
 :root[data-theme="riott"] #reveal-btn:hover{background:#333;color:#fff}
-:root[data-theme="riott"] #ac-list{background:#fff;border:1px solid #0a0a0a;border-left:1px solid #0a0a0a}
+:root[data-theme="riott"] #reveal-btn:disabled{background:rgba(10,10,10,0.25);opacity:1}
+:root[data-theme="riott"] #ac-list{background:#fff;border:1px solid #0a0a0a}
 :root[data-theme="riott"] #ac-list li{border-bottom:1px solid rgba(10,10,10,0.12);font-family:var(--grot);color:#0a0a0a}
-:root[data-theme="riott"] #ac-list li .ac-title{font-family:var(--grot);font-weight:700;font-size:.9rem;color:inherit}
-:root[data-theme="riott"] #ac-list li .ac-artists{font-family:var(--mono);color:inherit;opacity:.6}
+:root[data-theme="riott"] #ac-list li .ac-title{font-family:var(--grot);font-weight:700;font-size:.92rem;color:inherit;letter-spacing:0}
+:root[data-theme="riott"] #ac-list li .ac-artists{font-family:var(--grot);color:inherit;opacity:.55;letter-spacing:0}
 :root[data-theme="riott"] #ac-list li.focused,
 :root[data-theme="riott"] #ac-list li:hover{background:#0a0a0a;color:#fff}
 
-:root[data-theme="riott"] #feedback{font-family:var(--mono);font-weight:700;color:#0a0a0a;letter-spacing:.02em}
+:root[data-theme="riott"] #feedback{font-family:var(--grot);font-weight:700;color:#0a0a0a;letter-spacing:0;text-transform:none}
 :root[data-theme="riott"] #feedback.correct,
-:root[data-theme="riott"] #feedback.wrong{
-  font-family:var(--display);font-weight:400;font-size:clamp(2rem,6vw,3rem);
-  letter-spacing:.01em;color:#0a0a0a;
-}
-:root[data-theme="riott"] #next-btn{
-  background:#0a0a0a;color:#fff;border:none;
-  font-family:var(--grot);font-weight:700;font-size:.92rem;letter-spacing:.02em;
-}
+:root[data-theme="riott"] #feedback.wrong{font-family:var(--display);font-weight:400;font-size:clamp(2rem,6vw,3rem);letter-spacing:.01em;color:#0a0a0a;text-transform:uppercase}
+:root[data-theme="riott"] #next-btn{background:#0a0a0a;color:#fff;border:none;font-family:var(--grot);font-weight:700;font-size:.9rem;letter-spacing:0}
 :root[data-theme="riott"] #giveup-btn{
   background:none;border:none;color:#0a0a0a;
-  font-family:var(--hand);font-weight:400;font-size:1.7rem;letter-spacing:0;text-transform:none;
-  text-decoration:underline;text-decoration-thickness:1.5px;text-underline-offset:3px;transform:rotate(-2deg);
+  font-family:var(--grot);font-weight:700;font-size:.78rem;letter-spacing:0;text-transform:none;
+  text-decoration:underline;text-underline-offset:4px;
 }
 :root[data-theme="riott"] #giveup-btn:hover{border:none;color:#0a0a0a;opacity:.6}
 
-/* answer = tracklist entry with the cover */
+/* answer: tracklist entry with the cover */
 :root[data-theme="riott"] #answer-reveal{width:100%}
 :root[data-theme="riott"] .ans-card{
-  display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;
+  display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center;
   max-width:none;width:100%;padding:16px 0;
   background:none;border:none;border-top:2px solid #0a0a0a;border-bottom:1px solid #0a0a0a;
 }
 :root[data-theme="riott"] .ans-cover,
-:root[data-theme="riott"] .ans-cover-placeholder{width:88px;height:88px;border:none}
-:root[data-theme="riott"] .ans-label{font-family:var(--hand);font-weight:400;font-size:1.6rem;line-height:1;letter-spacing:0;text-transform:none;color:#0a0a0a}
-:root[data-theme="riott"] .ans-song{
-  font-family:var(--grot);font-weight:700;font-size:clamp(1.5rem,4.4vw,2.3rem);
-  letter-spacing:-.01em;line-height:1;color:#0a0a0a;text-transform:uppercase;
-}
+:root[data-theme="riott"] .ans-cover-placeholder{width:92px;height:92px;border:none}
+:root[data-theme="riott"] .ans-label{font-family:var(--grot);font-weight:400;font-size:.78rem;letter-spacing:0;text-transform:none;color:rgba(10,10,10,0.55)}
+:root[data-theme="riott"] .ans-song{font-family:var(--grot);font-weight:700;font-size:clamp(1.5rem,4.4vw,2.2rem);letter-spacing:-.02em;line-height:1.05;color:#0a0a0a;text-transform:uppercase}
 :root[data-theme="riott"] .ans-artists,
-:root[data-theme="riott"] .ans-feat{font-family:var(--mono);color:rgba(10,10,10,0.65);letter-spacing:0}
+:root[data-theme="riott"] .ans-feat{font-family:var(--grot);color:rgba(10,10,10,0.6);letter-spacing:0}
 
-/* share + stats: plain */
 :root[data-theme="riott"] .share-btn{background:#fff;color:#0a0a0a;border:1px solid #0a0a0a;font-family:var(--grot);font-weight:700}
 :root[data-theme="riott"] .share-btn:hover{background:#0a0a0a;color:#fff}
 
-/* ranked timer bar = feed overlay */
-:root[data-theme="riott"] #ranked-bar{background:#0a0a0a;border:none;color:#fff}
-:root[data-theme="riott"] #ranked-bar *{color:#fff !important;font-family:var(--pixel) !important;font-weight:400;letter-spacing:.04em}
-:root[data-theme="riott"] #ranked-mode-lbl,:root[data-theme="riott"] #ranked-score-disp{font-size:1.1rem !important}
+:root[data-theme="riott"] #ranked-bar{background:#2e2f31;border:none;color:#fff}
+:root[data-theme="riott"] #ranked-bar *{color:#fff !important;font-family:var(--grot) !important;font-weight:700;letter-spacing:0}
 :root[data-theme="riott"] #date-bar{background:#fff;border-bottom:1px solid rgba(10,10,10,0.15)}
-:root[data-theme="riott"] #date-label{font-family:var(--pixel);font-weight:400;font-size:1.25rem;color:#0a0a0a}
+:root[data-theme="riott"] #date-label{font-family:var(--grot);font-weight:700;color:#0a0a0a;letter-spacing:0}
 
-/* loading / error / empty states */
-:root[data-theme="riott"] #loading{
-  width:min(700px,100%);min-height:300px;padding:40px 44px;
-  background:#000;align-items:flex-start;justify-content:center;
-}
+/* loading = the clip's "Kamera offline" screen */
+:root[data-theme="riott"] #loading{width:min(700px,100%);min-height:300px;padding:40px 44px;background:#000;align-items:flex-start;justify-content:center}
 :root[data-theme="riott"] #loading .spinner{display:none}
 :root[data-theme="riott"] #loading p{font-size:0;letter-spacing:0;text-transform:none;color:#fff}
 :root[data-theme="riott"] #loading p::before{
@@ -442,6 +401,7 @@
   animation:riottFlicker 2.4s steps(1) infinite;
 }
 @keyframes riottFlicker{0%,100%{opacity:1}47%{opacity:.75}48%{opacity:1}83%{opacity:.85}}
+
 :root[data-theme="riott"] .err-title,
 :root[data-theme="riott"] .du-title{font-family:var(--grot);font-weight:700;letter-spacing:-.01em;color:#0a0a0a}
 :root[data-theme="riott"] .err-title span,
@@ -449,105 +409,9 @@
 :root[data-theme="riott"] .err-card,
 :root[data-theme="riott"] .du-card{background:none;border:none;border-top:2px solid #0a0a0a;border-bottom:1px solid #0a0a0a}
 :root[data-theme="riott"] .err-msg,
-:root[data-theme="riott"] .du-msg{font-family:var(--grot);color:#0a0a0a}
+:root[data-theme="riott"] .du-msg{font-family:var(--grot);color:#0a0a0a;letter-spacing:0}
 :root[data-theme="riott"] .err-btn-primary,
 :root[data-theme="riott"] .du-btn-primary{background:#0a0a0a;color:#fff;font-family:var(--grot);font-weight:700;border:none}
-
-/* ═══ GRAPHICS: graffiti tags, cracked phone, zine stickers ═══ */
-.riott-decor{display:none}
-:root[data-theme="riott"] #splash{position:relative}
-:root[data-theme="riott"] .riott-decor{display:block}
-
-/* black hand tag scribbled over the logo, like on the cover */
-:root[data-theme="riott"] .rd-tag{
-  position:absolute;top:30px;right:-60px;width:300px;height:154px;
-  background:#0a0a0a;opacity:.9;pointer-events:none;
-  -webkit-mask:url(/images/riott/tag.svg) no-repeat center/contain;
-          mask:url(/images/riott/tag.svg) no-repeat center/contain;
-  transform:rotate(-7deg);
-}
-
-/* the cracked-phone CD case */
-:root[data-theme="riott"] .rd-phone{
-  position:absolute;left:-250px;top:150px;width:168px;transform:rotate(-9deg);
-}
-:root[data-theme="riott"] .rd-phone img{display:block;width:100%;height:auto;filter:drop-shadow(6px 8px 0 rgba(10,10,10,0.12))}
-:root[data-theme="riott"] .rd-phone::after{          /* tape */
-  content:'';position:absolute;top:-10px;left:50%;width:78px;height:24px;
-  transform:translateX(-50%) rotate(4deg);
-  background:rgba(225,222,210,0.75);box-shadow:0 0 0 1px rgba(10,10,10,0.05);
-}
-
-/* sticker sheet */
-:root[data-theme="riott"] .rd-stickers{
-  position:absolute;right:-270px;top:120px;width:220px;
-  display:flex;flex-wrap:wrap;gap:16px 14px;align-items:flex-start;
-}
-.stk{
-  position:relative;display:inline-flex;align-items:center;gap:8px;
-  background:#fff;color:#0a0a0a;border:2px solid #0a0a0a;
-  font-family:var(--grot,'Arial',sans-serif);font-weight:700;line-height:1.05;
-  padding:8px 10px;box-shadow:3px 3px 0 rgba(10,10,10,0.12);
-}
-.stk::before{                                        /* bit of tape */
-  content:'';position:absolute;top:-9px;left:14px;width:38px;height:15px;
-  background:rgba(225,222,210,0.78);transform:rotate(-6deg);
-}
-.stk-zone{transform:rotate(-4deg);font-size:1.05rem;padding:8px 12px}
-.stk-tt{transform:rotate(7deg);border-radius:50%;width:66px;height:66px;justify-content:center;padding:0}
-.stk-tt::before{left:12px}
-.stk-tt .tt-mark{font-size:1.9rem;margin:0 0 10px}
-.stk-code{transform:rotate(3deg);flex-direction:column;align-items:stretch;font-size:.72rem;gap:4px;padding:8px 10px 6px}
-.stk-code i{display:block;height:26px;width:120px;
-  background:repeating-linear-gradient(90deg,#0a0a0a 0 2px,transparent 2px 4px,#0a0a0a 4px 7px,transparent 7px 8px,#0a0a0a 8px 9px,transparent 9px 12px)}
-.stk-offline{transform:rotate(-7deg);background:#0a0a0a;color:#fff;font-size:.82rem;padding:10px 12px}
-.stk-tar{transform:rotate(5deg);font-family:var(--goth,serif);font-size:1.25rem;letter-spacing:0;border-width:1px;padding:6px 12px}
-
-/* narrower screens: phone + stickers sit in a row under the corner stamp */
-@media (max-width:1300px){
-  :root[data-theme="riott"] .riott-decor{
-    display:flex;align-items:center;justify-content:center;gap:28px;
-    margin:34px auto 10px;
-  }
-  :root[data-theme="riott"] .rd-tag{right:0}
-  :root[data-theme="riott"] .rd-phone{position:relative;left:auto;top:auto;width:120px;flex-shrink:0}
-  :root[data-theme="riott"] .rd-stickers{position:relative;right:auto;top:auto;width:auto;max-width:330px}
-}
-@media (max-width:640px){
-  :root[data-theme="riott"] .rd-tag{width:190px;height:98px;right:0;top:46px}
-  :root[data-theme="riott"] .riott-decor{gap:18px}
-  :root[data-theme="riott"] .rd-phone{width:92px}
-  :root[data-theme="riott"] .rd-stickers{max-width:220px;gap:14px 10px}
-  :root[data-theme="riott"] .stk-zone{font-size:.86rem}
-  :root[data-theme="riott"] .stk-code i{width:90px}
-  :root[data-theme="riott"] .stk-tar{display:none}
-}
-
-/* inside the CCTV feed: shattered glass + a white tag, like the clip frame */
-:root[data-theme="riott"] .cam-hud::before,
-:root[data-theme="riott"] .cam-hud::after{content:'';position:absolute;pointer-events:none;background:#fff}
-:root[data-theme="riott"] .cam-hud::before{
-  top:0;right:0;width:62%;height:100%;opacity:.28;
-  -webkit-mask:url(/images/riott/cracks.svg) no-repeat right top/cover;
-          mask:url(/images/riott/cracks.svg) no-repeat right top/cover;
-}
-:root[data-theme="riott"] .cam-hud::after{
-  left:4%;bottom:8%;width:46%;height:52%;opacity:.2;
-  -webkit-mask:url(/images/riott/tag.svg) no-repeat left bottom/contain;
-          mask:url(/images/riott/tag.svg) no-repeat left bottom/contain;
-  transform:rotate(-4deg);
-}
-
-/* answer cover taped into the zine */
-:root[data-theme="riott"] .ans-card{position:relative}
-:root[data-theme="riott"] .ans-card::before,
-:root[data-theme="riott"] .ans-card::after{
-  content:'';position:absolute;width:44px;height:15px;z-index:1;
-  background:rgba(225,222,210,0.85);
-}
-:root[data-theme="riott"] .ans-card::before{top:10px;left:-12px;transform:rotate(-38deg)}
-:root[data-theme="riott"] .ans-card::after{top:10px;left:62px;transform:rotate(36deg)}
-:root[data-theme="riott"] .ans-cover{transform:rotate(-2deg);border:4px solid #fff;box-shadow:0 0 0 1px rgba(10,10,10,0.15)}
 
 /* ═══ PANELS ══════════════════════════════════════════════════ */
 :root[data-theme="riott"] #settings-panel,
@@ -555,14 +419,12 @@
 :root[data-theme="riott"] .settings-title,
 :root[data-theme="riott"] .qs-title{font-family:var(--grot);font-weight:700;letter-spacing:-.01em;color:#0a0a0a}
 :root[data-theme="riott"] .qs-title span{color:#0a0a0a}
-:root[data-theme="riott"] .settings-label{font-family:var(--grot);font-weight:700;letter-spacing:.02em}
+:root[data-theme="riott"] .settings-label{font-family:var(--grot);font-weight:700;letter-spacing:0}
 :root[data-theme="riott"] #settings-overlay,
 :root[data-theme="riott"] #qs-overlay{background:rgba(255,255,255,0.8);backdrop-filter:blur(2px)}
 :root[data-theme="riott"] .seg-ctrl{border:1px solid #0a0a0a}
-:root[data-theme="riott"] .seg-ctrl button{border-right-color:rgba(10,10,10,0.25);color:#0a0a0a;font-family:var(--grot);font-weight:700;letter-spacing:.02em}
+:root[data-theme="riott"] .seg-ctrl button{border-right-color:rgba(10,10,10,0.25);color:#0a0a0a;font-family:var(--grot);font-weight:700;letter-spacing:0}
 :root[data-theme="riott"] .seg-ctrl button.active{background:#0a0a0a;color:#fff}
-
-/* inputs elsewhere */
 :root[data-theme="riott"] input[type="text"],
 :root[data-theme="riott"] input[type="search"],
 :root[data-theme="riott"] input:not([type]){color:#0a0a0a}
@@ -572,36 +434,41 @@
 
 :root[data-theme="riott"] footer{background:#fff;border-top:1px solid #0a0a0a}
 :root[data-theme="riott"] .ft-left,
-:root[data-theme="riott"] .ft-link{font-family:var(--grot);font-weight:700;letter-spacing:.02em;color:#0a0a0a}
-:root[data-theme="riott"] .ft-right{font-family:var(--grot);font-weight:700;letter-spacing:.02em;font-size:.72rem;color:rgba(10,10,10,0.55)}
+:root[data-theme="riott"] .ft-link{font-family:var(--grot);font-weight:700;letter-spacing:0;color:#0a0a0a}
+:root[data-theme="riott"] .ft-right{font-family:var(--grot);font-weight:700;letter-spacing:0;font-size:.72rem;color:rgba(10,10,10,0.55)}
 :root[data-theme="riott"] .ft-social-link{color:#0a0a0a}
 :root[data-theme="riott"] ::-webkit-scrollbar-track{background:#fff}
 :root[data-theme="riott"] ::-webkit-scrollbar-thumb{background:#0a0a0a;border-radius:0}
 
 /* ═══ SMALL SCREENS ═══════════════════════════════════════════ */
 @media (max-width:640px){
-  :root[data-theme="riott"] nav{height:56px;padding:0 14px}
+  :root[data-theme="riott"] nav{height:54px;padding:0 14px}
   :root[data-theme="riott"] .wordmark{font-size:1.05rem}
   :root[data-theme="riott"] #cal-btn,
   :root[data-theme="riott"] #howto-btn,
   :root[data-theme="riott"] #settings-btn{font-size:.62rem;padding:6px 4px}
-  :root[data-theme="riott"] #type-switch button{min-width:96px}
-  :root[data-theme="riott"] .mode-bar-btn{font-size:.7rem;padding:12px 4px 10px}
-  :root[data-theme="riott"] .riott-hud{padding:5px 14px;font-size:.98rem}
+  :root[data-theme="riott"] #type-switch button{min-width:92px}
+  :root[data-theme="riott"] .mode-bar-btn{font-size:.68rem;padding:12px 4px 10px}
+  :root[data-theme="riott"] #splash h1{margin-bottom:56px}
   :root[data-theme="riott"] .mode-card,
-  :root[data-theme="riott"] .mode-card.active{grid-template-columns:44px 1fr auto;column-gap:10px;padding:14px 4px 12px}
-  :root[data-theme="riott"] .mode-card::before{font-size:1.4rem}
+  :root[data-theme="riott"] .mode-card.active{grid-template-columns:42px 1fr auto;column-gap:10px;padding:14px 4px 12px}
+  :root[data-theme="riott"] .mode-card::before{font-size:1.3rem}
   :root[data-theme="riott"] .mc-arrow{font-size:0}
   :root[data-theme="riott"] .mc-arrow::after{content:'\2192';font-size:1.1rem}
   :root[data-theme="riott"] .rl-text{font-size:.46rem}
+  :root[data-theme="riott"] .riott-sign{padding:14px 16px 18px;margin-top:48px}
+  :root[data-theme="riott"] .sg-plate{padding:10px 10px 8px}
+  :root[data-theme="riott"] .sg-logo{padding:10px 8px}
+  :root[data-theme="riott"] .sg-note{font-size:.42rem}
+  :root[data-theme="riott"] .sg-head{padding:0 20px;font-size:.5rem}
   :root[data-theme="riott"] #lyric-block,
-  :root[data-theme="riott"] #audio-block{padding:56px 16px;min-height:240px}
-  :root[data-theme="riott"] .cam-hud{padding:10px 12px;font-size:1rem}
+  :root[data-theme="riott"] #audio-block{padding:84px 16px 48px;min-height:250px}
+  :root[data-theme="riott"] .cam-top{height:40px}
+  :root[data-theme="riott"] .cam-sys{font-size:.78rem}
   :root[data-theme="riott"] #loading{padding:28px 22px;min-height:240px}
   :root[data-theme="riott"] #loading p::before{font-size:1.5rem}
-  :root[data-theme="riott"] .splash-pill{font-size:1.6rem}
 }
 @media (prefers-reduced-motion: reduce){
-  :root[data-theme="riott"] .riott-hud i,
-  :root[data-theme="riott"] .cam-rec i{animation:none}
+  :root[data-theme="riott"] .cam-rec i,
+  :root[data-theme="riott"] #loading p::before{animation:none}
 }
