@@ -7,9 +7,11 @@
 // already-visited browsers until they clear storage. Static assets (JS,
 // images) keep cache-first since those are versioned by browser reload
 // anyway and benefit more from instant offline hits.
-const CACHE_NAME = 'cotsozanuta-v2';
+const CACHE_NAME = 'cotsozanuta-v3';
 const PRECACHE = [
   '/utils.js',
+  '/theme.js',
+  '/theme.css',
   '/images/favicon.png',
 ];
 

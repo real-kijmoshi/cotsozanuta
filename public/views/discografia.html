@@ -8,23 +8,26 @@
   <meta name="robots" content="index, follow">
   <meta name="theme-color" content="#060404">
   <link rel="icon" type="image/png" href="/images/favicon.png">
+  <link rel="stylesheet" href="/theme.css">
+  <script src="/theme.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Share+Tech+Mono&family=Barlow+Condensed:ital,wght@0,400;0,700;0,900&display=swap" rel="stylesheet">
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     :root{
-      --bg:#060404;--panel:rgba(6,4,4,0.82);--line:rgba(255,255,255,0.07);
-      --text:#f2e9e4;--sub:rgba(242,233,228,0.38);--sub2:rgba(242,233,228,0.16);
-      --red:#e31c12;--red-dim:rgba(227,28,18,0.22);--red-glow:rgba(227,28,18,0.4);
+      --accent-rgb:227,28,18;--bg-rgb:6,4,4;--text-rgb:242,233,228;--panel-rgb:10,6,6;
+      --bg:#060404;--panel:rgba(var(--bg-rgb),0.82);--line:rgba(255,255,255,0.07);
+      --text:#f2e9e4;--sub:rgba(var(--text-rgb),0.38);--sub2:rgba(var(--text-rgb),0.16);
+      --red:#e31c12;--red-dim:rgba(var(--accent-rgb),0.22);--red-glow:rgba(var(--accent-rgb),0.4);
       --ok:#4fc85a;--mono:'Share Tech Mono',monospace;
       --display:'Anton',sans-serif;--cond:'Barlow Condensed',sans-serif;
     }
     ::-webkit-scrollbar{width:8px;height:8px}
-    ::-webkit-scrollbar-track{background:rgba(6,4,4,0.4)}
-    ::-webkit-scrollbar-thumb{background:rgba(227,28,18,0.25);border-radius:4px}
-    ::-webkit-scrollbar-thumb:hover{background:rgba(227,28,18,0.45)}
-    ::selection{background:rgba(227,28,18,0.22);color:var(--text)}
+    ::-webkit-scrollbar-track{background:rgba(var(--bg-rgb),0.4)}
+    ::-webkit-scrollbar-thumb{background:rgba(var(--accent-rgb),0.25);border-radius:4px}
+    ::-webkit-scrollbar-thumb:hover{background:rgba(var(--accent-rgb),0.45)}
+    ::selection{background:rgba(var(--accent-rgb),0.22);color:var(--text)}
     html{font-size:16px}
     body{
       font-family:var(--cond);background:var(--bg);color:var(--text);
@@ -45,14 +48,14 @@
     nav{
       display:flex;align-items:center;justify-content:space-between;
       padding:0 20px;height:54px;
-      border-bottom:1px solid rgba(227,28,18,0.2);flex-shrink:0;
+      border-bottom:1px solid rgba(var(--accent-rgb),0.2);flex-shrink:0;
       position:relative;z-index:100;
-      background:linear-gradient(to bottom,rgba(6,4,4,0.96) 0%,rgba(6,4,4,0.8) 100%);
+      background:linear-gradient(to bottom,rgba(var(--bg-rgb),0.96) 0%,rgba(var(--bg-rgb),0.8) 100%);
       backdrop-filter:blur(6px);
     }
     nav::after{
       content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
-      background:linear-gradient(90deg,transparent 0%,rgba(227,28,18,0.6) 30%,rgba(227,28,18,0.6) 70%,transparent 100%);
+      background:linear-gradient(90deg,transparent 0%,rgba(var(--accent-rgb),0.6) 30%,rgba(var(--accent-rgb),0.6) 70%,transparent 100%);
     }
     .wordmark{
       font-family:var(--display);font-size:1.25rem;letter-spacing:.1em;
@@ -99,7 +102,7 @@
     }
     #disc-search{
       flex:1;min-width:200px;max-width:360px;
-      background:rgba(6,4,4,0.88);border:1px solid rgba(255,255,255,0.1);
+      background:rgba(var(--bg-rgb),0.88);border:1px solid rgba(255,255,255,0.1);
       border-left:3px solid var(--red);padding:11px 16px;
       font-family:var(--mono);font-size:.8rem;letter-spacing:.04em;
       color:var(--text);outline:none;
@@ -136,11 +139,11 @@
     #albums-grid{display:flex;flex-direction:column;gap:12px}
 
     .album-block{
-      background:rgba(8,5,5,0.75);border:1px solid rgba(255,255,255,0.06);
+      background:rgba(var(--panel-rgb),0.75);border:1px solid rgba(255,255,255,0.06);
       border-left:3px solid var(--red-dim);overflow:hidden;
       transition:border-left-color .2s;
     }
-    .album-block:hover{border-left-color:rgba(227,28,18,0.55)}
+    .album-block:hover{border-left-color:rgba(var(--accent-rgb),0.55)}
     .album-block.expanded{border-left-color:var(--red)}
 
     .album-header{
@@ -151,13 +154,13 @@
     .album-header:hover{background:rgba(255,255,255,0.02)}
     .album-cover{
       width:64px;height:64px;object-fit:cover;flex-shrink:0;
-      background:rgba(227,28,18,0.08);display:block;
+      background:rgba(var(--accent-rgb),0.08);display:block;
     }
     .album-cover-ph{
       width:64px;height:64px;flex-shrink:0;
-      background:rgba(227,28,18,0.06);
+      background:rgba(var(--accent-rgb),0.06);
       display:flex;align-items:center;justify-content:center;
-      font-family:var(--display);font-size:1.4rem;color:rgba(227,28,18,0.25);
+      font-family:var(--display);font-size:1.4rem;color:rgba(var(--accent-rgb),0.25);
     }
     .album-meta{min-width:0}
     .album-name{
@@ -171,7 +174,7 @@
     }
     .album-daily-badge{
       font-family:var(--mono);font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;
-      color:var(--red);background:rgba(227,28,18,0.1);border:1px solid rgba(227,28,18,0.2);
+      color:var(--red);background:rgba(var(--accent-rgb),0.1);border:1px solid rgba(var(--accent-rgb),0.2);
       padding:3px 8px;margin-top:5px;display:inline-block;
     }
     .album-toggle{
@@ -227,14 +230,14 @@
 
     /* ─── FOOTER ─────────────────────────────────────────── */
     footer{
-      border-top:1px solid rgba(227,28,18,0.15);height:38px;
+      border-top:1px solid rgba(var(--accent-rgb),0.15);height:38px;
       display:flex;align-items:center;justify-content:space-between;
       padding:0 20px;flex-shrink:0;
-      background:rgba(6,4,4,0.88);backdrop-filter:blur(6px);
+      background:rgba(var(--bg-rgb),0.88);backdrop-filter:blur(6px);
     }
     .ft-left{font-family:var(--mono);font-size:.64rem;letter-spacing:.12em;text-transform:uppercase;color:var(--sub)}
     .ft-link{font-family:var(--mono);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--sub);text-decoration:none;transition:color .14s}
-    .ft-link:hover{color:rgba(227,28,18,0.8)}
+    .ft-link:hover{color:rgba(var(--accent-rgb),0.8)}
     .ft-right{display:flex;align-items:center;gap:16px}
 
     @media(max-width:600px){

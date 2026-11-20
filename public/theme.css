@@ -1,0 +1,67 @@
+/* ─── RIOTT THEME ─────────────────────────────────────────────
+   Siren blue on cold concrete. Every page colour is driven by the
+   --*-rgb tokens, so swapping them here re-skins the whole site.
+   The default (TTHE GRIND) palette lives in each page's :root. */
+:root[data-theme="riott"]{
+  --accent-rgb:47,107,255;
+  --bg-rgb:5,7,11;
+  --text-rgb:230,236,243;
+  --panel-rgb:8,11,17;
+  --siren-rgb:255,46,74;
+  --bg:#05070b;
+  --text:#e6ecf3;
+  --red:#2f6bff;
+  --line:rgba(170,195,255,0.08);
+  --line2:rgba(170,195,255,0.15);
+}
+
+/* cold smoke instead of the warm ember glow */
+:root[data-theme="riott"] #bg-photo{
+  background:
+    radial-gradient(ellipse 90% 60% at 15% 0%, rgba(47,107,255,0.16) 0%, transparent 60%),
+    radial-gradient(ellipse 70% 50% at 95% 10%, rgba(255,46,74,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 140% 80% at 50% 40%, rgba(16,22,34,0.7) 0%, transparent 75%),
+    var(--bg);
+}
+
+/* police-light strip under the nav: blue / red, slowly pulsing */
+:root[data-theme="riott"] nav::after{
+  height:2px;
+  background:linear-gradient(90deg,
+    transparent 0%,
+    rgba(var(--accent-rgb),0.85) 18%, rgba(var(--accent-rgb),0.85) 48%,
+    rgba(var(--siren-rgb),0.75) 52%, rgba(var(--siren-rgb),0.75) 82%,
+    transparent 100%);
+  animation:riottSiren 2.4s ease-in-out infinite;
+}
+@keyframes riottSiren{
+  0%,100%{opacity:.9}
+  50%{filter:brightness(1.35);opacity:.55}
+}
+
+/* ghosted graffiti tag: hazard-tape stencil instead of spray paint */
+:root[data-theme="riott"] #bg-tag{
+  color:transparent;
+  -webkit-text-stroke:2px rgba(var(--accent-rgb),0.09);
+  letter-spacing:.02em;
+  transform:rotate(-6deg);
+}
+:root[data-theme="riott"] #bg-year{
+  color:rgba(var(--siren-rgb),0.035);
+}
+
+/* the revealed word gets a split blue/red siren shadow */
+:root[data-theme="riott"] #current-word{
+  text-shadow:
+    -3px 0 0 rgba(var(--accent-rgb),0.35),
+    3px 0 0 rgba(var(--siren-rgb),0.22),
+    0 0 80px rgba(var(--accent-rgb),0.12);
+}
+
+:root[data-theme="riott"] .wm-hl{
+  text-shadow:0 0 24px rgba(var(--accent-rgb),0.55), 2px 2px 0 rgba(0,0,0,0.5);
+}
+
+@media (prefers-reduced-motion: reduce){
+  :root[data-theme="riott"] nav::after{animation:none}
+}
