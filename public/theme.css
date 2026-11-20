@@ -9,7 +9,7 @@
    The default (TTHE GRIND) look lives in each page; everything here is
    scoped to :root[data-theme="riott"] except the RIOTT-only elements,
    which are hidden by default. theme.js swaps in the logo + camera HUD. */
-@import url('https://fonts.googleapis.com/css2?family=Tinos:wght@700&family=Courier+Prime:wght@400;700&family=Inter+Tight:wght@500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Tinos:wght@700&family=Courier+Prime:wght@400;700&family=Arimo:wght@400;700&display=swap');
 
 /* RIOTT-only elements: hidden in other themes */
 .riott-hud,.riott-legal,.cam-hud{display:none}
@@ -30,7 +30,8 @@
   --line:rgba(10,10,10,0.12);
   --line2:rgba(10,10,10,0.22);
   --ok:#0a0a0a;
-  --grot:'Inter Tight','Helvetica Neue',Helvetica,Arial,sans-serif;
+  --grot:'Arimo','Helvetica Neue',Helvetica,Arial,sans-serif;
+  /* --display stays Anton: the heavy condensed face of the '13.07.2026' cards */
   --cond:var(--grot);
   --mono:'Courier Prime','Courier New',monospace;
   --worn:var(--mono);
@@ -185,8 +186,8 @@
 :root[data-theme="riott"] .mode-card .mc-icon{display:none}
 :root[data-theme="riott"] .mc-name{
   grid-column:2;grid-row:1;margin:0;
-  font-family:var(--grot);font-weight:900;font-size:clamp(1.15rem,3vw,1.7rem);
-  letter-spacing:-.01em;line-height:1.05;color:#0a0a0a;
+  font-family:var(--grot);font-weight:700;font-size:clamp(1.2rem,3vw,1.75rem);
+  letter-spacing:-.02em;line-height:1.05;color:#0a0a0a;text-transform:uppercase;
 }
 :root[data-theme="riott"] .mc-name::after{
   font-family:var(--mono);font-weight:400;font-size:.62em;letter-spacing:0;
@@ -233,7 +234,7 @@
 :root[data-theme="riott"] #splash-leaderboard{margin-top:56px;text-align:left}
 :root[data-theme="riott"] .slb-header{border-bottom:2px solid #0a0a0a;padding-bottom:8px;margin-bottom:12px}
 :root[data-theme="riott"] .slb-title{
-  font-family:var(--grot);font-weight:900;font-size:1.1rem;letter-spacing:-.01em;
+  font-family:var(--grot);font-weight:700;font-size:1.1rem;letter-spacing:-.01em;
   text-transform:uppercase;color:#0a0a0a;
 }
 :root[data-theme="riott"] .slb-title::before{content:'';display:none}
@@ -325,14 +326,14 @@
 }
 :root[data-theme="riott"] #word-history span{color:inherit !important;opacity:1 !important}
 :root[data-theme="riott"] #current-word{
-  font-family:var(--grot);font-weight:900;color:#fff;
-  font-size:clamp(2.8rem,9vw,5.6rem);letter-spacing:-.02em;line-height:.95;
+  font-family:var(--display);font-weight:400;color:#fff;text-transform:uppercase;
+  font-size:clamp(3.2rem,11vw,6.6rem);letter-spacing:.01em;line-height:.9;
 }
 
 /* audio inside the feed */
 :root[data-theme="riott"] #audio-play-btn{
   background:#fff;color:#0a0a0a;border:none;box-shadow:none;
-  font-family:var(--grot);font-weight:800;font-size:.86rem;letter-spacing:.02em;
+  font-family:var(--grot);font-weight:700;font-size:.86rem;letter-spacing:.02em;
 }
 :root[data-theme="riott"] #audio-play-btn svg{color:#0a0a0a}
 :root[data-theme="riott"] #audio-play-btn:hover{box-shadow:none;transform:none;opacity:.88}
@@ -369,12 +370,12 @@
 :root[data-theme="riott"] #feedback{font-family:var(--mono);font-weight:700;color:#0a0a0a;letter-spacing:.02em}
 :root[data-theme="riott"] #feedback.correct,
 :root[data-theme="riott"] #feedback.wrong{
-  font-family:var(--grot);font-weight:900;font-size:clamp(1.6rem,5vw,2.4rem);
-  letter-spacing:-.01em;color:#0a0a0a;
+  font-family:var(--display);font-weight:400;font-size:clamp(2rem,6vw,3rem);
+  letter-spacing:.01em;color:#0a0a0a;
 }
 :root[data-theme="riott"] #next-btn{
   background:#0a0a0a;color:#fff;border:none;
-  font-family:var(--grot);font-weight:800;font-size:.92rem;letter-spacing:.02em;
+  font-family:var(--grot);font-weight:700;font-size:.92rem;letter-spacing:.02em;
 }
 :root[data-theme="riott"] #giveup-btn{
   background:none;border:none;color:#0a0a0a;
@@ -394,7 +395,7 @@
 :root[data-theme="riott"] .ans-cover-placeholder{width:88px;height:88px;border:none}
 :root[data-theme="riott"] .ans-label{font-family:var(--mono);font-weight:700;font-size:.72rem;letter-spacing:0;text-transform:none;color:rgba(10,10,10,0.6)}
 :root[data-theme="riott"] .ans-song{
-  font-family:var(--grot);font-weight:900;font-size:clamp(1.5rem,4.4vw,2.3rem);
+  font-family:var(--grot);font-weight:700;font-size:clamp(1.5rem,4.4vw,2.3rem);
   letter-spacing:-.01em;line-height:1;color:#0a0a0a;text-transform:uppercase;
 }
 :root[data-theme="riott"] .ans-artists,
@@ -415,7 +416,7 @@
 :root[data-theme="riott"] #loading p{font-family:var(--mono);font-weight:700;letter-spacing:.02em;text-transform:none;color:#0a0a0a}
 :root[data-theme="riott"] #loading p::before{content:'Kamera offline \2014  ';color:rgba(10,10,10,0.5)}
 :root[data-theme="riott"] .err-title,
-:root[data-theme="riott"] .du-title{font-family:var(--grot);font-weight:900;letter-spacing:-.01em;color:#0a0a0a}
+:root[data-theme="riott"] .du-title{font-family:var(--grot);font-weight:700;letter-spacing:-.01em;color:#0a0a0a}
 :root[data-theme="riott"] .err-title span,
 :root[data-theme="riott"] .du-title span{color:#0a0a0a}
 :root[data-theme="riott"] .err-card,
@@ -423,15 +424,111 @@
 :root[data-theme="riott"] .err-msg,
 :root[data-theme="riott"] .du-msg{font-family:var(--mono);color:#0a0a0a}
 :root[data-theme="riott"] .err-btn-primary,
-:root[data-theme="riott"] .du-btn-primary{background:#0a0a0a;color:#fff;font-family:var(--grot);font-weight:800;border:none}
+:root[data-theme="riott"] .du-btn-primary{background:#0a0a0a;color:#fff;font-family:var(--grot);font-weight:700;border:none}
+
+/* ═══ GRAPHICS: graffiti tags, cracked phone, zine stickers ═══ */
+.riott-decor{display:none}
+:root[data-theme="riott"] #splash{position:relative}
+:root[data-theme="riott"] .riott-decor{display:block}
+
+/* black hand tag scribbled over the logo, like on the cover */
+:root[data-theme="riott"] .rd-tag{
+  position:absolute;top:30px;right:-60px;width:300px;height:154px;
+  background:#0a0a0a;opacity:.9;pointer-events:none;
+  -webkit-mask:url(/images/riott/tag.svg) no-repeat center/contain;
+          mask:url(/images/riott/tag.svg) no-repeat center/contain;
+  transform:rotate(-7deg);
+}
+
+/* the cracked-phone CD case */
+:root[data-theme="riott"] .rd-phone{
+  position:absolute;left:-250px;top:150px;width:168px;transform:rotate(-9deg);
+}
+:root[data-theme="riott"] .rd-phone img{display:block;width:100%;height:auto;filter:drop-shadow(6px 8px 0 rgba(10,10,10,0.12))}
+:root[data-theme="riott"] .rd-phone::after{          /* tape */
+  content:'';position:absolute;top:-10px;left:50%;width:78px;height:24px;
+  transform:translateX(-50%) rotate(4deg);
+  background:rgba(225,222,210,0.75);box-shadow:0 0 0 1px rgba(10,10,10,0.05);
+}
+
+/* sticker sheet */
+:root[data-theme="riott"] .rd-stickers{
+  position:absolute;right:-270px;top:120px;width:220px;
+  display:flex;flex-wrap:wrap;gap:16px 14px;align-items:flex-start;
+}
+.stk{
+  position:relative;display:inline-flex;align-items:center;gap:8px;
+  background:#fff;color:#0a0a0a;border:2px solid #0a0a0a;
+  font-family:var(--grot,'Arial',sans-serif);font-weight:700;line-height:1.05;
+  padding:8px 10px;box-shadow:3px 3px 0 rgba(10,10,10,0.12);
+}
+.stk::before{                                        /* bit of tape */
+  content:'';position:absolute;top:-9px;left:14px;width:38px;height:15px;
+  background:rgba(225,222,210,0.78);transform:rotate(-6deg);
+}
+.stk-zone{transform:rotate(-4deg);font-size:1.05rem;padding:8px 12px}
+.stk-tt{transform:rotate(7deg);border-radius:50%;width:66px;height:66px;justify-content:center;padding:0}
+.stk-tt::before{left:12px}
+.stk-tt .tt-mark{font-size:1.9rem;margin:0 0 10px}
+.stk-code{transform:rotate(3deg);flex-direction:column;align-items:stretch;font-size:.72rem;gap:4px;padding:8px 10px 6px}
+.stk-code i{display:block;height:26px;width:120px;
+  background:repeating-linear-gradient(90deg,#0a0a0a 0 2px,transparent 2px 4px,#0a0a0a 4px 7px,transparent 7px 8px,#0a0a0a 8px 9px,transparent 9px 12px)}
+.stk-offline{transform:rotate(-7deg);background:#0a0a0a;color:#fff;font-size:.82rem;padding:10px 12px}
+.stk-tar{transform:rotate(5deg);font-family:var(--mono,'Courier New',monospace);font-size:.74rem;letter-spacing:.06em;border-width:1px}
+
+/* narrower screens: phone + stickers sit in a row under the corner stamp */
+@media (max-width:1300px){
+  :root[data-theme="riott"] .riott-decor{
+    display:flex;align-items:center;justify-content:center;gap:28px;
+    margin:34px auto 10px;
+  }
+  :root[data-theme="riott"] .rd-tag{right:0}
+  :root[data-theme="riott"] .rd-phone{position:relative;left:auto;top:auto;width:120px;flex-shrink:0}
+  :root[data-theme="riott"] .rd-stickers{position:relative;right:auto;top:auto;width:auto;max-width:330px}
+}
+@media (max-width:640px){
+  :root[data-theme="riott"] .rd-tag{width:190px;height:98px;right:0;top:46px}
+  :root[data-theme="riott"] .riott-decor{gap:18px}
+  :root[data-theme="riott"] .rd-phone{width:92px}
+  :root[data-theme="riott"] .rd-stickers{max-width:220px;gap:14px 10px}
+  :root[data-theme="riott"] .stk-zone{font-size:.86rem}
+  :root[data-theme="riott"] .stk-code i{width:90px}
+  :root[data-theme="riott"] .stk-tar{display:none}
+}
+
+/* inside the CCTV feed: shattered glass + a white tag, like the clip frame */
+:root[data-theme="riott"] .cam-hud::before,
+:root[data-theme="riott"] .cam-hud::after{content:'';position:absolute;pointer-events:none;background:#fff}
+:root[data-theme="riott"] .cam-hud::before{
+  top:0;right:0;width:62%;height:100%;opacity:.28;
+  -webkit-mask:url(/images/riott/cracks.svg) no-repeat right top/cover;
+          mask:url(/images/riott/cracks.svg) no-repeat right top/cover;
+}
+:root[data-theme="riott"] .cam-hud::after{
+  left:4%;bottom:8%;width:46%;height:52%;opacity:.2;
+  -webkit-mask:url(/images/riott/tag.svg) no-repeat left bottom/contain;
+          mask:url(/images/riott/tag.svg) no-repeat left bottom/contain;
+  transform:rotate(-4deg);
+}
+
+/* answer cover taped into the zine */
+:root[data-theme="riott"] .ans-card{position:relative}
+:root[data-theme="riott"] .ans-card::before,
+:root[data-theme="riott"] .ans-card::after{
+  content:'';position:absolute;width:44px;height:15px;z-index:1;
+  background:rgba(225,222,210,0.85);
+}
+:root[data-theme="riott"] .ans-card::before{top:10px;left:-12px;transform:rotate(-38deg)}
+:root[data-theme="riott"] .ans-card::after{top:10px;left:62px;transform:rotate(36deg)}
+:root[data-theme="riott"] .ans-cover{transform:rotate(-2deg);border:4px solid #fff;box-shadow:0 0 0 1px rgba(10,10,10,0.15)}
 
 /* ═══ PANELS ══════════════════════════════════════════════════ */
 :root[data-theme="riott"] #settings-panel,
 :root[data-theme="riott"] #qs-panel{background:#fff;border-color:#0a0a0a}
 :root[data-theme="riott"] .settings-title,
-:root[data-theme="riott"] .qs-title{font-family:var(--grot);font-weight:900;letter-spacing:-.01em;color:#0a0a0a}
+:root[data-theme="riott"] .qs-title{font-family:var(--grot);font-weight:700;letter-spacing:-.01em;color:#0a0a0a}
 :root[data-theme="riott"] .qs-title span{color:#0a0a0a}
-:root[data-theme="riott"] .settings-label{font-family:var(--grot);font-weight:800;letter-spacing:.02em}
+:root[data-theme="riott"] .settings-label{font-family:var(--grot);font-weight:700;letter-spacing:.02em}
 :root[data-theme="riott"] #settings-overlay,
 :root[data-theme="riott"] #qs-overlay{background:rgba(255,255,255,0.8);backdrop-filter:blur(2px)}
 :root[data-theme="riott"] .seg-ctrl{border:1px solid #0a0a0a}
